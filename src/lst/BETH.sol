@@ -63,6 +63,24 @@ contract BETH is IBETH, IERC20, IERC20Errors, AccessControl {
         emit SetStakeManager(_address);
     }
 
+    /**
+     * Only stakeManager can mint when the user deposit ETH to vault
+     * @param _account Address who deposit ETH to vault
+     * @param _amount The amount of deposited ETH
+     */
+    function mint(address _account, uint256 _amount) external override onlyStakeManager{
+        _mint(_account, _amount);
+    }
+
+    /**
+     * Only stakeManager can burn when the user redempt the ETH he deposited
+     * @param _account Address who redempt the ETH
+     * @param _amount The amount of redempt ETH
+     */
+    function burn(address _account, uint256 _amount) external override onlyStakeManager {
+        _burn(_account, _amount);
+    }
+
     function transfer(address to, uint256 value) public virtual returns (bool) {
         address owner = msg.sender;
         _transfer(owner, to, value);
@@ -84,24 +102,6 @@ contract BETH is IBETH, IERC20, IERC20Errors, AccessControl {
         _spendAllowance(from, spender, value);
         _transfer(from, to, value);
         return true;
-    }
-
-    /**
-     * Only stakeManager can mint when the user deposit ETH to vault
-     * @param _account Address who deposit ETH to vault
-     * @param _amount The amount of deposited ETH
-     */
-    function mint(address _account, uint256 _amount) external override onlyStakeManager{
-        _mint(_account, _amount);
-    }
-
-    /**
-     * Only stakeManager can burn when the user redempt the ETH he deposited
-     * @param _account Address who redempt the ETH
-     * @param _amount The amount of redempt ETH
-     */
-    function burn(address _account, uint256 _amount) external override onlyStakeManager {
-        _burn(_account, _amount);
     }
 
     function _transfer(address from, address to, uint256 value) internal {
