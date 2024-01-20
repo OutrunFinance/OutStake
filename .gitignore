@@ -12,3 +12,8 @@ docs/
 
 # Dotenv file
 .env
+
+# Vscode file
+.vscode
+.github
+lib
