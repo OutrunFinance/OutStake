@@ -59,3 +59,6 @@ Doc: https://synclub.gitbook.io/synclub-docs/overview/whats-snbnb (文档很简�
 
 ### [Helio](https://helio.money/) (BNB链上的一个超额抵押稳定币协议)
 Doc: https://docs.helio.money/
+
+### [Thala](https://thala.fi/) (Aptos链上的一个LSD和超额抵押稳定币协议)
+https://docs.thala.fi/thala-protocol-design/
