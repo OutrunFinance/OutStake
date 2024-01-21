@@ -55,7 +55,7 @@ Blast上的ETH底层也是通过Lido质押的，和stETH一样都属于变基Tok
 Bang协议的质押代币BETH更像是wstETH, 基于Blast的ETH构建的，也就是stETH，而用户可以通过Bang协议控制自己的原生收益，将原生收益与链上DEFI活动分离。
 ### [SyncClub](https://www.synclub.io/en/liquid-staking/BNB)（BNB链上的LSD协议）
 Doc: https://synclub.gitbook.io/synclub-docs/overview/whats-snbnb (文档很简单)  
-我看过文档，snBNB应该不是变基Token
+snBNB不是变基Token, snBNB是利息凭证，具体算法在这个合约里 --> https://bscscan.com/address/0xd24f4bd59fd9c05520f58072a3d3dcf576aac382#code
 
 ### [Helio](https://helio.money/) (BNB链上的一个超额抵押稳定币协议)
 Doc: https://docs.helio.money/
