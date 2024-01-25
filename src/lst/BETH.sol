@@ -10,7 +10,7 @@ import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.so
  * @title Bang ETH Liquid Staked Token
  */
 contract BETH is IBETH, IERC20, IERC20Errors, AccessControl {
-    address private _stakeManager;
+    address private _ETHStakeManager;
 
     mapping(address account => uint256) private _balances;
     mapping(address account => mapping(address spender => uint256)) private _allowances;
@@ -19,17 +19,17 @@ contract BETH is IBETH, IERC20, IERC20Errors, AccessControl {
     string private _name = "Bang ETH";
     string private _symbol = "BETH";
 
-    modifier onlyStakeManager() {
+    modifier onlyETHStakeManager() {
         require(
-            msg.sender == _stakeManager,
+            msg.sender == _ETHStakeManager,
             "Accessible only by StakeManager Contract"
         );
         _;
     }
 
-    constructor(address stakeManager_) {
-        require(stakeManager_ != address(0), "Zero address provided");
-        _stakeManager = stakeManager_;
+    constructor(address ETHStakeManager_) {
+        require(ETHStakeManager_ != address(0), "Zero address provided");
+        _ETHStakeManager = ETHStakeManager_;
     }
 
     function name() public view virtual returns (string memory) {
@@ -48,8 +48,8 @@ contract BETH is IBETH, IERC20, IERC20Errors, AccessControl {
         return _totalSupply;
     }
 
-    function stakeManager() public view virtual returns (address) {
-        return _stakeManager;
+    function ETHStakeManager() public view virtual returns (address) {
+        return _ETHStakeManager;
     }
 
     function balanceOf(address account) public view virtual returns (uint256) {
@@ -64,20 +64,20 @@ contract BETH is IBETH, IERC20, IERC20Errors, AccessControl {
     }
 
     /**
-     * Only stakeManager can mint when the user deposit ETH to vault
-     * @param _account Address who deposit ETH to vault
+     * Only ETHStakeManager can mint when the user deposit ETH
+     * @param _account Address who deposit ETH 
      * @param _amount The amount of deposited ETH
      */
-    function mint(address _account, uint256 _amount) external override onlyStakeManager{
+    function mint(address _account, uint256 _amount) external override onlyETHStakeManager{
         _mint(_account, _amount);
     }
 
     /**
-     * Only stakeManager can burn when the user redempt the ETH he deposited
+     * Only ETHStakeManager can burn when the user redempt the ETH 
      * @param _account Address who redempt the ETH
      * @param _amount The amount of redempt ETH
      */
-    function burn(address _account, uint256 _amount) external override onlyStakeManager {
+    function burn(address _account, uint256 _amount) external override onlyETHStakeManager {
         _burn(_account, _amount);
     }
 
