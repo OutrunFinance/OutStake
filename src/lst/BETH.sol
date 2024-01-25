@@ -56,11 +56,11 @@ contract BETH is IBETH, IERC20, IERC20Errors, AccessControl {
         return _balances[account];
     }
 
-    function setStakeManager(address _address) external override {
+    function setETHStakeManager(address _address) external override {
         require(_address != address(0), "Zero address provided");
 
-        _stakeManager = _address;
-        emit SetStakeManager(_address);
+        _ETHStakeManager = _address;
+        emit SetETHStakeManager(_address);
     }
 
     /**

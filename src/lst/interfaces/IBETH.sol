@@ -9,9 +9,9 @@ interface IBETH {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setStakeManager(address _address) external;
+    function setETHStakeManager(address _address) external;
 
-    function stakeManager() external returns (address);
+    function ETHStakeManager() external returns (address);
 
-    event SetStakeManager(address indexed _address);
+    event SetETHStakeManager(address indexed _address);
 }

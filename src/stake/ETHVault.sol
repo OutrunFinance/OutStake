@@ -14,21 +14,20 @@ import "../utils/Pausable.sol";
  * @title ETH Vault Contract
  * @dev Handles Staking of BNB on BSC
  */
-contract Vault is IVault, AccessControl {
+contract ETHVault is IETHVault, AccessControl {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
     bytes32 public constant BOT = keccak256("BOT");
 
-    address public stakeManager;
-    address public redirectAddress;
+    address public ETHStakeManager;
     address public revenuePool;
     uint256 public feeRate; // range {0-1000}
 
-    modifier onlyStakeManager() {
+    modifier onlyETHStakeManager() {
         require(
-            msg.sender == stakeManager,
-            "Accessible only by StakeManager"
+            msg.sender == ETHStakeManager,
+            "Accessible only by ETHStakeManager"
         );
         _;
     }
@@ -70,7 +69,7 @@ contract Vault is IVault, AccessControl {
     /**
      * @dev StakeManager deposit ETH
      */
-    function deposit() external payable override onlyStakeManager {
+    function deposit() external payable override onlyETHStakeManager {
         uint256 amount = msg.value;
         require(amount > 0, "Invalid Amount");
 
@@ -82,7 +81,7 @@ contract Vault is IVault, AccessControl {
      * @dev StakeManager withdraw ETH
      * @param _amount - Amount of ETH for withdraw
      */
-    function withdraw(uint256 _amount) external override onlyStakeManager{
+    function withdraw(uint256 _amount) external override onlyETHStakeManager {
         require(_amount > 0, "Invalid Amount");
 
         // TODO 
@@ -90,13 +89,13 @@ contract Vault is IVault, AccessControl {
         emit Withdraw(msg.sender, _amount);
     }
 
-    function setBotRole(address _address) external override {
+    function setBotRole(address _address) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_address != address(0), "zero address provided");
 
         grantRole(BOT, _address);
     }
 
-    function revokeBotRole(address _address) external override {
+    function revokeBotRole(address _address) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_address != address(0), "zero address provided");
 
         revokeRole(BOT, _address);
@@ -113,17 +112,6 @@ contract Vault is IVault, AccessControl {
         emit SetFeeRate(_feeRate);
     }
 
-    function setRedirectAddress(address _address)
-        external
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        require(_address != address(0), "zero address provided");
-
-        redirectAddress = _address;
-        emit SetRedirectAddress(_address);
-    }
-
     function setRevenuePool(address _address)
         external
         override
@@ -137,10 +125,5 @@ contract Vault is IVault, AccessControl {
 
     receive() external payable {
         // TODO
-    }
-
-    modifier onlyRedirectAddress() {
-        require(msg.sender == redirectAddress, "Accessible only by RedirectAddress");
-        _;
     }
 }
