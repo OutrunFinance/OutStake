@@ -6,6 +6,8 @@ interface IETHVault {
 
     function withdraw(uint256 _amountInBETH) external;
 
+    function compoundRewards() external;
+
     function setBotRole(address _address) external;
 
     function revokeBotRole(address _address) external;
@@ -17,6 +19,8 @@ interface IETHVault {
     event Deposit(address _src, uint256 _amount);
    
     event Withdraw(address indexed _account, uint256 _amountInBnbX);
+
+    event RewardsCompounded(uint256 _amount);
 
     event SetFeeRate(uint256 _feeRate);
 

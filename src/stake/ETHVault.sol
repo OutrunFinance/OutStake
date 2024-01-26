@@ -6,9 +6,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-import {IVault} from "./interfaces/IVault.sol";
+import {IETHVault} from "./interfaces/IETHVault.sol";
 import {IBETH} from "../lst/interfaces/IBETH.sol";
-import "../utils/Pausable.sol";
 
 /**
  * @title ETH Vault Contract
@@ -44,16 +43,14 @@ contract ETHVault is IETHVault, AccessControl {
         address _revenuePool,
         address _stakeManager,
         uint256 _feeRate
-        
     ) {
         require(
-            ((_admin != address(0)) && 
-            (_bot != address(0))) &&
-            (_revenuePool != address(0)) &&
-            (_stakeManager != address(0)),
+            ((_admin != address(0)) && (_bot != address(0))) &&
+                (_revenuePool != address(0)) &&
+                (_stakeManager != address(0)),
             "Zero address provided"
         );
-        require(_feeRate <= THOUSAND, "_feeRate must not exceed (100%)");
+        require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
         _setRoleAdmin(BOT, DEFAULT_ADMIN_ROLE);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
@@ -73,7 +70,7 @@ contract ETHVault is IETHVault, AccessControl {
         uint256 amount = msg.value;
         require(amount > 0, "Invalid Amount");
 
-        // TODO 
+        // TODO
         emit Deposit(msg.sender, msg.value);
     }
 
@@ -84,46 +81,68 @@ contract ETHVault is IETHVault, AccessControl {
     function withdraw(uint256 _amount) external override onlyETHStakeManager {
         require(_amount > 0, "Invalid Amount");
 
-        // TODO 
+        // TODO
 
         emit Withdraw(msg.sender, _amount);
     }
 
-    function setBotRole(address _address) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_address != address(0), "zero address provided");
+    /**
+     * @dev Allows bot to compound rewards
+     */
+    function compoundRewards() external override onlyRole(BOT) {
+        require(address(this).balance > 0, "No funds");
+
+        // TODO 领取原生收益
+        uint256 amount;
+
+        if (feeRate > 0) {
+            uint256 fee = (amount * feeRate) / THOUSAND;
+            require(revenuePool != address(0), "revenue pool not set");
+            Address.sendValue(payable(revenuePool), fee);
+            amount -= fee;
+        }
+
+        emit RewardsCompounded(amount);
+    }
+
+    function setBotRole(
+        address _address
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_address != address(0), "Zero address provided");
 
         grantRole(BOT, _address);
     }
 
-    function revokeBotRole(address _address) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_address != address(0), "zero address provided");
+    function revokeBotRole(
+        address _address
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_address != address(0), "Zero address provided");
 
         revokeRole(BOT, _address);
     }
 
-    function setFeeRate(uint256 _feeRate)
-        external
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        require(_feeRate <= THOUSAND, "feeRate must not exceed (100%)");
+    function setFeeRate(
+        uint256 _feeRate
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
         feeRate = _feeRate;
         emit SetFeeRate(_feeRate);
     }
 
-    function setRevenuePool(address _address)
-        external
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        require(_address != address(0), "zero address provided");
+    function setRevenuePool(
+        address _address
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_address != address(0), "Zero address provided");
 
         revenuePool = _address;
         emit SetRevenuePool(_address);
     }
 
     receive() external payable {
-        // TODO
+        require(
+            msg.sender == ETHStakeManager,
+            "Only ETHStakeManager Can Deposit"
+        );
     }
 }

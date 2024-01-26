@@ -2,16 +2,22 @@
 pragma solidity ^0.8.0;
 
 interface IETHStakeManager {
-    function stake(uint256 _lockTime) external payable;
+    function stake(uint256 deadLine) external payable ;
 
-    function unStake(uint256 _amountInSnBnb) external;
+    function unStake(uint256 amount, uint256 positionId) external;
 
-    function acceptNewManager() external;
+    function settlementYield(address account, uint256 positionId) external;
 
-    function setRedirectAddress(address _address) external;
+    function getVaultETH() external returns (uint256);
+
+    function convertToBETH(uint256 amountInETH) external returns (uint256);
+
+    function convertToETH(uint256 amountInBETH) external returns (uint256);
+
+    function setManager(address _manager) external;
 
     event StakeETH(address _src, uint256 _amount, uint256 _deadLine);
-   
+
     event Withdraw(address indexed _account, uint256 _amountInBnbX);
 
     event SetManager(address indexed _address);
