@@ -16,13 +16,9 @@ interface IETHStakeManager {
 
     function setManager(address _manager) external;
 
-    event StakeETH(address _src, uint256 _amount, uint256 _deadLine);
+    event StakeETH(address indexed _account, uint256 _amount, uint256 _deadLine);
 
-    event Withdraw(address indexed _account, uint256 _amountInBnbX);
+    event Withdraw(address indexed _account, uint256 _amountInETH);
 
     event SetManager(address indexed _address);
-
-    event ProposeManager(address indexed _address);
-
-    event SetRedirectAddress(address indexed _address);
 }
