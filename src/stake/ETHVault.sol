@@ -11,7 +11,7 @@ import {IBETH} from "../lst/interfaces/IBETH.sol";
 
 /**
  * @title ETH Vault Contract
- * @dev Handles Staking of BNB on BSC
+ * @dev Handles Staking of ETH
  */
 contract ETHVault is IETHVault, AccessControl {
     using SafeERC20 for IERC20;
