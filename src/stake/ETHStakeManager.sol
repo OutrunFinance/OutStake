@@ -86,7 +86,7 @@ contract ETHStakeManager is IETHStakeManager, AccessControl {
      * 最后将BETH销毁，仅将本金ETH取出来，只有作为收益证明的NFT才能将质押收益取出来。
      *
      * @dev Allows user to unstake funds
-     * @param amount - Amount of ETH for withdraw
+     * @param amount - Amount of BETH for burn
      * @param positionId - NFT tokenId
      * @notice User must have approved this contract to spend BETH
      */
@@ -121,9 +121,7 @@ contract ETHStakeManager is IETHStakeManager, AccessControl {
         uint256 yieldVault = getVaultETH() - vaultdifference;
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        uint256 amountInBETH = (amountInETH * totalShares) / yieldVault;
-
-        return amountInBETH;
+        return (amountInETH * totalShares) / yieldVault;
     }
 
     /**
@@ -138,9 +136,7 @@ contract ETHStakeManager is IETHStakeManager, AccessControl {
         uint256 yieldVault = getVaultETH() - vaultdifference;
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        uint256 amountInETH = (amountInBETH * yieldVault) / totalShares;
-
-        return amountInETH;
+        return (amountInBETH * yieldVault) / totalShares;
     }
 
     function setManager(address _manager) external override {
