@@ -14,11 +14,23 @@ interface IETHStakeManager {
 
     function convertToETH(uint256 amountInBETH) external returns (uint256);
 
-    function setManager(address _manager) external;
+    function compoundRewards() external;
+
+    function setBotRole(address _address) external;
+
+    function revokeBotRole(address _address) external;
+    
+    function setFeeRate(uint256 _feeRate) external;
+
+    function setRevenuePool(address _address) external;
 
     event StakeETH(address indexed _account, uint256 _amount, uint256 _deadLine);
 
     event Withdraw(address indexed _account, uint256 _amountInETH);
 
-    event SetManager(address indexed _address);
+    event RewardsCompounded(uint256 _amount);
+
+    event SetFeeRate(uint256 _feeRate);
+
+    event SetRevenuePool(address indexed _address);
 }

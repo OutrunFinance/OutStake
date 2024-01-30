@@ -2,12 +2,12 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import {IETHStakeManager} from "./interfaces/IETHStakeManager.sol";
-import {IETHVault} from "./interfaces/IETHVault.sol";
 import {IBETH} from "../lst/interfaces/IBETH.sol";
 
 /**
@@ -17,38 +17,68 @@ import {IBETH} from "../lst/interfaces/IBETH.sol";
 contract ETHStakeManager is IETHStakeManager, AccessControl {
     using SafeERC20 for IERC20;
 
+    uint256 public constant THOUSAND = 1000;
+    bytes32 public constant BOT = keccak256("BOT");
+
     uint256 public minIntervalTime;
     address public bETH;
-    address public ETHVault;
     address public manager;
+    address public positionNFT;
+    address public revenuePool;
+    uint256 public feeRate; // range {0-1000}
 
-    uint256 public yieldTotalShares;
+    uint256 public yieldTotalCredential;  // 真实收益凭证总量
     uint256 public vaultdifference;
+    uint256 public yieldPrincipalETH;     // 真实收益本金总量
 
-    mapping(uint256 account => uint256 positionId) public userPositions;
+    mapping(uint256 account => uint256 positionId) public userPositions;    // positionId = NFT tokenId
 
     /**
      * @param _bETH - Address of BETH Token
-     * @param _manager - Address of the manager
+     * @param _admin - Address of the admin
+     * @param _bot - Address of the Bot
+     * @param _feeRate - Rewards fee to revenue pool
+     * @param _revenuePool - Revenue pool to receive rewards
+     * @param _revenuePool - Min lock interval time
      */
-    constructor(address _bETH, address _ETHVault, uint256 _minIntervalTime, address _manager) {
+    constructor(
+        address _bETH,
+        address _admin,
+        address _bot,
+        address _revenuePool,
+        address _positionNFT,
+        uint256 _feeRate,
+        uint256 _minIntervalTime
+    ) {
         require(
-            ((_bETH != address(0)) && (_ETHVault != address(0)) && (_manager != address(0))),
+            ((_bETH != address(0)) &&
+                (_admin != address(0)) && 
+                (_bot != address(0))) &&
+                (_revenuePool != address(0)) &&
+                (_positionNFT != address(0)),
             "Zero address provided"
         );
 
-        ETHVault = _ETHVault;
-        bETH = _bETH;
-        manager = _manager;
-        minIntervalTime = _minIntervalTime;
+        require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
-        emit SetManager(_manager);
+        bETH = _bETH;
+        minIntervalTime = _minIntervalTime;
+        feeRate = _feeRate;
+        revenuePool = _revenuePool;
+        positionNFT =_positionNFT;
+
+        _setRoleAdmin(BOT, DEFAULT_ADMIN_ROLE);
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(BOT, _bot);
+
+        emit SetRevenuePool(revenuePool);
+        emit SetFeeRate(_feeRate);
     }
 
     /**
      * 用户stake ETH，指定一个锁定时间deadLine，锁定时间前不可unstake，经过计算后铸造BETH和收益NFT
-     * yieldTotalShares收益凭证总量需要累加新铸造的BETH的数量，yieldTotalShares表示实际有收益的凭证
-     * 数量，用户锁定时间到期后结算时需要减去待销毁的数量，从而保证yieldTotalShares是真实产生收益的凭证数量，
+     * yieldTotalCredential收益凭证总量需要累加新铸造的BETH的数量，yieldTotalCredential表示实际有收益的凭证
+     * 数量，用户锁定时间到期后结算时需要减去待销毁的数量，从而保证yieldTotalCredential是真实产生收益的凭证数量，
      * 而不是BETH总发行量。
      *
      * @dev Allows user to deposit ETH and mints BETH for the user
@@ -61,18 +91,15 @@ contract ETHStakeManager is IETHStakeManager, AccessControl {
             "LockTime too short"
         );
 
-        // TODO Send to Vault.
-        IETHVault(ETHVault).deposit{value: amount}();
-
         // 计算利息凭证
         uint256 bETHToMint = convertToBETH(amount);
         require(bETHToMint > 0, "Invalid BETH Amount");
-        yieldTotalShares += bETHToMint;
+        yieldTotalCredential += bETHToMint;
 
         // 铸造BETH
         IBETH(bETH).mint(msg.sender, bETHToMint);
 
-        // 铸造NFT证明
+        // TODO 铸造NFT证明
 
         emit StakeETH(msg.sender, msg.value, deadLine);
     }
@@ -98,15 +125,20 @@ contract ETHStakeManager is IETHStakeManager, AccessControl {
 
     /**
      * 结算单个仓位到期收益
+     * (share / totalShare) * vault - principal
+     *
      * @param account - Position owner
      * @param positionId - NFT tokenId
      */
-    function settlementYield(address account, uint256 positionId) public override {
-
+    function settlementYield(
+        address account,
+        uint256 positionId
+    ) public override {
+        
     }
 
     function getVaultETH() public view override returns (uint256) {
-        return ETHVault.balance;
+        return address(this).balance;
     }
 
     /**
@@ -115,13 +147,13 @@ contract ETHStakeManager is IETHStakeManager, AccessControl {
     function convertToBETH(
         uint256 amountInETH
     ) public view override returns (uint256) {
-        uint256 totalShares = yieldTotalShares;
-        totalShares = totalShares == 0 ? 1 : totalShares;
+        uint256 totalCredential = yieldTotalCredential;
+        totalCredential = totalCredential == 0 ? 1 : totalCredential;
 
         uint256 yieldVault = getVaultETH() - vaultdifference;
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        return (amountInETH * totalShares) / yieldVault;
+        return (amountInETH * totalCredential) / yieldVault;
     }
 
     /**
@@ -130,28 +162,67 @@ contract ETHStakeManager is IETHStakeManager, AccessControl {
     function convertToETH(
         uint256 amountInBETH
     ) public view override returns (uint256) {
-        uint256 totalShares = yieldTotalShares;
-        totalShares = totalShares == 0 ? 1 : totalShares;
+        uint256 totalCredential = yieldTotalCredential;
+        totalCredential = totalCredential == 0 ? 1 : totalCredential;
 
         uint256 yieldVault = getVaultETH() - vaultdifference;
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        return (amountInBETH * yieldVault) / totalShares;
+        return (amountInBETH * yieldVault) / totalCredential;
     }
 
-    function setManager(address _manager) external override {
-        require(_manager != address(0), "Zero address provided");
+    /**
+     * @dev Allows bot to compound rewards
+     */
+    function compoundRewards() external override onlyRole(BOT) {
+        require(address(this).balance > 0, "No funds");
 
-        manager = _manager;
-        emit SetManager(_manager);
+        // TODO 领取原生收益
+        uint256 amount;
+
+        if (feeRate > 0) {
+            uint256 fee = (amount * feeRate) / THOUSAND;
+            require(revenuePool != address(0), "revenue pool not set");
+            Address.sendValue(payable(revenuePool), fee);
+            amount -= fee;
+        }
+
+        emit RewardsCompounded(amount);
     }
 
-    receive() external payable {
+    function setBotRole(
+        address _address
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_address != address(0), "Zero address provided");
 
+        grantRole(BOT, _address);
     }
 
-    modifier onlyManager() {
-        require(msg.sender == manager, "Accessible only by Manager");
-        _;
+    function revokeBotRole(
+        address _address
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_address != address(0), "Zero address provided");
+
+        revokeRole(BOT, _address);
     }
+
+    function setFeeRate(
+        uint256 _feeRate
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
+
+        feeRate = _feeRate;
+        emit SetFeeRate(_feeRate);
+    }
+
+    function setRevenuePool(
+        address _address
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_address != address(0), "Zero address provided");
+
+        revenuePool = _address;
+        emit SetRevenuePool(_address);
+    }
+
+    receive() external payable {}
 }
