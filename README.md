@@ -11,7 +11,6 @@ Not Only Blast L2 Native Yield Stake Protocol
 Blast提供了一个接口来使合约可以控制合约内部资产所产生的原生收益。 详情：https://docs.blast.io/building/guides/eth-yield  
 
 举个例子，开发一个dex，用户建立交易资金池，将ETH-TOKEN流动性添加到流动性合约地址，那么在这个合约地址中的ETH也会开始Yield，开发者可以选择将原生收益据为己有，可以全部返还给用户，可以用来给自己的产品引流，也可以分配给自身协议Token的持有者，或者构建一些更复杂的DEFI产品。这里的重点时是开发者owned这些native yield。目前Blast上已经有很多类似的DEX，NFT等等项目
-![1705585054922](https://github.com/jasonrale/Bang/assets/32949831/253ed035-ed23-4ff7-98dc-f845abae0081)  
 
 ## 被忽视的地方
 在这个看起来很美好的特性中，有一个被忽视的地方，包括Blast官方也在鼓励开发者控制并利用这些原生收益，但是没人注意到用户本身是否愿意将自己的原生收益转让给开发者利用。如果用户想要自己控制这些原生收益呢？  
