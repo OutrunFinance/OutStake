@@ -22,37 +22,18 @@ Blast提供了一个接口来使合约可以控制合约内部资产所产生的
 Bon是一个原生收益质押协议，类似于LSD协议，将原生收益锁定给用户自身。  
 我们将ETH, WETH, USDB(Blast原生稳定币，如何发行目前未知)称为原生收益Token，其他ERC20都是非原生收益Token。  
 
-Bon会提供一个Vault金库，用户将原生收益Token存入Vault，Vault会发行非原生收益Token "BETH"和"BUSD"，BETH和BUSD是Bang协议的原生收益质押Token，只有质押ETH, WETH, USDB才能铸造。
+Bon生态系统中ETH有两种形式，NETH(Bon Ether)和PETH(Principal Ether)，此外还将引入ETH YieldNFT代表对质押的NETH的收益权。
 
-Bon协议会统一管理Vault中所有的原生收益，在用户存入原生收益Token后自动持续计算每个用户的原生质押收益以及Bang协议Token奖励，而BETH和BUSD作为Bon协议的原生收益质押Token，代表着收益权的证明，将BETH和BUSD返回Vault销毁后，可以从Vault取出自己质押的原生收益Token以及原生yield收益，同时BETH和BUSD也作为ETH和USDB的稳定币，在链上其他Defi协议比如uniswap中使用，并拥有相同的价值。
+NETH是一种与ETH松散挂钩的稳定币，因此1个NETH始终代表1个ETH，并且NETH在流通中的数量与Bon ETH系统中的ETH数量相匹配。单独持有NETH并不符合获得抵押收益的条件，应该将其视为持有ETH的类比。NETH挂钩率定义为在1.00汇率的两侧各1％，这意味着为了保持1个NETH兑换1.01-0.9900 ETH的汇率。
+
+PETH是NETH的质押本金代币，旨在积累Blast产生的原生收益并释放锁仓的流动性。用户随时可以将NETH质押锁定指定的时间并铸造PETH与YieldNFT，随着时间的推移，用户可以不断获得原生质押收益。相应数量的NETH被铸造并添加到储蓄库中，使用户可以获得比存入时更多的NETH。在锁定时间到期后可以销毁PETH以赎回质押的NETH  
+注意：PETH为本金代币，产生的质押收益由YieldNFT管理  
+
+ETH YieldNFT代表对质押的NETH的收益权，通过锁仓质押NETH获得。YieldNFT将ETHN的质押收益剥离。持有YieldNFT即可享有未来的原生收益。每个YieldNFT中记录了对应锁定仓位的ETH数量，和解锁时间，到期后可以销毁YieldNFT赎回该仓位的原生收益。YieldNFT可以在二级市场上交易  
+
+Bon协议会统一管理Vault中所有的原生收益，在用户存入原生收益Token后自动持续计算每个用户的原生质押收益以及Bon协议Token奖励，而NETH,PETH和YieldNFT作为Bon协议的原生收益质押Token，代表着质押的证明，将NETH,PETH和YieldNFT销毁后，可以取出自己质押的原生收益Token以及原生yield收益，同时NETH,PETH也作为ETH的稳定币，在链上其他Defi协议比如uniswap中使用，并拥有相同的价值。
+
+USDB暂不支持YieldNFT,除此之位与ETH相同
 
 ## Dex等同质化产品面临的问题
-Uniswap作为最知名的AMM协议，占据了AMM市场的绝大部分份额，在我看来，目前的Blast上正在开发的DEX有很多，竞争激烈，他们无非是fork Uniswap后再引入Blast的新特性，但是这些协议绝大部分都会死，甚至全部都会死，被Uniswap取代，而Bang协议则会加快Uniswap的迁移速度。  
-
-现在链上的DEFI产品都很模块化，在我看来Dex就该关注Dex该做的事，借贷协议就该关注借贷的事，而原生收益需要一个协议来专门管理。如果BETH和BUSD获得大量采用，Uniswap等老协议不需要修改代码，可以直接使用BETH和BUSD作为基础货币。这时候链上大部分的原生收益都会集中在Bang协议管理，而用户自己也能收获自己的原生收益，而不是让其他项目方控制属于自己的权益。
-
-## 一个有意思的想法
-将Staked与NFT结合，从而使原生收益代币化。例如用户向Vault存入10000 USDB并锁定1年, Vault将会铸造10000 BUSD和一个代表未来1年内10000 USDB产生的原生收益的NFT, 这个NFT享有对应的收益权，并可以在二级市场转卖交易，在这种情况下，一年后用户销毁10000 BUSD只能赎回锁定的10000 USDB，而NFT拥有者可以销毁该NFT来获取这10000 USDB一年内所产生的原生收益。
-
-## 愿景
-Bang将会作为Blast上最大的质押协议以及稳定币发行商，在后续将会成为MakerDao那样的存在，将BUSD作为我们协议的原生稳定币，Bang作为Blast的中央银行，我们将带领DEFI再次走向繁荣。  
-
-事实上Bang可以不仅仅只是Native Yield Staked协议，他同样可以成长，后续可以开发DEX，稳定币交换以及借贷功能。  
-
-## 可参考协议
-### [Lido](https://lido.fi/)（最知名的ETH LSD协议）
-#### stETH
-
-> stETH是Lido版质押ETH的流动性代币。stETH代表Lido中质押的以太币，其价值包括了初始存款和质押奖励。当存入ETH时铸造stETH，当赎回ETH时销毁stETH。stETH数量与在Lido质押的以太币1比1挂钩。在预言机每天报告总质押量的变化时，stETH数量也会随之更新。每天更新stETH余额的机制称为“rebase”。每天UTC时间下午12点，你地址中的stETH余额将基于当前APR而增加。
-
-> stETH可以像使用以太币一样使用，允许你获得ETH 2.0质押奖励，同时又能从去中心化金融产品受益，如额外的收益等。当你在钱包中持有Lido的stETH代币时，每一天都得到质押奖励。它们是具有较好的流动性的，因此你可以随时根据你的需求使用stETH - 交易，出售，交换，将代币投入到DeFi项目等。
-
-Blast上的ETH底层也是通过Lido质押的，和stETH一样都属于变基Token
-
-Bang协议的质押代币BETH更像是wstETH, 基于Blast的ETH构建的，也就是stETH，而用户可以通过Bang协议控制自己的原生收益，将原生收益与链上DEFI活动分离。
-### [SyncClub](https://www.synclub.io/en/liquid-staking/BNB)（BNB链上的LSD协议）
-Doc: https://synclub.gitbook.io/synclub-docs/overview/whats-snbnb (文档很简单)  
-snBNB是利息凭证，具体算法在这个合约里 --> https://bscscan.com/address/0xd24f4bd59fd9c05520f58072a3d3dcf576aac382#code
-
-### [Helio](https://helio.money/) (BNB链上的一个超额抵押稳定币协议)
-Doc: https://docs.helio.money/
+现在链上的DEFI产品都很模块化，在我看来Dex就该关注Dex该做的事，借贷协议就该关注借贷的事，而原生收益需要一个协议来专门管理。如果BETH和BUSD获得大量采用，Uniswap等老协议不需要修改代码，可以直接使用BETH和BUSD作为基础货币。这时候链上大部分的原生收益都会集中在Bon协议管理，而用户自己也能收获自己的原生收益，而不是让其他项目方控制属于自己的权益。
