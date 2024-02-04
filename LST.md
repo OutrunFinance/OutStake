@@ -9,4 +9,4 @@ PETH是BETH的质押本金代币，旨在积累Blast产生的原生收益并释�
 注意：PETH为本金代币，产生的质押收益由YieldNFT管理
 
 ## ETH YieldNFT
-ETH YieldNFT代表对质押的BETH的收益权，通过锁仓质押BETH获得。YieldNFT将ETHN的质押收益剥离。持有YieldNFT即可享有未来的原生收益。每个YieldNFT中记录了对应锁定仓位的ETH数量，和解锁时间，到期后可以销毁YieldNFT赎回该仓位的原生收益。YieldNFT可以在二级市场上交易
+ETH YieldNFT代表对质押的BETH的收益权，通过锁仓质押BETH获得。YieldNFT将PETH的质押收益剥离。持有YieldNFT即可享有未来的原生收益。每个YieldNFT中记录了对应锁定仓位的ETH数量，和解锁时间，到期后可以销毁YieldNFT赎回该仓位的原生收益。YieldNFT可以在二级市场上交易
