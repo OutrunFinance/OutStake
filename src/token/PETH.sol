@@ -1,38 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.20;
 
-import "./interfaces/IBETH.sol";
+import "./interfaces/IPETH.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title Bang ETH Liquid Staked Token
+ * @title Bang Principal ETH Liquid Staked Token
  */
-contract BETH is IBETH, ERC20, AccessControl {
-    address private _ETHStakeManager;
+contract PETH is IPETH, ERC20, Ownable {
+    address public ETHStakeManager;
 
     modifier onlyETHStakeManager() {
         require(
-            msg.sender == _ETHStakeManager,
-            "Accessible only by StakeManager Contract"
+            msg.sender == ETHStakeManager,
+            "Access only by StakeManager"
         );
         _;
     }
 
-    constructor(address admin) ERC20("Bang ETH", "BETH") {
-        require(admin != address(0), "Zero address provided");
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+    constructor(address owner, address _ETHStakeManager) ERC20("Principal Staked ETH", "PETH") Ownable(owner) {
+        require(_ETHStakeManager != address(0), "Zero address provided");
+
+        ETHStakeManager = _ETHStakeManager;
+
+        emit SetETHStakeManager(_ETHStakeManager);
     }
 
-    function ETHStakeManager() public view virtual returns (address) {
-        return _ETHStakeManager;
-    }
+    function setETHStakeManager(address _ETHStakeManager) external override onlyOwner {
+        require(_ETHStakeManager != address(0), "Zero address provided");
 
-    function setETHStakeManager(address _address) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_address != address(0), "Zero address provided");
+        ETHStakeManager = _ETHStakeManager;
 
-        _ETHStakeManager = _address;
-        emit SetETHStakeManager(_address);
+        emit SetETHStakeManager(_ETHStakeManager);
     }
 
     /**

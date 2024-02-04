@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import {IUSDBStakeManager} from "./interfaces/IUSDBStakeManager.sol";
-import {IBUSD} from "../lst/interfaces/IBUSD.sol";
+import {IBUSD} from "../token/interfaces/IBUSD.sol";
 
 /**
  * @title USDB Stake Manager Contract (Vault)

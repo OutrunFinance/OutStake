@@ -2,16 +2,14 @@
 pragma solidity ^0.8.20;
 
  /**
-  * @title BETH interface
+  * @title PETH interface
   */
-interface IBETH {
+interface IPETH {
     function mint(address _account, uint256 _amount) external;
 
     function burn(address _account, uint256 _amount) external;
 
     function setETHStakeManager(address _address) external;
 
-    function ETHStakeManager() external returns (address);
-
-    event SetETHStakeManager(address indexed _address);
+    event SetETHStakeManager(address _address);
 }
