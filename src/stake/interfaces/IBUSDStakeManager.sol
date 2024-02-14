@@ -1,16 +1,19 @@
 //SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
-interface IUSDBStakeManager {
+ /**
+  * @title IBUSDStakeManager interface
+  */
+interface IBUSDStakeManager {
     function stake(uint256 amount) external payable ;
 
     function unStake(uint256 amount) external;
 
-    function getVaultUSDB() external returns (uint256);
+    function getVaultBUSD() external returns (uint256);
 
-    function convertToBUSD(uint256 amountInUSDB) external returns (uint256);
+    function convertToPUSD(uint256 amountInUSDB) external returns (uint256);
 
-    function convertToUSDB(uint256 amountInBUSD) external returns (uint256);
+    function convertToBUSD(uint256 amountInBUSD) external returns (uint256);
 
     function compoundRewards() external;
 

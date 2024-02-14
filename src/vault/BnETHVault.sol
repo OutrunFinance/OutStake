@@ -1,88 +1,91 @@
 //SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IBnETHVault} from "./interfaces/IBnETHVault.sol";
-import {IBETH} from "../token/interfaces/IBETH.sol";
+import {IBETH} from "../token/ETH//interfaces/IBETH.sol";
 
 /**
  * @title ETH Stake Manager Contract
  * @dev Handles Staking of ETH
  */
-contract BnETHVault is IBnETHVault, AccessControl {
+contract BnETHVault is IBnETHVault, Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
-    bytes32 public constant BOT = keccak256("BOT");
 
     address public immutable bETH;
+    address public bot;
     address public revenuePool;
+    address public yieldPool;
     uint256 public feeRate;
 
-    mapping(address account => uint256 amount) public balances;
-
     /**
+     * @param _owner - Address of the owner
      * @param _bETH - Address of BETH Token
-     * @param _admin - Address of the admin
      * @param _bot - Address of the bot
      * @param _feeRate - Fee to revenue pool
      * @param _revenuePool - Revenue pool
+     * @param _yieldPool - BETH Yield pool
      */
     constructor(
+        address _owner,
         address _bETH,
-        address _admin,
         address _bot,
         address _revenuePool,
+        address _yieldPool,
         uint256 _feeRate
-    ) {
-        require(
-            ((_bETH != address(0)) &&
-            (_admin != address(0)) &&
-            (_bot != address(0)) &&
-            (_revenuePool != address(0))),
-            "Zero address provided"
-        );
-
+    ) Ownable(_owner) {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
         bETH = _bETH;
         feeRate = _feeRate;
+        bot = _bot;
         revenuePool = _revenuePool;
+        yieldPool = _yieldPool;
 
-        _setRoleAdmin(BOT, DEFAULT_ADMIN_ROLE);
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(BOT, _bot);
-
-        emit SetRevenuePool(revenuePool);
         emit SetFeeRate(_feeRate);
+        emit SetBot(_bot);
+        emit SetRevenuePool(_revenuePool);
+        emit SetYieldPool(_yieldPool);
     }
 
     /**
-     * @dev Allows user to unstake funds by BETH contract
-     * @param account - Address of user
+     * @dev Allows user to deposit ETH and mint BETH
+     */
+    function deposit() public payable override {
+        uint256 amount = msg.value;
+        require(amount > 0, "Invalid Amount");
+
+        address user = msg.sender;
+        IBETH(bETH).mint(user, amount);
+
+        emit Deposit(user, amount);
+    }
+
+    /**
+     * @dev Allows user to withdraw ETH by BETH
      * @param amount - Amount of BETH for burn
      */
-    function withdraw(address account, uint256 amount) external override {
-        require(msg.sender == bETH, "Withdraw by BETH pls");
-        Address.sendValue(payable(account), amount);
-    }
+    function withdraw(uint256 amount) external override {
+        require(amount > 0, "Invalid Amount");
+        address user = msg.sender;
+        IBETH(bETH).burn(user, amount);
+        Address.sendValue(payable(user), amount);
 
-    /**
-     * @dev Get valut ETH balance
-     */
-    function getVaultETH() public view override returns (uint256) {
-        return address(this).balance;
+        emit Withdraw(user, amount);
     }
 
     /**
      * @dev Allows bot to compound rewards
      */
-    function compound() external override onlyRole(BOT) {
+    function compound() external override {
+        require(msg.sender == bot, "Permission denied");
         require(address(this).balance > 0, "No funds");
 
         // TODO 领取原生收益
@@ -95,46 +98,32 @@ contract BnETHVault is IBnETHVault, AccessControl {
             amount -= fee;
         }
 
-        // TODO 转换为BETH发送到StakeManager，StakeManager计算累计收益率
+        IBETH(bETH).mint(yieldPool, amount);
 
         emit Compounded(amount);
     }
 
-    function setBotRole(
-        address _address
-    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_address != address(0), "Zero address provided");
-
-        grantRole(BOT, _address);
+    function setBot(address _bot) external override onlyOwner {
+        bot = _bot;
+        emit SetBot(_bot);
     }
 
-    function revokeBotRole(
-        address _pool
-    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_pool != address(0), "Zero address provided");
-
-        revokeRole(BOT, _pool);
-    }
-
-    function setFeeRate(
-        uint256 _feeRate
-    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setFeeRate(uint256 _feeRate) external onlyOwner {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
         feeRate = _feeRate;
         emit SetFeeRate(_feeRate);
     }
 
-    function setRevenuePool(
-        address _address
-    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_address != address(0), "Zero address provided");
-
-        revenuePool = _address;
-        emit SetRevenuePool(_address);
+    function setRevenuePool(address _pool) external onlyOwner {
+        revenuePool = _pool;
+        emit SetRevenuePool(_pool);
     }
 
-    receive() external payable {
-        require(msg.sender == bETH, "Illegal operation");
+    function setYieldPool(address _pool) external override onlyOwner {
+        yieldPool = _pool;
+        emit SetYieldPool(_pool);
     }
+
+    receive() external payable {}
 }

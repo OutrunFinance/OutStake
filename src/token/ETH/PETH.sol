@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "./interfaces/IPETH.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -20,10 +20,7 @@ contract PETH is IPETH, ERC20, Ownable {
     }
 
     constructor(address owner, address _ETHStakeManager) ERC20("Principal Staked ETH", "PETH") Ownable(owner) {
-        require(_ETHStakeManager != address(0), "Zero address provided");
-
         ETHStakeManager = _ETHStakeManager;
-
         emit SetETHStakeManager(_ETHStakeManager);
     }
 
@@ -31,7 +28,6 @@ contract PETH is IPETH, ERC20, Ownable {
         require(_ETHStakeManager != address(0), "Zero address provided");
 
         ETHStakeManager = _ETHStakeManager;
-
         emit SetETHStakeManager(_ETHStakeManager);
     }
 

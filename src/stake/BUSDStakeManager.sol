@@ -1,19 +1,20 @@
 //SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-import {IUSDBStakeManager} from "./interfaces/IUSDBStakeManager.sol";
-import {IBUSD} from "../token/interfaces/IBUSD.sol";
+import {IBUSDStakeManager} from "./interfaces/IBUSDStakeManager.sol";
+import {IBUSD} from "../token/USDB/interfaces/IBUSD.sol";
+import {IPUSD} from "../token/USDB/interfaces/IPUSD.sol";
 
 /**
- * @title USDB Stake Manager Contract (Vault)
- * @dev Handles Staking of USDB
+ * @title BUSD Stake Manager Contract
+ * @dev Handles Staking of BUSD
  */
-contract USDBStakeManager is IUSDBStakeManager, AccessControl {
+contract BUSDStakeManager is IBUSDStakeManager, AccessControl {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
@@ -21,33 +22,30 @@ contract USDBStakeManager is IUSDBStakeManager, AccessControl {
     address public constant USDB = 0x4200000000000000000000000000000000000022;
 
     address public busd;
+    address public pusd;
     address public revenuePool;
     uint256 public feeRate; // range {0-1000}
 
     /**
      * @param _admin - Address of the admin
      * @param _bot - Address of the Bot
+     * @param _busd - Address of BUSD Token
+     * @param _pusd - Address of PUSD Token
      * @param _feeRate - Rewards fee to revenue pool
      * @param _revenuePool - Revenue pool to receive rewards
-     * @param _busd - Address of BUSD Token
      */
     constructor(
-        address _busd,
         address _admin,
+        address _busd,
+        address _pusd,
         address _bot,
         address _revenuePool,
         uint256 _feeRate
     ) {
-        require(
-            (_busd != address(0)) &&
-                (_admin != address(0)) &&
-                (_bot != address(0)) &&
-                (_revenuePool != address(0)),
-            "Zero address provided"
-        );
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
         busd = _busd;
+        pusd = _pusd;
         feeRate = _feeRate;
         revenuePool = _revenuePool;
 
@@ -60,9 +58,9 @@ contract USDBStakeManager is IUSDBStakeManager, AccessControl {
     }
 
     /**
-     * 用户stake USDB，随时可以取出
+     * 用户stake BUSD
      *
-     * @dev Allows user to deposit USDB and mints BUSD for the user
+     * @dev Allows user to deposit BUSD and mints PUSD for the user
      */
     function stake(uint256 amount) external payable override {
         require(amount > 0, "Invalid Amount");
@@ -84,54 +82,48 @@ contract USDBStakeManager is IUSDBStakeManager, AccessControl {
     function unStake(uint256 amount) external override {
         require(amount > 0, "Invalid Amount");
 
-        uint256 amountInUSDB = convertToUSDB(amount);
-        require(amountInUSDB <= getVaultUSDB(), "Not enough USDB to withdraw");
-
-        IBUSD(busd).burn(msg.sender, amount);
-        IERC20(USDB).safeTransfer(msg.sender, amountInUSDB);
-
         emit UnStake(msg.sender, amount);
     }
 
-    function getVaultUSDB() public view override returns (uint256) {
+    function getVaultBUSD() public view override returns (uint256) {
         return IERC20(USDB).balanceOf(address(this));
     }
 
     /**
-     * @dev Calculates amount of BETH 利息凭证算法
+     * @dev Calculates amount of PUSD 本金凭证算法
      */
-    function convertToBUSD(
-        uint256 amountInUSDB
+    function convertToPUSD(
+        uint256 amountInBUSD
     ) public view override returns (uint256) {
-        uint256 totalShares = IBUSD(busd).totalSupply();
+        uint256 totalShares = IPUSD(pusd).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
-        uint256 yieldVault = getVaultUSDB();
+        uint256 yieldVault = getVaultBUSD();
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        return (amountInUSDB * totalShares) / yieldVault;
+        return (amountInBUSD * totalShares) / yieldVault;
     }
 
     /**
-     * @dev Calculates amount of USDB
+     * @dev Calculates amount of BUSD
      */
-    function convertToUSDB(
-        uint256 amountInBUSD
+    function convertToBUSD(
+        uint256 amountInPUSD
     ) public view override returns (uint256) {
-        uint256 totalShares = IBUSD(busd).totalSupply();
+        uint256 totalShares = IPUSD(pusd).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
-        uint256 yieldVault = getVaultUSDB();
+        uint256 yieldVault = getVaultBUSD();
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        return (amountInBUSD * yieldVault) / totalShares;
+        return (amountInPUSD * yieldVault) / totalShares;
     }
 
     /**
      * @dev Allows bot to compound rewards
      */
     function compoundRewards() external override onlyRole(BOT) {
-        require(getVaultUSDB() > 0, "No funds");
+        require(getVaultBUSD() > 0, "No funds");
 
         // TODO 领取原生收益
         uint256 amount;

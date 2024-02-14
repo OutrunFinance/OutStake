@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "./interfaces/IBUSD.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -20,7 +20,6 @@ contract BUSD is IBUSD, ERC20, AccessControl {
     }
 
     constructor(address USDBStakeManager_) ERC20("Bang USDB", "BUSD") {
-        require(USDBStakeManager_ != address(0), "Zero address provided");
         _USDBStakeManager = USDBStakeManager_;
     }
 
