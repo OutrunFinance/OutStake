@@ -55,9 +55,7 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
         ETHYieldPool = _ETHYieldPool;
     }
 
-    function positionsOf(
-        uint256 positionId
-    ) public view virtual returns (Position memory) {
+    function positionsOf(uint256 positionId) public view virtual returns (Position memory) {
         return _positions[positionId];
     }
 
@@ -130,7 +128,6 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
 
     function setETHYieldPool(address _pool) external onlyOwner {
         ETHYieldPool = _pool;
-
         emit SetETHYieldPool(_pool);
     }
 
@@ -139,7 +136,6 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
      */
     function setMinIntervalTime(uint256 _minIntervalTime) external onlyOwner {
         minIntervalTime = _minIntervalTime;
-
         emit SetMinIntervalTime(_minIntervalTime);
     }
     
@@ -148,7 +144,6 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
      */
     function setMaxIntervalTime(uint256 _maxIntervalTime) external onlyOwner {
         maxIntervalTime = _maxIntervalTime;
-
         emit SetMaxIntervalTime(_maxIntervalTime);
     }
 
