@@ -40,6 +40,7 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
      * @param _bETH - Address of BETH Token
      * @param _pETH - Address of PETH Token
      * @param _bEYT - Address of BEYT Token
+     * @param _ETHYieldPool - Address of ETHYieldPool
      */
     constructor(
         address _owner,
