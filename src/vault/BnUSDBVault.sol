@@ -49,6 +49,9 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
 
+        BLAST.configureClaimableGas(); 
+		BLAST.configureClaimableYield();
+
         emit SetFeeRate(_feeRate);
         emit SetBot(_bot);
         emit SetRevenuePool(_revenuePool);
@@ -90,7 +93,8 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
 
         // TODO 领取原生收益
         uint256 amount;
-
+        require(BLAST.readClaimableYield(address(this))>0,"ClaimableYield is zero!");
+        amount = BLAST.claimMaxGas(address(this),address(this));
         if (feeRate > 0) {
             uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
             require(revenuePool != address(0), "revenue pool not set");
