@@ -52,7 +52,7 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
         bETH = _bETH;
         pETH = _pETH;
         bEYT = _bEYT;
-        ETHYieldPool =_ETHYieldPool;
+        ETHYieldPool = _ETHYieldPool;
     }
 
     function positionsOf(
