@@ -10,6 +10,9 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {IOutUSDBVault} from "./interfaces/IOutUSDBVault.sol";
 import {IRUSD} from "../token/USDB//interfaces/IRUSD.sol";
 
+import "./IERC20Rebasing.sol";
+import {MyEnumContract} from "./IERC20Enum.sol";
+
 /**
  * @title USDB Vault Contract
  */
@@ -17,6 +20,8 @@ contract OutUSDBVault is IOutUSDBVault, Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
+    IERC20Rebasing public constant USDB = IERC20Rebasing(0x4200000000000000000000000000000000000022);
+
 
     address public immutable rUSD;
     address public bot;
@@ -47,6 +52,9 @@ contract OutUSDBVault is IOutUSDBVault, Ownable {
         bot = _bot;
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
+
+        BLAST.configureClaimableGas(); 
+        USDB.configure(MyEnumContract.YieldMode.CLAIMABLE) 
 
         emit SetFeeRate(_feeRate);
         emit SetBot(_bot);
@@ -89,7 +97,9 @@ contract OutUSDBVault is IOutUSDBVault, Ownable {
 
         // TODO 领取原生收益
         uint256 amount;
-
+        require(USDB.getClaimableAmount(address(this))>0,"ClaimableYield is zero!");
+        amount = USDB.getClaimableAmount(address(this));
+        USDB.claim(address(this),amount);
         if (feeRate > 0) {
             uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
             require(revenuePool != address(0), "revenue pool not set");

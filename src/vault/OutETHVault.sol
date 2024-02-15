@@ -10,6 +10,10 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {IOutETHVault} from "./interfaces/IOutETHVault.sol";
 import {IRETH} from "../token/ETH//interfaces/IRETH.sol";
 
+import "./IBlast.sol";
+import {MyEnumContract} from "./contractEnum.sol";
+
+
 /**
  * @title ETH Vault Contract
  */
@@ -23,6 +27,7 @@ contract OutETHVault is IOutETHVault, Ownable {
     address public revenuePool;
     address public yieldPool;
     uint256 public feeRate;
+    IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
 
     /**
      * @param _owner - Address of the owner
@@ -47,6 +52,8 @@ contract OutETHVault is IOutETHVault, Ownable {
         bot = _bot;
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
+        BLAST.configureClaimableGas(); 
+		BLAST.configureClaimableYield();
 
         emit SetFeeRate(_feeRate);
         emit SetBot(_bot);
@@ -89,7 +96,8 @@ contract OutETHVault is IOutETHVault, Ownable {
 
         // TODO 领取原生收益
         uint256 amount;
-
+        require(BLAST.readClaimableYield(address(this))>0,"ClaimableYield is zero!");
+        amount = BLAST.claimMaxGas(address(this),address(this));
         if (feeRate > 0) {
             uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
             require(revenuePool != address(0), "revenue pool not set");
