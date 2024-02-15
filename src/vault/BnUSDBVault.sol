@@ -10,6 +10,9 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {IBnUSDBVault} from "./interfaces/IBnUSDBVault.sol";
 import {IBUSD} from "../token/USDB//interfaces/IBUSD.sol";
 
+import "./IERC20Rebasing.sol";
+import {MyEnumContract} from "./IERC20Enum.sol";
+
 /**
  * @title USDB Stake Manager Contract
  * @dev Handles Staking of USDB
@@ -18,6 +21,8 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
+    IERC20Rebasing public constant USDB = IERC20Rebasing(0x4200000000000000000000000000000000000022);
+
 
     address public immutable bUSD;
     address public bot;
@@ -50,7 +55,7 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
         yieldPool = _yieldPool;
 
         BLAST.configureClaimableGas(); 
-		BLAST.configureClaimableYield();
+        USDB.configure(MyEnumContract.YieldMode.CLAIMABLE) 
 
         emit SetFeeRate(_feeRate);
         emit SetBot(_bot);
@@ -93,8 +98,9 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
 
         // TODO 领取原生收益
         uint256 amount;
-        require(BLAST.readClaimableYield(address(this))>0,"ClaimableYield is zero!");
-        amount = BLAST.claimMaxGas(address(this),address(this));
+        require(USDB.getClaimableAmount(address(this))>0,"ClaimableYield is zero!");
+        amount = USDB.getClaimableAmount(address(this));
+        USDB.claim(address(this),amount);
         if (feeRate > 0) {
             uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
             require(revenuePool != address(0), "revenue pool not set");
