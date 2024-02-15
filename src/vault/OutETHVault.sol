@@ -7,19 +7,18 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {IBnETHVault} from "./interfaces/IBnETHVault.sol";
-import {IBETH} from "../token/ETH//interfaces/IBETH.sol";
+import {IOutETHVault} from "./interfaces/IOutETHVault.sol";
+import {IRETH} from "../token/ETH//interfaces/IRETH.sol";
 
 /**
- * @title ETH Stake Manager Contract
- * @dev Handles Staking of ETH
+ * @title ETH Vault Contract
  */
-contract BnETHVault is IBnETHVault, Ownable {
+contract OutETHVault is IOutETHVault, Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
 
-    address public immutable bETH;
+    address public immutable rETH;
     address public bot;
     address public revenuePool;
     address public yieldPool;
@@ -27,15 +26,15 @@ contract BnETHVault is IBnETHVault, Ownable {
 
     /**
      * @param _owner - Address of the owner
-     * @param _bETH - Address of BETH Token
+     * @param _rETH - Address of RETH Token
      * @param _bot - Address of the bot
      * @param _feeRate - Fee to revenue pool
      * @param _revenuePool - Revenue pool
-     * @param _yieldPool - BETH Yield pool
+     * @param _yieldPool - RETH Yield pool
      */
     constructor(
         address _owner,
-        address _bETH,
+        address _rETH,
         address _bot,
         address _revenuePool,
         address _yieldPool,
@@ -43,7 +42,7 @@ contract BnETHVault is IBnETHVault, Ownable {
     ) Ownable(_owner) {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
-        bETH = _bETH;
+        rETH = _rETH;
         feeRate = _feeRate;
         bot = _bot;
         revenuePool = _revenuePool;
@@ -56,26 +55,26 @@ contract BnETHVault is IBnETHVault, Ownable {
     }
 
     /**
-     * @dev Allows user to deposit ETH and mint BETH
+     * @dev Allows user to deposit ETH and mint RETH
      */
     function deposit() public payable override {
         uint256 amount = msg.value;
         require(amount > 0, "Invalid Amount");
 
         address user = msg.sender;
-        IBETH(bETH).mint(user, amount);
+        IRETH(rETH).mint(user, amount);
 
         emit Deposit(user, amount);
     }
 
     /**
-     * @dev Allows user to withdraw ETH by BETH
-     * @param amount - Amount of BETH for burn
+     * @dev Allows user to withdraw ETH by RETH
+     * @param amount - Amount of RETH for burn
      */
     function withdraw(uint256 amount) external override {
         require(amount > 0, "Invalid Amount");
         address user = msg.sender;
-        IBETH(bETH).burn(user, amount);
+        IRETH(rETH).burn(user, amount);
         Address.sendValue(payable(user), amount);
 
         emit Withdraw(user, amount);
@@ -98,7 +97,7 @@ contract BnETHVault is IBnETHVault, Ownable {
             amount -= fee;
         }
 
-        IBETH(bETH).mint(yieldPool, amount);
+        IRETH(rETH).mint(yieldPool, amount);
 
         emit Compounded(amount);
     }

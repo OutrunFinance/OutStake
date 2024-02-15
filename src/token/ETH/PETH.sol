@@ -6,46 +6,46 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title Bang Principal ETH Liquid Staked Token
+ * @title Outrun Principal ETH Liquid Staked Token
  */
 contract PETH is IPETH, ERC20, Ownable {
-    address public ETHStakeManager;
+    address public RETHStakeManager;
 
-    modifier onlyETHStakeManager() {
+    modifier onlyRETHStakeManager() {
         require(
-            msg.sender == ETHStakeManager,
+            msg.sender == RETHStakeManager,
             "Access only by StakeManager"
         );
         _;
     }
 
-    constructor(address owner, address _ETHStakeManager) ERC20("Principal Staked ETH", "PETH") Ownable(owner) {
-        ETHStakeManager = _ETHStakeManager;
-        emit SetETHStakeManager(_ETHStakeManager);
+    constructor(address owner, address _RETHStakeManager) ERC20("Principal Staked ETH", "PETH") Ownable(owner) {
+        RETHStakeManager = _RETHStakeManager;
+        emit SetRETHStakeManager(_RETHStakeManager);
     }
 
-    function setETHStakeManager(address _ETHStakeManager) external override onlyOwner {
-        require(_ETHStakeManager != address(0), "Zero address provided");
+    function setRETHStakeManager(address _RETHStakeManager) external override onlyOwner {
+        require(_RETHStakeManager != address(0), "Zero address provided");
 
-        ETHStakeManager = _ETHStakeManager;
-        emit SetETHStakeManager(_ETHStakeManager);
+        RETHStakeManager = _RETHStakeManager;
+        emit SetRETHStakeManager(_RETHStakeManager);
     }
 
     /**
-     * Only ETHStakeManager can mint when the user deposit ETH
-     * @param _account Address who deposit ETH 
-     * @param _amount The amount of deposited ETH
+     * Only RETHStakeManager can mint when the user deposit RETH
+     * @param _account Address who deposit RETH 
+     * @param _amount The amount of deposited RETH
      */
-    function mint(address _account, uint256 _amount) external override onlyETHStakeManager{
+    function mint(address _account, uint256 _amount) external override onlyRETHStakeManager{
         _mint(_account, _amount);
     }
 
     /**
-     * Only ETHStakeManager can burn when the user redempt the ETH 
-     * @param _account Address who redempt the ETH
-     * @param _amount The amount of redempt ETH
+     * Only RETHStakeManager can burn when the user redempt the RETH 
+     * @param _account Address who redempt the RETH
+     * @param _amount The amount of redempt RETH
      */
-    function burn(address _account, uint256 _amount) external override onlyETHStakeManager {
+    function burn(address _account, uint256 _amount) external override onlyRETHStakeManager {
         _burn(_account, _amount);
     }
 }

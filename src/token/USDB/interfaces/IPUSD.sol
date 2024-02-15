@@ -11,7 +11,7 @@ interface IPUSD is IERC20 {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setBUSDStakeManager(address _address) external;
+    function setRUSDStakeManager(address _address) external;
 
-    event SetBUSDStakeManager(address _address);
+    event SetRUSDStakeManager(address _address);
 }

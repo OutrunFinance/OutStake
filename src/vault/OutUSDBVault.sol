@@ -7,19 +7,18 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {IBnUSDBVault} from "./interfaces/IBnUSDBVault.sol";
-import {IBUSD} from "../token/USDB//interfaces/IBUSD.sol";
+import {IOutUSDBVault} from "./interfaces/IOutUSDBVault.sol";
+import {IRUSD} from "../token/USDB//interfaces/IRUSD.sol";
 
 /**
- * @title USDB Stake Manager Contract
- * @dev Handles Staking of USDB
+ * @title USDB Vault Contract
  */
-contract BnUSDBVault is IBnUSDBVault, Ownable {
+contract OutUSDBVault is IOutUSDBVault, Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
 
-    address public immutable bUSD;
+    address public immutable rUSD;
     address public bot;
     address public revenuePool;
     address public yieldPool;
@@ -27,15 +26,15 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
 
     /**
      * @param _owner - Address of the owner
-     * @param _bUSD - Address of BUSD Token
+     * @param _rUSD - Address of RUSD Token
      * @param _bot - Address of the bot
      * @param _feeRate - Fee to revenue pool
      * @param _revenuePool - Revenue pool
-     * @param _yieldPool - BUSD Yield pool
+     * @param _yieldPool - RUSD Yield pool
      */
     constructor(
         address _owner,
-        address _bUSD,
+        address _rUSD,
         address _bot,
         address _revenuePool,
         address _yieldPool,
@@ -43,7 +42,7 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
     ) Ownable(_owner) {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
-        bUSD = _bUSD;
+        rUSD = _rUSD;
         feeRate = _feeRate;
         bot = _bot;
         revenuePool = _revenuePool;
@@ -56,26 +55,26 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
     }
 
     /**
-     * @dev Allows user to deposit USDB and mint BUSD
+     * @dev Allows user to deposit USDB and mint RUSD
      */
     function deposit() public payable override {
         uint256 amount = msg.value;
         require(amount > 0, "Invalid Amount");
 
         address user = msg.sender;
-        IBUSD(bUSD).mint(user, amount);
+        IRUSD(rUSD).mint(user, amount);
 
         emit Deposit(user, amount);
     }
 
     /**
-     * @dev Allows user to withdraw USDB by BUSD
-     * @param amount - Amount of BUSD for burn
+     * @dev Allows user to withdraw USDB by RUSD
+     * @param amount - Amount of RUSD for burn
      */
     function withdraw(uint256 amount) external override {
         require(amount > 0, "Invalid Amount");
         address user = msg.sender;
-        IBUSD(bUSD).burn(user, amount);
+        IRUSD(rUSD).burn(user, amount);
         Address.sendValue(payable(user), amount);
 
         emit Withdraw(user, amount);
@@ -98,7 +97,7 @@ contract BnUSDBVault is IBnUSDBVault, Ownable {
             amount -= fee;
         }
 
-        IBUSD(bUSD).mint(yieldPool, amount);
+        IRUSD(rUSD).mint(yieldPool, amount);
 
         emit Compounded(amount);
     }

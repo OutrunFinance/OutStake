@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-interface IBnETHVault {
+interface IOutUSDBVault {
     function deposit() external payable;
 
     function withdraw(uint256 amount) external;

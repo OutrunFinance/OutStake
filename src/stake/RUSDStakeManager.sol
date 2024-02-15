@@ -8,28 +8,28 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import {IBETHStakeManager} from "./interfaces/IBETHStakeManager.sol";
+import {IRUSDStakeManager} from "./interfaces/IRUSDStakeManager.sol";
 import {AutoIncrementId} from "../utils/AutoIncrementId.sol";
-import {IBETH} from "../token/ETH/interfaces/IBETH.sol";
-import {IPETH} from "../token/ETH/interfaces/IPETH.sol";
-import {IBEYT} from "../token/ETH/interfaces/IBEYT.sol";
+import {IRUSD} from "../token/USDB/interfaces/IRUSD.sol";
+import {IPUSD} from "../token/USDB/interfaces/IPUSD.sol";
+import {IRUYT} from "../token/USDB/interfaces/IRUYT.sol";
 
 /**
- * @title BETH Stake Manager Contract
- * @dev Handles Staking of BETH
+ * @title RUSD Stake Manager Contract
+ * @dev Handles Staking of RUSD
  */
-contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
+contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
-    uint256 public constant PRECISION = 1e15;
+    uint256 public constant PRECISION = 1e18;
     uint256 public constant DAY = 24 * 3600;
 
-    address public immutable bETH;
-    address public immutable pETH;
-    address public immutable bEYT;
+    address public immutable rUSD;
+    address public immutable pUSD;
+    address public immutable rUYT;
 
-    address public BETHYieldPool;
+    address public USDBYieldPool;
     uint256 public minIntervalTime;
     uint256 public maxIntervalTime;
 
@@ -37,22 +37,22 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
 
     /**
      * @param _owner - Address of the owner
-     * @param _bETH - Address of BETH Token
-     * @param _pETH - Address of PETH Token
-     * @param _bEYT - Address of BEYT Token
-     * @param _BETHYieldPool - Address of BETHYieldPool
+     * @param _rUSD - Address of RUSD Token
+     * @param _pUSD - Address of PUSD Token
+     * @param _rUYT - Address of RUYT Token
+     * @param _USDBYieldPool - Address of USDBYieldPool
      */
     constructor(
         address _owner,
-        address _bETH,
-        address _pETH,
-        address _bEYT,
-        address _BETHYieldPool
+        address _rUSD,
+        address _pUSD,
+        address _rUYT,
+        address _USDBYieldPool
     ) Ownable(_owner){
-        bETH = _bETH;
-        pETH = _pETH;
-        bEYT = _bEYT;
-        BETHYieldPool = _BETHYieldPool;
+        rUSD = _rUSD;
+        pUSD = _pUSD;
+        rUYT = _rUYT;
+        USDBYieldPool = _USDBYieldPool;
     }
 
     function positionsOf(uint256 positionId) public view virtual returns (Position memory) {
@@ -60,12 +60,10 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * 用户stake BETH，指定一个锁定到期时间deadLine，锁定到期前不可unstake，铸造相同数量的PETH和与锁定时间相关的收益代币BEYT
-     *
-     * @dev Allows user to deposit BETH, then mints PETH and BEYT for the user.
-     * @param amount - BETH staked amount, amount % 1e15 == 0
+     * @dev Allows user to deposit RUSD, then mints PUSD and RUYT for the user.
+     * @param amount - RUSD staked amount, amount % 1e18 == 0
      * @param deadLine - User can withdraw principal after deadLine
-     * @notice User must have approved this contract to spend BETH
+     * @notice User must have approved this contract to spend RUSD
      */
     function stake(uint256 amount, uint256 deadLine) external override {
         require(amount % PRECISION == 0 && amount != 0, "Invalid Amount");
@@ -76,32 +74,32 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
         );
 
         address user = msg.sender;
-        IERC20(bETH).safeTransferFrom(user, address(this), amount);
-        IPETH(pETH).mint(user, CalcPETHAmount(amount));
+        IERC20(rUSD).safeTransferFrom(user, address(this), amount);
+        IPUSD(pUSD).mint(user, CalcPUSDAmount(amount));
         uint256 intervalTime = deadLine - block.timestamp;
-        uint amountInPETH = Math.mulDiv(amount, intervalTime, DAY);
-        IBEYT(bEYT).mint(user, amountInPETH);
+        uint amountInPUSD = Math.mulDiv(amount, intervalTime, DAY);
+        IRUYT(rUYT).mint(user, amountInPUSD);
 
         uint256 positionId = nextId();
         _positions[positionId] = Position(
             positionId,
             amount,
-            amountInPETH,
+            amountInPUSD,
             user,
             deadLine,
             false
         );
 
-        emit StakeBETH(user, amount, deadLine, positionId);
+        emit StakeUSDB(user, amount, deadLine, positionId);
     }
 
     /**
-     * 用户销毁PETH以将质押的BETH取出来, 锁定时间未过期不能unstake。
+     * 用户销毁PUSD以将质押的RUSD取出来, 锁定时间未过期不能unstake。
      *
      * @dev Allows user to unstake funds
-     * @param amount - Amount of PETH for burn
+     * @param amount - Amount of PUSD for burn
      * @param positionId - Staked Principal Position Id
-     * @notice User must have approved this contract to spend PETH
+     * @notice User must have approved this contract to spend PUSD
      */
     function unStake(uint256 amount, uint256 positionId) external override {
         require(amount > 0, "Invalid Amount");
@@ -111,24 +109,24 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
         require(position.owner == user, "Not Owner");
         require(position.deadLine <= block.timestamp, "Lock time not expired");
         require(position.closed == false, "Position closed");
-        require(position.PETHAmount == amount, "PETH amount not enough");
+        require(position.PUSDAmount == amount, "PUSD amount not enough");
 
-        IPETH(pETH).burn(user, amount);
-        uint256 amountInBETH = position.BETHAmount;
-        IERC20(bETH).safeTransfer(user, amountInBETH);
+        IPUSD(pUSD).burn(user, amount);
+        uint256 amountInRUSD = position.RUSDAmount;
+        IERC20(rUSD).safeTransfer(user, amountInRUSD);
         position.closed = true;
         _positions[positionId] = position;
 
-        emit Withdraw(msg.sender, amountInBETH);
+        emit Withdraw(msg.sender, amountInRUSD);
     }
 
-    function getStakedBETH() public view override returns (uint256) {
-        return IBETH(bETH).balanceOf(address(this)) + IBETH(bETH).balanceOf(BETHYieldPool);
+    function getStakedRUSD() public view override returns (uint256) {
+        return IRUSD(rUSD).balanceOf(address(this)) + IRUSD(rUSD).balanceOf(USDBYieldPool);
     }
 
-    function setBETHYieldPool(address _pool) external onlyOwner {
-        BETHYieldPool = _pool;
-        emit SetBETHYieldPool(_pool);
+    function setUSDBYieldPool(address _pool) external onlyOwner {
+        USDBYieldPool = _pool;
+        emit SetUSDBYieldPool(_pool);
     }
 
     /**
@@ -148,16 +146,16 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @dev Calculates amount of PETH 本金凭证算法
+     * @dev Calculates amount of PUSD 本金凭证算法
      */
-    function CalcPETHAmount(uint256 amountInBETH) internal view returns (uint256) {
-        uint256 totalShares = IBETH(pETH).totalSupply();
+    function CalcPUSDAmount(uint256 amountInRUSD) internal view returns (uint256) {
+        uint256 totalShares = IRUSD(pUSD).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
-        uint256 yieldVault = getStakedBETH();
+        uint256 yieldVault = getStakedRUSD();
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        return (amountInBETH * totalShares) / yieldVault;
+        return (amountInRUSD * totalShares) / yieldVault;
     }
 
     receive() external payable {}

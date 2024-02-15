@@ -1,14 +1,14 @@
-//SPDX-License-Identifier: GPL-3.0
+//SPDX-License-Identifier: GPL-3.0rETH
 pragma solidity ^0.8.19;
 
 /**
- * @title IBETHStakeManager interface
+ * @title IRUSDStakeManager interface
  */
-interface IBETHStakeManager {
+interface IRUSDStakeManager {
     struct Position {
         uint256 positionId;
-        uint256 BETHAmount;
-        uint256 PETHAmount;
+        uint256 RUSDAmount;
+        uint256 PUSDAmount;
         address owner;
         uint256 deadLine;
         bool closed;
@@ -20,24 +20,24 @@ interface IBETHStakeManager {
 
     function unStake(uint256 amount, uint256 positionId) external;
 
-    function getStakedBETH() external returns (uint256);
+    function getStakedRUSD() external returns (uint256);
 
-    function setBETHYieldPool(address pool) external;
+    function setUSDBYieldPool(address pool) external;
 
     function setMinIntervalTime(uint256 interval) external;
 
     function setMaxIntervalTime(uint256 interval) external;
 
-    event StakeBETH(
+    event StakeUSDB(
         address indexed _account,
         uint256 _amount,
         uint256 _deadLine,
         uint256 _positionId
     );
 
-    event Withdraw(address indexed _account, uint256 _amountInBETH);
+    event Withdraw(address indexed _account, uint256 _amountInRUSD);
 
-    event SetBETHYieldPool(address _pool);
+    event SetUSDBYieldPool(address _pool);
 
     event SetMinIntervalTime(uint256 _minIntervalTime);
 

@@ -2,13 +2,13 @@
 pragma solidity ^0.8.19;
 
 /**
- * @title IBUSDStakeManager interface
+ * @title IRETHStakeManager interface
  */
-interface IBUSDStakeManager {
+interface IRETHStakeManager {
     struct Position {
         uint256 positionId;
-        uint256 BUSDAmount;
-        uint256 PUSDAmount;
+        uint256 RETHAmount;
+        uint256 PETHAmount;
         address owner;
         uint256 deadLine;
         bool closed;
@@ -20,24 +20,24 @@ interface IBUSDStakeManager {
 
     function unStake(uint256 amount, uint256 positionId) external;
 
-    function getStakedBUSD() external returns (uint256);
+    function getStakedRETH() external returns (uint256);
 
-    function setUSDBYieldPool(address pool) external;
+    function setRETHYieldPool(address pool) external;
 
     function setMinIntervalTime(uint256 interval) external;
 
     function setMaxIntervalTime(uint256 interval) external;
 
-    event StakeUSDB(
+    event StakeRETH(
         address indexed _account,
         uint256 _amount,
         uint256 _deadLine,
         uint256 _positionId
     );
 
-    event Withdraw(address indexed _account, uint256 _amountInBUSD);
+    event Withdraw(address indexed _account, uint256 _amountInRETH);
 
-    event SetUSDBYieldPool(address _pool);
+    event SetRETHYieldPool(address _pool);
 
     event SetMinIntervalTime(uint256 _minIntervalTime);
 

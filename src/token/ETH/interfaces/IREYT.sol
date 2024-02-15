@@ -4,20 +4,20 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
  /**
-  * @title Bang ETH yield token interface
+  * @title Outrun ETH yield token interface
   */
-interface IBEYT is IERC20 {
+interface IREYT is IERC20 {
     function mint(address _account, uint256 _amount) external;
 
     function burn(address _account, uint256 _amount) external;
 
-    function setBETHYieldPool(address _address) external;
+    function setRETHYieldPool(address _address) external;
 
-    function setETHStakeManager(address _address) external;
+    function setRETHStakeManager(address _address) external;
 
     event Mint(address indexed _account, uint256 _amount);
     
-    event SetBETHYieldPool(address  _address);
+    event SetRETHYieldPool(address  _address);
 
-    event SetETHStakeManager(address  _address);
+    event SetRETHStakeManager(address  _address);
 }
