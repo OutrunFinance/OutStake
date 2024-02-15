@@ -4,14 +4,14 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
  /**
-  * @title BUSD interface
+  * @title RETH interface
   */
-interface IBUSD is IERC20 {
+interface IRETH is IERC20 {
     function mint(address _account, uint256 _amount) external;
 
     function burn(address _account, uint256 _amount) external;
 
-    function setBnUSDBVault(address _address) external;
+    function setOutETHVault(address _address) external;
     
-    event SetBnUSDBVault(address _address);
+    event SetOutETHVault(address _address);
 }

@@ -6,46 +6,46 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title Bang Principal USD Liquid Staked Token
+ * @title Outrun Principal USD Liquid Staked Token
  */
 contract PUSD is IPUSD, ERC20, Ownable {
-    address public BUSDStakeManager;
+    address public RUSDStakeManager;
 
-    modifier onlyBUSDStakeManager() {
+    modifier onlyRUSDStakeManager() {
         require(
-            msg.sender == BUSDStakeManager,
+            msg.sender == RUSDStakeManager,
             "Access only by StakeManager"
         );
         _;
     }
 
-    constructor(address owner, address _BUSDStakeManager) ERC20("Principal Staked USD", "PUSD") Ownable(owner) {
-        BUSDStakeManager = _BUSDStakeManager;
-        emit SetBUSDStakeManager(_BUSDStakeManager);
+    constructor(address owner, address _RUSDStakeManager) ERC20("Principal Staked USD", "PUSD") Ownable(owner) {
+        RUSDStakeManager = _RUSDStakeManager;
+        emit SetRUSDStakeManager(_RUSDStakeManager);
     }
 
-    function setBUSDStakeManager(address _BUSDStakeManager) external override onlyOwner {
-        require(_BUSDStakeManager != address(0), "Zero address provided");
+    function setRUSDStakeManager(address _RUSDStakeManager) external override onlyOwner {
+        require(_RUSDStakeManager != address(0), "Zero address provided");
 
-        BUSDStakeManager = _BUSDStakeManager;
-        emit SetBUSDStakeManager(_BUSDStakeManager);
+        RUSDStakeManager = _RUSDStakeManager;
+        emit SetRUSDStakeManager(_RUSDStakeManager);
     }
 
     /**
-     * Only BUSDStakeManager can mint when the user deposit BUSD
-     * @param _account Address who deposit BUSD 
-     * @param _amount The amount of deposited BUSD
+     * Only RUSDStakeManager can mint when the user deposit RUSD
+     * @param _account Address who deposit RUSD 
+     * @param _amount The amount of deposited RUSD
      */
-    function mint(address _account, uint256 _amount) external override onlyBUSDStakeManager{
+    function mint(address _account, uint256 _amount) external override onlyRUSDStakeManager{
         _mint(_account, _amount);
     }
 
     /**
-     * Only BUSDStakeManager can burn when the user redempt the BUSD 
-     * @param _account Address who redempt the BUSD
-     * @param _amount The amount of redempt BUSD
+     * Only RUSDStakeManager can burn when the user redempt the RUSD 
+     * @param _account Address who redempt the RUSD
+     * @param _amount The amount of redempt RUSD
      */
-    function burn(address _account, uint256 _amount) external override onlyBUSDStakeManager {
+    function burn(address _account, uint256 _amount) external override onlyRUSDStakeManager {
         _burn(_account, _amount);
     }
 }

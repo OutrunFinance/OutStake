@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-interface IBnUSDBVault {
+interface IOutETHVault {
     function deposit() external payable;
 
     function withdraw(uint256 amount) external;
 
-    function compound() external;
+    function claimETHYield() external;
 
     function setBot(address _address) external;
 
@@ -20,7 +20,7 @@ interface IBnUSDBVault {
 
     event Withdraw(address indexed _account, uint256 _amount);
 
-    event Compounded(uint256 amount);
+    event ClaimETHYield(uint256 amount);
 
     event SetFeeRate(uint256 _feeRate);
 

@@ -11,7 +11,7 @@ interface IPETH is IERC20 {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setETHStakeManager(address _address) external;
+    function setRETHStakeManager(address _address) external;
 
-    event SetETHStakeManager(address _address);
+    event SetRETHStakeManager(address _address);
 }

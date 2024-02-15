@@ -7,40 +7,37 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {IBnETHVault} from "./interfaces/IBnETHVault.sol";
-import {IBETH} from "../token/ETH//interfaces/IBETH.sol";
-
-import "./IBlast.sol";
-import {MyEnumContract} from "./contractEnum.sol";
-
+import "../blast/IERC20Rebasing.sol";
+import {BlastModeEnum} from "../blast/BlastModeEnum.sol";
+import {IOutUSDBVault} from "./interfaces/IOutUSDBVault.sol";
+import {IRUSD} from "../token/USDB//interfaces/IRUSD.sol";
 
 /**
- * @title ETH Stake Manager Contract
- * @dev Handles Staking of ETH
+ * @title USDB Vault Contract
  */
-contract BnETHVault is IBnETHVault, Ownable {
+contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     using SafeERC20 for IERC20;
 
+    IERC20Rebasing public constant USDB = IERC20Rebasing(0x4200000000000000000000000000000000000022);
     uint256 public constant THOUSAND = 1000;
 
-    address public immutable bETH;
+    address public immutable rUSD;
     address public bot;
     address public revenuePool;
     address public yieldPool;
     uint256 public feeRate;
-    IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
 
     /**
      * @param _owner - Address of the owner
-     * @param _bETH - Address of BETH Token
+     * @param _rUSD - Address of RUSD Token
      * @param _bot - Address of the bot
      * @param _feeRate - Fee to revenue pool
      * @param _revenuePool - Revenue pool
-     * @param _yieldPool - BETH Yield pool
+     * @param _yieldPool - RUSD Yield pool
      */
     constructor(
         address _owner,
-        address _bETH,
+        address _rUSD,
         address _bot,
         address _revenuePool,
         address _yieldPool,
@@ -48,13 +45,13 @@ contract BnETHVault is IBnETHVault, Ownable {
     ) Ownable(_owner) {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
-        bETH = _bETH;
+        rUSD = _rUSD;
         feeRate = _feeRate;
         bot = _bot;
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
-        BLAST.configureClaimableGas(); 
-		BLAST.configureClaimableYield();
+
+        USDB.configure(YieldMode.CLAIMABLE);
 
         emit SetFeeRate(_feeRate);
         emit SetBot(_bot);
@@ -63,52 +60,51 @@ contract BnETHVault is IBnETHVault, Ownable {
     }
 
     /**
-     * @dev Allows user to deposit ETH and mint BETH
+     * @dev Allows user to deposit USDB and mint RUSD
      */
     function deposit() public payable override {
         uint256 amount = msg.value;
         require(amount > 0, "Invalid Amount");
 
         address user = msg.sender;
-        IBETH(bETH).mint(user, amount);
+        IRUSD(rUSD).mint(user, amount);
+        claimUSDBYield();
 
         emit Deposit(user, amount);
     }
 
     /**
-     * @dev Allows user to withdraw ETH by BETH
-     * @param amount - Amount of BETH for burn
+     * @dev Allows user to withdraw USDB by RUSD
+     * @param amount - Amount of RUSD for burn
      */
     function withdraw(uint256 amount) external override {
         require(amount > 0, "Invalid Amount");
         address user = msg.sender;
-        IBETH(bETH).burn(user, amount);
+        IRUSD(rUSD).burn(user, amount);
         Address.sendValue(payable(user), amount);
+        claimUSDBYield();
 
         emit Withdraw(user, amount);
     }
 
     /**
-     * @dev Allows bot to compound rewards
+     * @dev Claim USDB yield to this contract
      */
-    function compound() external override {
-        require(msg.sender == bot, "Permission denied");
-        require(address(this).balance > 0, "No funds");
+    function claimUSDBYield() public override {
+        uint256 amount = USDB.getClaimableAmount(address(this));
+        if (amount > 0) {
+            USDB.claim(address(this), amount);
+            if (feeRate > 0) {
+                uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
+                require(revenuePool != address(0), "revenue pool not set");
+                Address.sendValue(payable(revenuePool), fee);
+                amount -= fee;
+            }
 
-        // TODO 领取原生收益
-        uint256 amount;
-        require(BLAST.readClaimableYield(address(this))>0,"ClaimableYield is zero!");
-        amount = BLAST.claimMaxGas(address(this),address(this));
-        if (feeRate > 0) {
-            uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
-            require(revenuePool != address(0), "revenue pool not set");
-            Address.sendValue(payable(revenuePool), fee);
-            amount -= fee;
+            IRUSD(rUSD).mint(yieldPool, amount);
+
+            emit ClaimUSDBYield(amount);
         }
-
-        IBETH(bETH).mint(yieldPool, amount);
-
-        emit Compounded(amount);
     }
 
     function setBot(address _bot) external override onlyOwner {

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.17;
-import {MyEnumContract} from "./contractEnum.sol";
+pragma solidity ^0.8.19;
 
-interface IBlast {
+import {BlastModeEnum} from "./BlastModeEnum.sol";
+
+interface IBlast is BlastModeEnum {
     // configure
-    function configureContract(address contractAddress, MyEnumContract.YieldMode _yield, MyEnumContract.GasMode gasMode, address governor) external;
-    function configure(MyEnumContract.YieldMode _yield, MyEnumContract.GasMode gasMode, address governor) external;
+    function configureContract(address contractAddress, YieldMode _yield, GasMode gasMode, address governor) external;
+    function configure(YieldMode _yield, GasMode gasMode, address governor) external;
 
     // base configuration options
     function configureClaimableYield() external;
@@ -34,5 +35,5 @@ interface IBlast {
     // read functions
     function readClaimableYield(address contractAddress) external view returns (uint256);
     function readYieldConfiguration(address contractAddress) external view returns (uint8);
-    function readGasParams(address contractAddress) external view returns (uint256 etherSeconds, uint256 etherBalance, uint256 lastUpdated, MyEnumContract.GasMode);
+    function readGasParams(address contractAddress) external view returns (uint256 etherSeconds, uint256 etherBalance, uint256 lastUpdated, GasMode);
 }
