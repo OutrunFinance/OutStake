@@ -7,21 +7,19 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+import "../blast/IERC20Rebasing.sol";
+import {BlastModeEnum} from "../blast/BlastModeEnum.sol";
 import {IOutUSDBVault} from "./interfaces/IOutUSDBVault.sol";
 import {IRUSD} from "../token/USDB//interfaces/IRUSD.sol";
-
-import "./IERC20Rebasing.sol";
-import {MyEnumContract} from "./IERC20Enum.sol";
 
 /**
  * @title USDB Vault Contract
  */
-contract OutUSDBVault is IOutUSDBVault, Ownable {
+contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     using SafeERC20 for IERC20;
 
-    uint256 public constant THOUSAND = 1000;
     IERC20Rebasing public constant USDB = IERC20Rebasing(0x4200000000000000000000000000000000000022);
-
+    uint256 public constant THOUSAND = 1000;
 
     address public immutable rUSD;
     address public bot;
@@ -53,8 +51,7 @@ contract OutUSDBVault is IOutUSDBVault, Ownable {
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
 
-        BLAST.configureClaimableGas(); 
-        USDB.configure(MyEnumContract.YieldMode.CLAIMABLE) 
+        USDB.configure(YieldMode.CLAIMABLE);
 
         emit SetFeeRate(_feeRate);
         emit SetBot(_bot);
@@ -71,6 +68,7 @@ contract OutUSDBVault is IOutUSDBVault, Ownable {
 
         address user = msg.sender;
         IRUSD(rUSD).mint(user, amount);
+        claimUSDBYield();
 
         emit Deposit(user, amount);
     }
@@ -84,32 +82,29 @@ contract OutUSDBVault is IOutUSDBVault, Ownable {
         address user = msg.sender;
         IRUSD(rUSD).burn(user, amount);
         Address.sendValue(payable(user), amount);
+        claimUSDBYield();
 
         emit Withdraw(user, amount);
     }
 
     /**
-     * @dev Allows bot to compound rewards
+     * @dev Claim USDB yield to this contract
      */
-    function compound() external override {
-        require(msg.sender == bot, "Permission denied");
-        require(address(this).balance > 0, "No funds");
+    function claimUSDBYield() public override {
+        uint256 amount = USDB.getClaimableAmount(address(this));
+        if (amount > 0) {
+            USDB.claim(address(this), amount);
+            if (feeRate > 0) {
+                uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
+                require(revenuePool != address(0), "revenue pool not set");
+                Address.sendValue(payable(revenuePool), fee);
+                amount -= fee;
+            }
 
-        // TODO 领取原生收益
-        uint256 amount;
-        require(USDB.getClaimableAmount(address(this))>0,"ClaimableYield is zero!");
-        amount = USDB.getClaimableAmount(address(this));
-        USDB.claim(address(this),amount);
-        if (feeRate > 0) {
-            uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
-            require(revenuePool != address(0), "revenue pool not set");
-            Address.sendValue(payable(revenuePool), fee);
-            amount -= fee;
+            IRUSD(rUSD).mint(yieldPool, amount);
+
+            emit ClaimUSDBYield(amount);
         }
-
-        IRUSD(rUSD).mint(yieldPool, amount);
-
-        emit Compounded(amount);
     }
 
     function setBot(address _bot) external override onlyOwner {

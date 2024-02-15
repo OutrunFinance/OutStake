@@ -6,7 +6,7 @@ interface IOutETHVault {
 
     function withdraw(uint256 amount) external;
 
-    function compound() external;
+    function claimETHYield() external;
 
     function setBot(address _address) external;
 
@@ -20,7 +20,7 @@ interface IOutETHVault {
 
     event Withdraw(address indexed _account, uint256 _amount);
 
-    event Compounded(uint256 amount);
+    event ClaimETHYield(uint256 amount);
 
     event SetFeeRate(uint256 _feeRate);
 

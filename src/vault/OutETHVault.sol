@@ -7,12 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+import "../blast/IBlast.sol";
 import {IOutETHVault} from "./interfaces/IOutETHVault.sol";
 import {IRETH} from "../token/ETH//interfaces/IRETH.sol";
-
-import "./IBlast.sol";
-import {MyEnumContract} from "./contractEnum.sol";
-
 
 /**
  * @title ETH Vault Contract
@@ -20,6 +17,7 @@ import {MyEnumContract} from "./contractEnum.sol";
 contract OutETHVault is IOutETHVault, Ownable {
     using SafeERC20 for IERC20;
 
+    IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
     uint256 public constant THOUSAND = 1000;
 
     address public immutable rETH;
@@ -27,7 +25,6 @@ contract OutETHVault is IOutETHVault, Ownable {
     address public revenuePool;
     address public yieldPool;
     uint256 public feeRate;
-    IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
 
     /**
      * @param _owner - Address of the owner
@@ -52,7 +49,7 @@ contract OutETHVault is IOutETHVault, Ownable {
         bot = _bot;
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
-        BLAST.configureClaimableGas(); 
+
 		BLAST.configureClaimableYield();
 
         emit SetFeeRate(_feeRate);
@@ -70,6 +67,7 @@ contract OutETHVault is IOutETHVault, Ownable {
 
         address user = msg.sender;
         IRETH(rETH).mint(user, amount);
+        claimETHYield();
 
         emit Deposit(user, amount);
     }
@@ -83,31 +81,28 @@ contract OutETHVault is IOutETHVault, Ownable {
         address user = msg.sender;
         IRETH(rETH).burn(user, amount);
         Address.sendValue(payable(user), amount);
+        claimETHYield();
 
         emit Withdraw(user, amount);
     }
 
     /**
-     * @dev Allows bot to compound rewards
+     * @dev Claim ETH yield to this contract
      */
-    function compound() external override {
-        require(msg.sender == bot, "Permission denied");
-        require(address(this).balance > 0, "No funds");
+    function claimETHYield() public override {
+        uint256 amount = BLAST.claimAllYield(address(this), address(this));
+        if (amount > 0) {
+            if (feeRate > 0) {
+                uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
+                require(revenuePool != address(0), "revenue pool not set");
+                Address.sendValue(payable(revenuePool), fee);
+                amount -= fee;
+            }
 
-        // TODO 领取原生收益
-        uint256 amount;
-        require(BLAST.readClaimableYield(address(this))>0,"ClaimableYield is zero!");
-        amount = BLAST.claimMaxGas(address(this),address(this));
-        if (feeRate > 0) {
-            uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
-            require(revenuePool != address(0), "revenue pool not set");
-            Address.sendValue(payable(revenuePool), fee);
-            amount -= fee;
+            IRETH(rETH).mint(yieldPool, amount);
+
+            emit ClaimETHYield(amount);
         }
-
-        IRETH(rETH).mint(yieldPool, amount);
-
-        emit Compounded(amount);
     }
 
     function setBot(address _bot) external override onlyOwner {
