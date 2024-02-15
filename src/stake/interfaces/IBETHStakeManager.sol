@@ -22,22 +22,22 @@ interface IBETHStakeManager {
 
     function getStakedBETH() external returns (uint256);
 
-    function setETHYieldPool(address pool) external;
+    function setBETHYieldPool(address pool) external;
 
     function setMinIntervalTime(uint256 interval) external;
 
     function setMaxIntervalTime(uint256 interval) external;
 
-    event StakeETH(
+    event StakeBETH(
         address indexed _account,
         uint256 _amount,
         uint256 _deadLine,
         uint256 _positionId
     );
 
-    event Withdraw(address indexed _account, uint256 _amountInETH);
+    event Withdraw(address indexed _account, uint256 _amountInBETH);
 
-    event SetETHYieldPool(address _pool);
+    event SetBETHYieldPool(address _pool);
 
     event SetMinIntervalTime(uint256 _minIntervalTime);
 

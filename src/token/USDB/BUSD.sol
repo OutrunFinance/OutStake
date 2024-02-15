@@ -2,53 +2,37 @@
 pragma solidity ^0.8.19;
 
 import "./interfaces/IBUSD.sol";
+import "../../vault/interfaces/IBnUSDBVault.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
- * @title Bang USDB Liquid Staked Token
+ * @title Bang USD Wrapped Token
  */
-contract BUSD is IBUSD, ERC20, AccessControl {
-    address private _USDBStakeManager;
+contract BUSD is IBUSD, ERC20, Ownable {
+    address public BnUSDBVault;
 
-    modifier onlyUSDBStakeManager() {
-        require(
-            msg.sender == _USDBStakeManager,
-            "Accessible only by StakeManager Contract"
-        );
+    modifier onlyBnUSDBVault() {
+        require(msg.sender == BnUSDBVault, "Access only by BnUSDBVault");
         _;
     }
 
-    constructor(address USDBStakeManager_) ERC20("Bang USDB", "BUSD") {
-        _USDBStakeManager = USDBStakeManager_;
+    constructor(address owner, address _BnUSDBVault) ERC20("Bang Wrapped USDB", "BUSD") Ownable(owner) {
+        BnUSDBVault = _BnUSDBVault;
+        emit SetBnUSDBVault(_BnUSDBVault);
     }
 
-    function USDBStakeManager() public view virtual returns (address) {
-        return _USDBStakeManager;
-    }
-
-    function setUSDBStakeManager(address _address) external override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_address != address(0), "Zero address provided");
-
-        _USDBStakeManager = _address;
-        emit SetUSDBStakeManager(_address);
-    }
-
-    /**
-     * Only USDBStakeManager can mint when the user deposit USDB
-     * @param _account Address who deposit USDB 
-     * @param _amount The amount of deposited USDB
-     */
-    function mint(address _account, uint256 _amount) external override onlyUSDBStakeManager{
+    function mint(address _account, uint256 _amount) external override onlyBnUSDBVault {
         _mint(_account, _amount);
     }
 
-    /**
-     * Only USDBStakeManager can burn when the user redempt the USDB 
-     * @param _account Address who redempt the USDB
-     * @param _amount The amount of redempt USDB
-     */
-    function burn(address _account, uint256 _amount) external override onlyUSDBStakeManager {
+    function burn(address _account, uint256 _amount) external override onlyBnUSDBVault {
         _burn(_account, _amount);
+    }
+
+    function setBnUSDBVault(address _BnUSDBVault) external override onlyOwner {
+        BnUSDBVault = _BnUSDBVault;
+        emit SetBnUSDBVault(_BnUSDBVault);
     }
 }

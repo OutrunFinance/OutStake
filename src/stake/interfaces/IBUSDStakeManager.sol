@@ -1,37 +1,45 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
- /**
-  * @title IBUSDStakeManager interface
-  */
+/**
+ * @title IBUSDStakeManager interface
+ */
 interface IBUSDStakeManager {
-    function stake(uint256 amount) external payable ;
+    struct Position {
+        uint256 positionId;
+        uint256 BUSDAmount;
+        uint256 PUSDAmount;
+        address owner;
+        uint256 deadLine;
+        bool closed;
+    }
 
-    function unStake(uint256 amount) external;
+    function positionsOf(uint256 positionId) external returns (Position memory);
 
-    function getVaultBUSD() external returns (uint256);
+    function stake(uint256 amount, uint256 deadLine) external;
 
-    function convertToPUSD(uint256 amountInUSDB) external returns (uint256);
+    function unStake(uint256 amount, uint256 positionId) external;
 
-    function convertToBUSD(uint256 amountInBUSD) external returns (uint256);
+    function getStakedBUSD() external returns (uint256);
 
-    function compoundRewards() external;
+    function setUSDBYieldPool(address pool) external;
 
-    function setBotRole(address _address) external;
+    function setMinIntervalTime(uint256 interval) external;
 
-    function revokeBotRole(address _address) external;
-    
-    function setFeeRate(uint256 _feeRate) external;
+    function setMaxIntervalTime(uint256 interval) external;
 
-    function setRevenuePool(address _address) external;
+    event StakeUSDB(
+        address indexed _account,
+        uint256 _amount,
+        uint256 _deadLine,
+        uint256 _positionId
+    );
 
-    event Stake(address indexed _account, uint256 _amount);
+    event Withdraw(address indexed _account, uint256 _amountInBUSD);
 
-    event UnStake(address indexed _account, uint256 _amountInUSDB);
+    event SetUSDBYieldPool(address _pool);
 
-    event RewardsCompounded(uint256 _amount);
+    event SetMinIntervalTime(uint256 _minIntervalTime);
 
-    event SetFeeRate(uint256 _feeRate);
-
-    event SetRevenuePool(address indexed _address);
+    event SetMaxIntervalTime(uint256 _maxIntervalTime);
 }

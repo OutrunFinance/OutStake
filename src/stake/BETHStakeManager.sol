@@ -29,7 +29,7 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
     address public immutable pETH;
     address public immutable bEYT;
 
-    address public ETHYieldPool;
+    address public BETHYieldPool;
     uint256 public minIntervalTime;
     uint256 public maxIntervalTime;
 
@@ -40,19 +40,19 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
      * @param _bETH - Address of BETH Token
      * @param _pETH - Address of PETH Token
      * @param _bEYT - Address of BEYT Token
-     * @param _ETHYieldPool - Address of ETHYieldPool
+     * @param _BETHYieldPool - Address of BETHYieldPool
      */
     constructor(
         address _owner,
         address _bETH,
         address _pETH,
         address _bEYT,
-        address _ETHYieldPool
+        address _BETHYieldPool
     ) Ownable(_owner){
         bETH = _bETH;
         pETH = _pETH;
         bEYT = _bEYT;
-        ETHYieldPool = _ETHYieldPool;
+        BETHYieldPool = _BETHYieldPool;
     }
 
     function positionsOf(uint256 positionId) public view virtual returns (Position memory) {
@@ -92,7 +92,7 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
             false
         );
 
-        emit StakeETH(user, amount, deadLine, positionId);
+        emit StakeBETH(user, amount, deadLine, positionId);
     }
 
     /**
@@ -123,12 +123,12 @@ contract BETHStakeManager is IBETHStakeManager, Ownable, AutoIncrementId {
     }
 
     function getStakedBETH() public view override returns (uint256) {
-        return IBETH(bETH).balanceOf(address(this)) + IBETH(bETH).balanceOf(ETHYieldPool);
+        return IBETH(bETH).balanceOf(address(this)) + IBETH(bETH).balanceOf(BETHYieldPool);
     }
 
-    function setETHYieldPool(address _pool) external onlyOwner {
-        ETHYieldPool = _pool;
-        emit SetETHYieldPool(_pool);
+    function setBETHYieldPool(address _pool) external onlyOwner {
+        BETHYieldPool = _pool;
+        emit SetBETHYieldPool(_pool);
     }
 
     /**

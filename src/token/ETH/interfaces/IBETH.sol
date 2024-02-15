@@ -13,5 +13,5 @@ interface IBETH is IERC20 {
 
     function setBnETHVault(address _address) external;
     
-    event SetBnETHVault(address  _address);
+    event SetBnETHVault(address _address);
 }

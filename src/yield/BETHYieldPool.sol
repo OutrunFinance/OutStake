@@ -6,14 +6,14 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import {IETHYieldPool} from "./interfaces/IETHYieldPool.sol";
-import {IBETH} from "../token/ETH//interfaces/IBETH.sol";
-import {IBEYT} from "../token/ETH//interfaces/IBEYT.sol";
+import {IBETHYieldPool} from "./interfaces/IBETHYieldPool.sol";
+import {IBETH} from "../token/ETH/interfaces/IBETH.sol";
+import {IBEYT} from "../token/ETH/interfaces/IBEYT.sol";
 
 /**
- * @title ETH Yield Pool
+ * @title BETH Yield Pool
  */
-contract ETHYieldPool is IETHYieldPool {
+contract BETHYieldPool is IBETHYieldPool {
     using SafeERC20 for IERC20;
 
     address public immutable bETH;

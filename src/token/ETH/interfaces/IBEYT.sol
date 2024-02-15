@@ -11,13 +11,13 @@ interface IBEYT is IERC20 {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setETHYieldPool(address _address) external;
+    function setBETHYieldPool(address _address) external;
 
     function setETHStakeManager(address _address) external;
 
     event Mint(address indexed _account, uint256 _amount);
     
-    event SetETHYieldPool(address  _address);
+    event SetBETHYieldPool(address  _address);
 
     event SetETHStakeManager(address  _address);
 }
