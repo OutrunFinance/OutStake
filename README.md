@@ -1,5 +1,8 @@
 # Outrun -- 不仅仅是Blast原生收益质押协议
-Not Only Blast L2 Native Yield Stake Protocol
+_Not Only Blast L2 Native Yield Stake Protocol_  
+_The first LSDFi protocol live on Blast._   
+_The first concentrated liquidity AMM with native yield._  
+_The first decentralized algorithmic stablecoin pegged to ETH and USDB yields._  
 
 ## Blast是一个什么样的L 2?
 在Blast的[官方文档](https://docs.blast.io/about-blast "Blast官方文档")中可以看到
