@@ -46,7 +46,7 @@ Outrun 的 RETH YieldToken 是真正的同质化 Token (FT)，流动性非常好
 
 REY 可以自由交易，并且可以无限制地即时销毁并赎回 YieldPool 中积累的原生收益，销毁时按销毁的 REY 数量占 REY 总量的比例赎回已产生原生收益。
 
-REY 的存在能帮助长期质押者获得更多的收入。由于销毁时按销毁的 REY 数量占 REY 总量的比例赎回已产生原生收益，这会引入一个无常损失 Impermanent Loss (IL)，而这个 Impermanent Loss 所产生的无常收益 Impermanent Profit (IP) 会分配至长期质押者。
+REY 的存在能帮助长期质押者获得更多的收入。由于销毁时按销毁的 REY 数量占 REY 总供应量的比例赎回已产生原生收益，这可能会产生无常损失 Impermanent Loss (IL)，然而这个 Impermanent Loss 所对应的无常收益 Impermanent Profit (IP) 会分配至长期质押者，从而提高长期质押者的收入。
 
 ### REY的数学模型
 REY 虽然看起来很简洁，但是由于 REY 可以自由交易，并且任何持有 REY 的用户可以随时赎回原生收益，所以这其中会有一个非常复杂的博弈过程，从而引入一个极其复杂的非线性的数学模型。
