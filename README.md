@@ -1,19 +1,19 @@
-# Outrun -- 不仅仅是Blast原生收益质押协议
+# Outrun -- 不仅仅是 Blast 原生收益质押协议
 _Not Only Blast L2 Native Yield Stake Protocol_  
 _The first LSDFi protocol live on Blast._   
 _The first concentrated liquidity AMM with native yield._  
 _The first decentralized algorithmic stablecoin pegged to ETH and USDB yields._  
 
-## Blast是一个什么样的L 2?
-在Blast的[官方文档](https://docs.blast.io/about-blast "Blast官方文档")中可以看到
-> Blast 是唯一具有 ETH 和稳定币原生收益的以太坊L2。Blast 收益来自 ETH 质押和 RWA 协议。这些去中心化协议的收益会自动传回给 Blast 用户。其他 L2 的默认利率为 0%。在 Blast 上，ETH 为 4%，稳定币为 5%。这种收益使得为 Dapp 创建新的商业模式成为可能，而这在其他 L2 上是不可能的。
+## Blast 是一个什么样的 L2?
+在 Blast 的[官方文档](https://docs.blast.io/about-blast "Blast官方文档")中可以看到
+> Blast 是唯一具有 ETH 和稳定币原生收益的以太坊 L2。Blast 收益来自 ETH 质押和 RWA 协议。这些去中心化协议的收益会自动传回给 Blast 用户。其他 L2 的默认利率为 0%。在 Blast 上，ETH 为 4%，稳定币为 5%。这种收益使得为 Dapp 创建新的商业模式成为可能，而这在其他 L2 上是不可能的。
 
-通过上面的描述我们可以知道，只要用户将ETH跨链到Blast，用户的EOA钱包中就会自动开始产生原生收益。而智能合约中同样可以产生原生收益，不过此时的收益是由智能合约控制的，合约开发者可以通过Blast的接口提取收益。
+通过上面的描述我们可以知道，只要用户将 ETH 跨链到 Blast，用户的 EOA 钱包中就会自动开始产生原生收益。而智能合约中同样可以产生原生收益，不过此时的收益是由智能合约控制的，合约开发者可以通过 Blast 的接口提取收益。
   
 ## 怎样利用原生收益
-Blast提供了一个接口来使合约可以控制合约内部资产所产生的原生收益。 详情：https://docs.blast.io/building/guides/eth-yield  
+Blast 提供了一个接口来使合约可以控制合约内部资产所产生的原生收益。 详情：https://docs.blast.io/building/guides/eth-yield  
 
-举个例子，开发一个dex，用户建立交易资金池，将ETH-TOKEN流动性添加到流动性合约地址，那么在这个合约地址中的ETH也会开始Yield，开发者可以选择将原生收益据为己有，可以全部返还给用户，可以用来给自己的产品引流，也可以分配给自身协议Token的持有者，或者构建一些更复杂的DEFI产品。这里的重点时是开发者owned这些native yield。目前Blast上已经有很多类似的DEX，NFT等等项目
+举个例子，开发一个 dex，用户建立交易资金池，将 ETH-TOKEN 流动性添加到流动性合约地址，那么在这个合约地址中的 ETH 也会开始 Yield，开发者可以选择将原生收益据为己有，可以全部返还给用户，可以用来给自己的产品引流，也可以分配给自身协议 Token 的持有者，或者构建一些更复杂的 DEFI 产品。这里的重点时是开发者控制这些 native yield。
 
 ## Why choose Outrun?
 Native Yield 是一个很有意思的特性，它使构建许多新的商业模式成为了可能。  
@@ -26,7 +26,7 @@ Outrun 生态系统中 ETH 有两种形式，RETH ( Outrun Ethe r) 和 PETH ( Pr
 ### RETH
 RETH 是一种与 ETH 挂钩的稳定币，可以通过向 OutETHVault 质押 ETH 来 1 : 1 获得。  
 因此 1 个RETH 始终代表 1 个 ETH，并且 RETH 在流通中的数量与 Outrun ETH 系统中的 ETH 数量相匹配，用户随时可以将 RETH 转换为 ETH。单独持有 RETH 并不会获得质押产生的原生收益的，应该将其视为持有 ETH 的类比。  
-RETH 挂钩率定义为在 1.00 汇率的两侧各1％，这意味着保持 1 个 RETH 兑换 1.01-0.9900 ETH 的汇率。
+RETH 挂钩率定义为在 1.00 汇率的两侧各 1％，这意味着保持 1 个 RETH 兑换 1.01-0.9900 ETH 的汇率。
 
 ### PETH
 PETH 是向 RETHStakeManager 质押 RETH 而铸造的质押本金代币，旨在积累 Blast 产生的原生收益并释放质押代币的流动性。
