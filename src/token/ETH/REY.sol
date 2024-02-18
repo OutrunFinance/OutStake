@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-import "./interfaces/IREYT.sol";
+import "./interfaces/IREY.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Outrun ETH yield token
  */
-contract REYT is IREYT, ERC20, Ownable {
+contract REY is IREY, ERC20, Ownable {
     address public RETHStakeManager;
     address public RETHYieldPool;
 
-    constructor(address owner, address _RETHStakeManager, address _RETHYieldPool) ERC20("Outrun ETH yield token", "RUYT") Ownable(owner) {
+    constructor(address owner, address _RETHStakeManager, address _RETHYieldPool) ERC20("Outrun ETH yield token", "REY") Ownable(owner) {
         RETHStakeManager = _RETHStakeManager;
         RETHYieldPool = _RETHYieldPool;
 

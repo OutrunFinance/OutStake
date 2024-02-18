@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-import "./interfaces/IRUYT.sol";
+import "./interfaces/IRUY.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Outrun USD yield token
  */
-contract RUYT is IRUYT, ERC20, Ownable {
+contract RUY is IRUY, ERC20, Ownable {
     address public RUSDStakeManager;
     address public RUSDYieldPool;
 
-    constructor(address owner, address _RUSDStakeManager, address _RUSDYieldPool) ERC20("Outrun USD yield token", "RUYT") Ownable(owner) {
+    constructor(address owner, address _RUSDStakeManager, address _RUSDYieldPool) ERC20("Outrun USD yield token", "RUY") Ownable(owner) {
         RUSDStakeManager = _RUSDStakeManager;
         RUSDYieldPool = _RUSDYieldPool;
 

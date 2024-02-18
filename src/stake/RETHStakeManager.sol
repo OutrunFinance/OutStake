@@ -12,7 +12,7 @@ import {IRETHStakeManager} from "./interfaces/IRETHStakeManager.sol";
 import {AutoIncrementId} from "../utils/AutoIncrementId.sol";
 import {IRETH} from "../token/ETH/interfaces/IRETH.sol";
 import {IPETH} from "../token/ETH/interfaces/IPETH.sol";
-import {IREYT} from "../token/ETH/interfaces/IREYT.sol";
+import {IREY} from "../token/ETH/interfaces/IREY.sol";
 
 /**
  * @title RETH Stake Manager Contract
@@ -27,7 +27,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
 
     address public immutable rETH;
     address public immutable pETH;
-    address public immutable rEYT;
+    address public immutable rey;
 
     address public RETHYieldPool;
     uint256 public minIntervalTime;
@@ -39,19 +39,19 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param _owner - Address of the owner
      * @param _rETH - Address of RETH Token
      * @param _pETH - Address of PETH Token
-     * @param _rEYT - Address of REYT Token
+     * @param _rey - Address of REY Token
      * @param _RETHYieldPool - Address of RETHYieldPool
      */
     constructor(
         address _owner,
         address _rETH,
         address _pETH,
-        address _rEYT,
+        address _rey,
         address _RETHYieldPool
     ) Ownable(_owner){
         rETH = _rETH;
         pETH = _pETH;
-        rEYT = _rEYT;
+        rey = _rey;
         RETHYieldPool = _RETHYieldPool;
     }
 
@@ -60,9 +60,9 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * 用户stake RETH，指定一个锁定到期时间deadLine，锁定到期前不可unstake，铸造相同数量的PETH和与锁定时间相关的收益代币REYT
+     * 用户stake RETH，指定一个锁定到期时间deadLine，锁定到期前不可unstake，铸造相同数量的PETH和与锁定时间相关的收益代币REY
      *
-     * @dev Allows user to deposit RETH, then mints PETH and REYT for the user.
+     * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
      * @param amount - RETH staked amount, amount % 1e15 == 0
      * @param deadLine - User can withdraw principal after deadLine
      * @notice User must have approved this contract to spend RETH
@@ -80,7 +80,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         IPETH(pETH).mint(user, CalcPETHAmount(amount));
         uint256 intervalTime = deadLine - block.timestamp;
         uint amountInPETH = Math.mulDiv(amount, intervalTime, DAY);
-        IREYT(rEYT).mint(user, amountInPETH);
+        IREY(rey).mint(user, amountInPETH);
 
         uint256 positionId = nextId();
         _positions[positionId] = Position(

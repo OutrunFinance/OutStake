@@ -12,7 +12,7 @@ import {IRUSDStakeManager} from "./interfaces/IRUSDStakeManager.sol";
 import {AutoIncrementId} from "../utils/AutoIncrementId.sol";
 import {IRUSD} from "../token/USDB/interfaces/IRUSD.sol";
 import {IPUSD} from "../token/USDB/interfaces/IPUSD.sol";
-import {IRUYT} from "../token/USDB/interfaces/IRUYT.sol";
+import {IRUY} from "../token/USDB/interfaces/IRUY.sol";
 
 /**
  * @title RUSD Stake Manager Contract
@@ -27,7 +27,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
 
     address public immutable rUSD;
     address public immutable pUSD;
-    address public immutable rUYT;
+    address public immutable ruy;
 
     address public USDBYieldPool;
     uint256 public minIntervalTime;
@@ -39,19 +39,19 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param _owner - Address of the owner
      * @param _rUSD - Address of RUSD Token
      * @param _pUSD - Address of PUSD Token
-     * @param _rUYT - Address of RUYT Token
+     * @param _ruy - Address of RUY Token
      * @param _USDBYieldPool - Address of USDBYieldPool
      */
     constructor(
         address _owner,
         address _rUSD,
         address _pUSD,
-        address _rUYT,
+        address _ruy,
         address _USDBYieldPool
     ) Ownable(_owner){
         rUSD = _rUSD;
         pUSD = _pUSD;
-        rUYT = _rUYT;
+        ruy = _ruy;
         USDBYieldPool = _USDBYieldPool;
     }
 
@@ -60,7 +60,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @dev Allows user to deposit RUSD, then mints PUSD and RUYT for the user.
+     * @dev Allows user to deposit RUSD, then mints PUSD and RUY for the user.
      * @param amount - RUSD staked amount, amount % 1e18 == 0
      * @param deadLine - User can withdraw principal after deadLine
      * @notice User must have approved this contract to spend RUSD
@@ -78,7 +78,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         IPUSD(pUSD).mint(user, CalcPUSDAmount(amount));
         uint256 intervalTime = deadLine - block.timestamp;
         uint amountInPUSD = Math.mulDiv(amount, intervalTime, DAY);
-        IRUYT(rUYT).mint(user, amountInPUSD);
+        IRUY(ruy).mint(user, amountInPUSD);
 
         uint256 positionId = nextId();
         _positions[positionId] = Position(

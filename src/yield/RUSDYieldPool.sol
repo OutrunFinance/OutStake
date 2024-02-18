@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IRUSDYieldPool} from "./interfaces/IRUSDYieldPool.sol";
 import {IRUSD} from "../token/USDB/interfaces/IRUSD.sol";
-import {IRUYT} from "../token/USDB/interfaces/IRUYT.sol";
+import {IRUY} from "../token/USDB/interfaces/IRUY.sol";
 
 /**
  * @title RUSD Yield Pool
@@ -17,35 +17,35 @@ contract RUSDYieldPool is IRUSDYieldPool {
     using SafeERC20 for IERC20;
 
     address public immutable rUSD;
-    address public immutable rUYT;
+    address public immutable ruy;
 
     /**
      * @param _rUSD - Address of RUSD Token
-     * @param _rUYT - Address of RUYT Token
+     * @param _ruy - Address of RUY Token
      */
-    constructor(address _rUSD, address _rUYT) {
+    constructor(address _rUSD, address _ruy) {
         rUSD = _rUSD;
-        rUYT = _rUYT;
+        ruy = _ruy;
     }
 
     /**
-     * @dev Allows user burn RUYT to  withdraw yield
-     * @param amountInRUYT - Amount of RUYT
+     * @dev Allows user burn RUY to  withdraw yield
+     * @param amountInRUY - Amount of RUY
      */
-    function withdraw(uint256 amountInRUYT) public override {
-        require(amountInRUYT > 0, "Invalid Amount");
+    function withdraw(uint256 amountInRUY) public override {
+        require(amountInRUY > 0, "Invalid Amount");
 
         address user = msg.sender;
-        IRUYT(rUYT).burn(user, amountInRUYT);
+        IRUY(ruy).burn(user, amountInRUY);
 
         uint256 _yieldAmount = Math.mulDiv(
             IRUSD(rUSD).balanceOf(address(this)),
-            amountInRUYT,
-            IRUYT(rUYT).totalSupply()
+            amountInRUY,
+            IRUY(ruy).totalSupply()
         );
         IERC20(rUSD).safeTransfer(user, _yieldAmount);
 
-        emit Withdraw(user, amountInRUYT, _yieldAmount);
+        emit Withdraw(user, amountInRUY, _yieldAmount);
     }
 
     receive() external payable {}

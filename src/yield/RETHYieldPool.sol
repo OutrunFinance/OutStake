@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IRETHYieldPool} from "./interfaces/IRETHYieldPool.sol";
 import {IRETH} from "../token/ETH/interfaces/IRETH.sol";
-import {IREYT} from "../token/ETH/interfaces/IREYT.sol";
+import {IREY} from "../token/ETH/interfaces/IREY.sol";
 
 /**
  * @title RETH Yield Pool
@@ -17,35 +17,35 @@ contract RETHYieldPool is IRETHYieldPool {
     using SafeERC20 for IERC20;
 
     address public immutable rETH;
-    address public immutable rEYT;
+    address public immutable rey;
 
     /**
      * @param _rETH - Address of RETH Token
-     * @param _rEYT - Address of REYT Token
+     * @param _rey - Address of REY Token
      */
-    constructor(address _rETH, address _rEYT) {
+    constructor(address _rETH, address _rey) {
         rETH = _rETH;
-        rEYT = _rEYT;
+        rey = _rey;
     }
 
     /**
-     * @dev Allows user burn REYT to  withdraw yield
-     * @param amountInREYT - Amount of REYT
+     * @dev Allows user burn REY to  withdraw yield
+     * @param amountInREY - Amount of REY
      */
-    function withdraw(uint256 amountInREYT) public override {
-        require(amountInREYT > 0, "Invalid Amount");
+    function withdraw(uint256 amountInREY) public override {
+        require(amountInREY > 0, "Invalid Amount");
 
         address user = msg.sender;
-        IREYT(rEYT).burn(user, amountInREYT);
+        IREY(rey).burn(user, amountInREY);
 
         uint256 _yieldAmount = Math.mulDiv(
             IRETH(rETH).balanceOf(address(this)),
-            amountInREYT,
-            IREYT(rEYT).totalSupply()
+            amountInREY,
+            IREY(rey).totalSupply()
         );
         IERC20(rETH).safeTransfer(user, _yieldAmount);
 
-        emit Withdraw(user, amountInREYT, _yieldAmount);
+        emit Withdraw(user, amountInREY, _yieldAmount);
     }
 
     receive() external payable {}
