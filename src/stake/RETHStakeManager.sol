@@ -63,12 +63,12 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * 用户stake RETH，指定一个锁定到期时间deadLine，锁定到期前不可unstake，铸造相同数量的PETH和与锁定时间相关的收益代币REY
      *
      * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
-     * @param amount - RETH staked amount, amount % 1e15 == 0
+     * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
      * @param deadLine - User can withdraw principal after deadLine
      * @notice User must have approved this contract to spend RETH
      */
-    function stake(uint256 amount, uint256 deadLine) external override {
-        require(amount % PRECISION == 0 && amount != 0, "Invalid Amount");
+    function stake(uint256 amountInRETH, uint256 deadLine) external override {
+        require(amountInRETH % PRECISION == 0 && amountInRETH != 0, "Invalid Amount");
         require(
             deadLine >= minIntervalTime + block.timestamp &&
                 deadLine <= maxIntervalTime + block.timestamp,
@@ -76,44 +76,45 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         );
 
         address user = msg.sender;
-        IERC20(rETH).safeTransferFrom(user, address(this), amount);
-        IPETH(pETH).mint(user, CalcPETHAmount(amount));
+        IERC20(rETH).safeTransferFrom(user, address(this), amountInRETH);
+        uint256 amountInPETH = CalcPETHAmount(amountInRETH);
+        IPETH(pETH).mint(user, amountInPETH);
         uint256 intervalTime = deadLine - block.timestamp;
-        uint amountInPETH = Math.mulDiv(amount, intervalTime, DAY);
-        IREY(rey).mint(user, amountInPETH);
+        uint amountInREY = Math.mulDiv(amountInRETH, intervalTime, DAY);
+        IREY(rey).mint(user, amountInREY);
 
         uint256 positionId = nextId();
         _positions[positionId] = Position(
             positionId,
-            amount,
+            amountInRETH,
             amountInPETH,
             user,
             deadLine,
             false
         );
 
-        emit StakeRETH(user, amount, deadLine, positionId);
+        emit StakeRETH(user, amountInRETH, deadLine, positionId);
     }
 
     /**
      * 用户销毁PETH以将质押的RETH取出来, 锁定时间未过期不能unstake。
      *
      * @dev Allows user to unstake funds
-     * @param amount - Amount of PETH for burn
+     * @param amountInPETH - Amount of PETH for burn
      * @param positionId - Staked Principal Position Id
      * @notice User must have approved this contract to spend PETH
      */
-    function unStake(uint256 amount, uint256 positionId) external override {
-        require(amount > 0, "Invalid Amount");
+    function unStake(uint256 amountInPETH, uint256 positionId) external override {
+        require(amountInPETH > 0, "Invalid Amount");
 
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
         require(position.owner == user, "Not Owner");
         require(position.deadLine <= block.timestamp, "Lock time not expired");
         require(position.closed == false, "Position closed");
-        require(position.PETHAmount == amount, "PETH amount not enough");
+        require(position.PETHAmount == amountInPETH, "PETH amount not enough");
 
-        IPETH(pETH).burn(user, amount);
+        IPETH(pETH).burn(user, amountInPETH);
         uint256 amountInRETH = position.RETHAmount;
         IERC20(rETH).safeTransfer(user, amountInRETH);
         position.closed = true;

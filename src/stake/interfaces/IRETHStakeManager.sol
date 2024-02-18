@@ -16,9 +16,9 @@ interface IRETHStakeManager {
 
     function positionsOf(uint256 positionId) external returns (Position memory);
 
-    function stake(uint256 amount, uint256 deadLine) external;
+    function stake(uint256 amountInRETH, uint256 deadLine) external;
 
-    function unStake(uint256 amount, uint256 positionId) external;
+    function unStake(uint256 amountInPETH, uint256 positionId) external;
 
     function getStakedRETH() external returns (uint256);
 
@@ -30,7 +30,7 @@ interface IRETHStakeManager {
 
     event StakeRETH(
         address indexed _account,
-        uint256 _amount,
+        uint256 _amountInRETH,
         uint256 _deadLine,
         uint256 _positionId
     );

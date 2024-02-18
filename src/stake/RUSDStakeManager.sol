@@ -29,7 +29,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     address public immutable pUSD;
     address public immutable ruy;
 
-    address public USDBYieldPool;
+    address public RUSDYieldPool;
     uint256 public minIntervalTime;
     uint256 public maxIntervalTime;
 
@@ -40,19 +40,19 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param _rUSD - Address of RUSD Token
      * @param _pUSD - Address of PUSD Token
      * @param _ruy - Address of RUY Token
-     * @param _USDBYieldPool - Address of USDBYieldPool
+     * @param _RUSDYieldPool - Address of RUSDYieldPool
      */
     constructor(
         address _owner,
         address _rUSD,
         address _pUSD,
         address _ruy,
-        address _USDBYieldPool
+        address _RUSDYieldPool
     ) Ownable(_owner){
         rUSD = _rUSD;
         pUSD = _pUSD;
         ruy = _ruy;
-        USDBYieldPool = _USDBYieldPool;
+        RUSDYieldPool = _RUSDYieldPool;
     }
 
     function positionsOf(uint256 positionId) public view virtual returns (Position memory) {
@@ -61,12 +61,12 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
 
     /**
      * @dev Allows user to deposit RUSD, then mints PUSD and RUY for the user.
-     * @param amount - RUSD staked amount, amount % 1e18 == 0
+     * @param amountInRUSD - RUSD staked amount, amount % 1e18 == 0
      * @param deadLine - User can withdraw principal after deadLine
      * @notice User must have approved this contract to spend RUSD
      */
-    function stake(uint256 amount, uint256 deadLine) external override {
-        require(amount % PRECISION == 0 && amount != 0, "Invalid Amount");
+    function stake(uint256 amountInRUSD, uint256 deadLine) external override {
+        require(amountInRUSD % PRECISION == 0 && amountInRUSD != 0, "Invalid Amount");
         require(
             deadLine >= minIntervalTime + block.timestamp &&
                 deadLine <= maxIntervalTime + block.timestamp,
@@ -74,44 +74,45 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         );
 
         address user = msg.sender;
-        IERC20(rUSD).safeTransferFrom(user, address(this), amount);
-        IPUSD(pUSD).mint(user, CalcPUSDAmount(amount));
+        IERC20(rUSD).safeTransferFrom(user, address(this), amountInRUSD);
+        uint256 amountInPUSD = CalcPUSDAmount(amountInRUSD);
+        IPUSD(pUSD).mint(user, amountInPUSD);
         uint256 intervalTime = deadLine - block.timestamp;
-        uint amountInPUSD = Math.mulDiv(amount, intervalTime, DAY);
-        IRUY(ruy).mint(user, amountInPUSD);
+        uint256 amountInRUY = Math.mulDiv(amountInRUSD, intervalTime, DAY);
+        IRUY(ruy).mint(user, amountInRUY);
 
         uint256 positionId = nextId();
         _positions[positionId] = Position(
             positionId,
-            amount,
+            amountInRUSD,
             amountInPUSD,
             user,
             deadLine,
             false
         );
 
-        emit StakeUSDB(user, amount, deadLine, positionId);
+        emit StakeRUSD(user, amountInRUSD, deadLine, positionId);
     }
 
     /**
      * 用户销毁PUSD以将质押的RUSD取出来, 锁定时间未过期不能unstake。
      *
      * @dev Allows user to unstake funds
-     * @param amount - Amount of PUSD for burn
+     * @param amountInPUSD - Amount of PUSD for burn
      * @param positionId - Staked Principal Position Id
      * @notice User must have approved this contract to spend PUSD
      */
-    function unStake(uint256 amount, uint256 positionId) external override {
-        require(amount > 0, "Invalid Amount");
+    function unStake(uint256 amountInPUSD, uint256 positionId) external override {
+        require(amountInPUSD > 0, "Invalid Amount");
 
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
         require(position.owner == user, "Not Owner");
         require(position.deadLine <= block.timestamp, "Lock time not expired");
         require(position.closed == false, "Position closed");
-        require(position.PUSDAmount == amount, "PUSD amount not enough");
+        require(position.PUSDAmount == amountInPUSD, "PUSD amount not enough");
 
-        IPUSD(pUSD).burn(user, amount);
+        IPUSD(pUSD).burn(user, amountInPUSD);
         uint256 amountInRUSD = position.RUSDAmount;
         IERC20(rUSD).safeTransfer(user, amountInRUSD);
         position.closed = true;
@@ -121,12 +122,12 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     }
 
     function getStakedRUSD() public view override returns (uint256) {
-        return IRUSD(rUSD).balanceOf(address(this)) + IRUSD(rUSD).balanceOf(USDBYieldPool);
+        return IRUSD(rUSD).balanceOf(address(this)) + IRUSD(rUSD).balanceOf(RUSDYieldPool);
     }
 
-    function setUSDBYieldPool(address _pool) external onlyOwner {
-        USDBYieldPool = _pool;
-        emit SetUSDBYieldPool(_pool);
+    function setRUSDYieldPool(address _pool) external onlyOwner {
+        RUSDYieldPool = _pool;
+        emit SetRUSDYieldPool(_pool);
     }
 
     /**
