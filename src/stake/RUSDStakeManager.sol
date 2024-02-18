@@ -22,7 +22,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
-    uint256 public constant PRECISION = 1e18;
+    uint256 public constant MINSTAKE = 1e20;
     uint256 public constant DAY = 24 * 3600;
 
     address public immutable rUSD;
@@ -66,7 +66,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @notice User must have approved this contract to spend RUSD
      */
     function stake(uint256 amountInRUSD, uint256 deadLine) external override {
-        require(amountInRUSD % PRECISION == 0 && amountInRUSD != 0, "Invalid Amount");
+        require(amountInRUSD >= MINSTAKE, "Invalid Amount");
         require(
             deadLine >= minIntervalTime + block.timestamp &&
                 deadLine <= maxIntervalTime + block.timestamp,

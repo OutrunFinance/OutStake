@@ -22,7 +22,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant THOUSAND = 1000;
-    uint256 public constant PRECISION = 1e15;
+    uint256 public constant MINSTAKE = 1e16;
     uint256 public constant DAY = 24 * 3600;
 
     address public immutable rETH;
@@ -68,7 +68,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @notice User must have approved this contract to spend RETH
      */
     function stake(uint256 amountInRETH, uint256 deadLine) external override {
-        require(amountInRETH % PRECISION == 0 && amountInRETH != 0, "Invalid Amount");
+        require(amountInRETH >= MINSTAKE, "Invalid Amount");
         require(
             deadLine >= minIntervalTime + block.timestamp &&
                 deadLine <= maxIntervalTime + block.timestamp,
