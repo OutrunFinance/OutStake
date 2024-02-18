@@ -21,7 +21,7 @@ Native Yield 是一个很有意思的特性，它使构建许多新的商业模�
 Outrun 的诞生就是用来解决这个问题的，Outrun 是领先的原生收益质押解决方案，通过使用 Outrun 进行质押，用户可以自己控制自己资产所产生的原生收益，并且用户的代币可以保持流动性，并且可以在一系列 DeFi 应用程序中使用，从而获得额外的奖励。
 
 ## Stake ETH
-Outrun 生态系统中 ETH 有两种形式，RETH ( Outrun Ethe r) 和 PETH ( Principal Ether )，此外还将引入 REY ( RETH YieldToken ) 代表对质押的 RETH 的收益权。
+Outrun 生态系统中 ETH 有两种形式，RETH (Outrun Ether) 和 PETH (Principal Ether)，此外还将引入 REY (RETH YieldToken) 代表对质押的 RETH 的收益权。
 
 ### RETH
 RETH 是一种与 ETH 挂钩的稳定币，可以通过向 OutETHVault 质押 ETH 来 1 : 1 获得。  
