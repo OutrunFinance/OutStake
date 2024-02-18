@@ -42,7 +42,7 @@ RETH YieldToken (REY) 代表对质押的 RETH 的收益权，通过质押 RETH �
 
 与目前市场上其他协议的 YieldToken 不同，其他协议的 YieldToken 都是 NFT 或者特殊的 FT，他们都是非同质化的，这种特性导致了 YieldToken 流动性缺失，并且降低了协议的可组合性。
 
-Outrun 的 RETH YieldToken 是真正的同质化 Token (FT)，流动性非常好，可组合性极强。每将0.001 RETH 锁定质押 1 天会铸造 1 个REY，将 x RETH 锁定质押 y 天就会铸造 1000xy 个 REY，所以理论上 1 个 REY 锚定 0.001 RETH 质押 1 天所产生的原生收益。
+Outrun 的 RETH YieldToken 是真正的同质化 Token (FT)，流动性非常好，可组合性极强。每将0.001 RETH 锁定质押 1 天会铸造 1 个REY，将 x RETH 锁定质押 y 天就会铸造 1000xy 个 REY，所以理论上 1 REY 锚定 1 RETH 质押 1 天所产生的原生收益。
 
 REY 可以自由交易，并且可以无限制地即时销毁并赎回 YieldPool 中积累的原生收益，销毁时按销毁的 REY 数量占 REY 总量的比例赎回已产生原生收益。
 
