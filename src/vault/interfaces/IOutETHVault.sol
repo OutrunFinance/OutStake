@@ -8,8 +8,6 @@ interface IOutETHVault {
 
     function claimETHYield() external;
 
-    function setBot(address _address) external;
-
     function setFeeRate(uint256 _feeRate) external;
 
     function setRevenuePool(address _pool) external;
