@@ -61,7 +61,7 @@ Outrun's RETH YieldToken is a genuinely fungible token (FT), offering excellent 
 
 REY can be freely traded and can be instantly destroyed and redeemed for the accumulated native yield in the YieldPool without restrictions. When destroyed, the native yield generated is redeemed proportionally based on the number of REY destroyed compared to the total REY supply.
 
-The existence of REY helps long-term stakers earn more income. While there might be impermanent loss (IL) incurred when destroying REY due to the proportional redemption of native yield based on the number of REY destroyed compared to the total REY supply, the corresponding impermanent profit (IP) is distributed to long-term stakers, thereby increasing their income.
+The existence of REY helps long-term stakers earn more income. While there might be impermanent loss (_IL_) incurred when destroying REY due to the proportional redemption of native yield based on the number of REY destroyed compared to the total REY supply, the corresponding impermanent profit (_IP_) is distributed to long-term stakers, thereby increasing their income.
 
 ### The mathematical model of REY
 Although REY appears straightforward, the fact that it can be freely traded and any user holding REY can redeem native yields at any time introduces a highly complex game theory process, thereby necessitating an extremely intricate mathematical model.
@@ -79,14 +79,14 @@ After _t_ days:
 </div>
 
 
-The Impermanent Profit and Loss Ratio (IPLR) can be obtained by dividing the actual earnings by the expected earnings and then subtracting 1.  
-IPLR = (Actual Earnings / Expected Earnings) - 1
+The Impermanent Profit and Loss Ratio (_IPLR_) can be obtained by dividing the actual earnings by the expected earnings and then subtracting 1.  
+_IPLR_ = (Actual Earnings / Expected Earnings) - 1
 
 <div align="center">
     <img src="https://github.com/OutrunDao/Outrun-Stake/assets/32949831/64da270a-3fbb-42b3-a3cf-939c784e4e34" width="270" height="135">  
 </div>
 
-The impermanent profit and loss (IPL) can be obtained by multiplying each user's impermanent profit and loss ratio (IPLR) by their respective expected earnings.  
+The impermanent profit and loss (_IPL_) can be obtained by multiplying each user's impermanent profit and loss ratio (_IPLR_) by their respective expected earnings.  
 IPL_A = IPLR_A * Expected Profit_A  
 IPL_B = IPLR_B * Expected Profit_B  
 
@@ -94,9 +94,9 @@ IPL_B = IPLR_B * Expected Profit_B
     <img src="https://github.com/OutrunDao/Outrun-Stake/assets/32949831/ec9ea667-228f-4027-b7f3-3942fa240ee3" width="320" height="160">  
 </div>
 
-From the above figure, we can deduce that there is an impermanent profit and loss conservation between User A and User B. If User A and User B lock up their assets for the same duration, both parties would experience no impermanent profit or loss. In other words, an individual user's impermanent profit and loss are correlated with the weighted average duration of other users in the staking pool.
+From the above figure, we can deduce that there is an impermanent profit and loss conservation between User _A_ and User _B_. If User _A_ and User _B_ lock up their assets for the same duration, both parties would experience no impermanent profit or loss. In other words, an individual user's impermanent profit and loss are correlated with the weighted average duration of other users in the staking pool.
 
-Of course, the above is just a minimal model. The actual situation will be more complex due to the influence of multiple players in the game. Therefore, we will set a maximum lock-up time limit -- MaxLockInterval. The closer the user's lock-up time is to MaxLockInterval, the smaller the IL and the larger the IP. Additionally, users can reduce IL and obtain more IP by redeeming their principal immediately upon the expiration of the lock-up period and then staking to mint REY again. When the user's lock-up time is MaxLockInterval, there will definitely be no IL.
+Of course, the above is just a minimal model. The actual situation will be more complex due to the influence of multiple players in the game. Therefore, we will set a maximum lock-up time limit -- _MaxLockInterval_. The closer the user's lock-up time is to _MaxLockInterval_, the smaller the _IL_ and the larger the _IP_. Additionally, users can reduce _IL_ and obtain more _IP_ by redeeming their principal immediately upon the expiration of the lock-up period and then staking to mint REY again. When the user's lock-up time is _MaxLockInterval_, there will definitely be no _IL_.
 
 Based on the model presented above, Outrun can help long-term stakers earn more income. We believe that ETH staking itself aims to make Ethereum more decentralized and secure. Therefore, users who contribute to the long-term protection of Ethereum should be rewarded more generously.
 
