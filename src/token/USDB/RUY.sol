@@ -12,13 +12,7 @@ contract RUY is IRUY, ERC20, Ownable {
     address public RUSDStakeManager;
     address public RUSDYieldPool;
 
-    constructor(address owner, address _RUSDStakeManager, address _RUSDYieldPool) ERC20("Outrun USD yield token", "RUY") Ownable(owner) {
-        RUSDStakeManager = _RUSDStakeManager;
-        RUSDYieldPool = _RUSDYieldPool;
-
-        emit SetRUSDYieldPool(_RUSDYieldPool);
-        emit SetRUSDStakeManager(_RUSDStakeManager);
-    }
+    constructor(address owner) ERC20("Outrun USD yield token", "RUY") Ownable(owner) {}
 
     function burn(address account, uint256 amount) external override {
         require(msg.sender == RUSDYieldPool, "Access only by RUSDYieldPool");

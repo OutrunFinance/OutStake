@@ -12,13 +12,7 @@ contract REY is IREY, ERC20, Ownable {
     address public RETHStakeManager;
     address public RETHYieldPool;
 
-    constructor(address owner, address _RETHStakeManager, address _RETHYieldPool) ERC20("Outrun ETH yield token", "REY") Ownable(owner) {
-        RETHStakeManager = _RETHStakeManager;
-        RETHYieldPool = _RETHYieldPool;
-
-        emit SetRETHYieldPool(_RETHYieldPool);
-        emit SetRETHStakeManager(_RETHStakeManager);
-    }
+    constructor(address owner) ERC20("Outrun ETH yield token", "REY") Ownable(owner) {}
 
     function burn(address account, uint256 amount) external override {
         require(msg.sender == RETHYieldPool, "Access only by RETHYieldPool");

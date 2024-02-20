@@ -18,10 +18,7 @@ contract RETH is IRETH, ERC20, Ownable {
         _;
     }
 
-    constructor(address owner, address _outETHVault) ERC20("Outrun Wrapped ETH", "RETH") Ownable(owner) {
-        outETHVault = _outETHVault;
-        emit SetOutETHVault(_outETHVault);
-    }
+    constructor(address owner) ERC20("Outrun Wrapped ETH", "RETH") Ownable(owner) {}
 
     function mint(address _account, uint256 _amount) external override onlyOutETHVault {
         _mint(_account, _amount);

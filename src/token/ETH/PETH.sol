@@ -19,10 +19,7 @@ contract PETH is IPETH, ERC20, Ownable {
         _;
     }
 
-    constructor(address owner, address _RETHStakeManager) ERC20("Principal Staked ETH", "PETH") Ownable(owner) {
-        RETHStakeManager = _RETHStakeManager;
-        emit SetRETHStakeManager(_RETHStakeManager);
-    }
+    constructor(address owner) ERC20("Principal Staked ETH", "PETH") Ownable(owner) {}
 
     function setRETHStakeManager(address _RETHStakeManager) external override onlyOwner {
         require(_RETHStakeManager != address(0), "Zero address provided");

@@ -18,10 +18,7 @@ contract RUSD is IRUSD, ERC20, Ownable {
         _;
     }
 
-    constructor(address owner, address _outUSDBVault) ERC20("Outrun Wrapped USDB", "RUSD") Ownable(owner) {
-        outUSDBVault = _outUSDBVault;
-        emit SetOutUSDBVault(_outUSDBVault);
-    }
+    constructor(address owner) ERC20("Outrun Wrapped USDB", "RUSD") Ownable(owner) {}
 
     function mint(address _account, uint256 _amount) external override onlyOutUSDBVault {
         _mint(_account, _amount);
