@@ -1,3 +1,4 @@
+[Gitbook](https://outrundao.gitbook.io/outrun/ "OutrunDao Official Doc")  
 **Read this in chinese: [中文](README.cn.md)**  
 # Outrun -- Not Only Blast L2 Native Yield Stake Protocol
 _The first LSDFi protocol live on Blast._   
