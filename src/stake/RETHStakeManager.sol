@@ -55,7 +55,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         RETHYieldPool = _RETHYieldPool;
     }
 
-    function positionsOf(uint256 positionId) public view virtual returns (Position memory) {
+    function positionsOf(uint256 positionId) public view override returns (Position memory) {
         return _positions[positionId];
     }
 

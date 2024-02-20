@@ -55,7 +55,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         RUSDYieldPool = _RUSDYieldPool;
     }
 
-    function positionsOf(uint256 positionId) public view virtual returns (Position memory) {
+    function positionsOf(uint256 positionId) public view override returns (Position memory) {
         return _positions[positionId];
     }
 

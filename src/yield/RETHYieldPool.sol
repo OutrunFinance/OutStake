@@ -32,7 +32,7 @@ contract RETHYieldPool is IRETHYieldPool {
      * @dev Allows user burn REY to  withdraw yield
      * @param amountInREY - Amount of REY
      */
-    function withdraw(uint256 amountInREY) public override {
+    function withdraw(uint256 amountInREY) external override {
         require(amountInREY > 0, "Invalid Amount");
 
         address user = msg.sender;

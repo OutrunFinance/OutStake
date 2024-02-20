@@ -110,14 +110,14 @@ contract OutETHVault is IOutETHVault, Ownable {
         emit SetBot(_bot);
     }
 
-    function setFeeRate(uint256 _feeRate) external onlyOwner {
+    function setFeeRate(uint256 _feeRate) external override onlyOwner {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
 
         feeRate = _feeRate;
         emit SetFeeRate(_feeRate);
     }
 
-    function setRevenuePool(address _pool) external onlyOwner {
+    function setRevenuePool(address _pool) external override onlyOwner {
         revenuePool = _pool;
         emit SetRevenuePool(_pool);
     }
