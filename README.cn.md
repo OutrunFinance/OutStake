@@ -16,8 +16,10 @@ Blast 提供了一个接口来使合约可以控制合约内部资产所产生�
 举个例子，开发一个 dex，用户建立交易资金池，将 ETH-TOKEN 流动性添加到流动性合约地址，那么在这个合约地址中的 ETH 也会开始 Yield，开发者可以选择将原生收益据为己有，可以全部返还给用户，可以用来给自己的产品引流，也可以分配给自身协议 Token 的持有者，或者构建一些更复杂的 DEFI 产品。这里的重点时是开发者控制这些 native yield。
 
 ## Why choose Outrun?
-Native Yield 是一个很有意思的特性，它使构建许多新的商业模式成为了可能。  
-但是在这背后，对于用户来说，有一个很大的缺陷，或者说是未被重视的的地方 -- 那就是用户是否愿意将自己的原生收益让开发者控制，如果用户想要自己控制这些原生收益呢？  
+Native Yield 是一个很有意思的特性，它使构建许多新的商业模式成为了可能。
+
+但是在这背后，对于用户来说，有一个很大的缺陷，或者说是未被重视的的地方 -- 那就是用户是否愿意将自己的原生收益让开发者控制，如果用户想要自己控制这些原生收益呢？ 
+
 Outrun 的诞生就是用来解决这个问题的，Outrun 是领先的原生收益质押解决方案，通过使用 Outrun 进行质押，用户可以自己控制自己资产所产生的原生收益，并且用户的代币可以保持流动性，并且可以在一系列 DeFi 应用程序中使用，从而获得额外的奖励。
 
 ## Stake ETH
@@ -25,26 +27,29 @@ Outrun 生态系统中 ETH 有两种形式，RETH (Outrun Ether) 和 PETH (Princ
 
 ### RETH
 RETH 是一种与 ETH 挂钩的稳定币，可以通过向 OutETHVault 质押 ETH 来 1 : 1 获得。  
-因此 1 个RETH 始终代表 1 个 ETH，并且 RETH 在流通中的数量与 Outrun ETH 系统中的 ETH 数量相匹配，用户随时可以将 RETH 转换为 ETH。单独持有 RETH 并不会获得质押产生的原生收益的，应该将其视为持有 ETH 的类比。  
+
+因此 1 个RETH 始终代表 1 个 ETH，并且 RETH 在流通中的数量与 Outrun ETH 系统中的 ETH 数量相匹配，用户随时可以将 RETH 转换为 ETH。单独持有 RETH 并不会获得质押产生的原生收益的，应该将其视为持有 ETH 的类比。 
+
 RETH 挂钩率定义为在 1.00 汇率的两侧各 1％，这意味着保持 1 个 RETH 兑换 1.01-0.9900 ETH 的汇率。
 
 ### PETH
 PETH 是向 RETHStakeManager 质押 RETH 而铸造的质押本金代币，旨在积累 Blast 产生的原生收益并释放质押代币的流动性。
+
 用户质押 RETH 时需要指定一个锁定时间从而铸造 PETH 与 YieldToken，PETH 数量并不是按质押的 RETH 来 1 : 1 铸造的，而是使用下面利息凭证比例算法来计算的。  
 <div align="center">
     <img src="https://github.com/OutrunDao/Outrun/assets/32949831/1da8d6fa-3d16-4f9e-9c39-e34736fa9dd5" width="800" height="50">  
 </div>
 随着时间的推移，OutETHVault 可以不断产生原生质押收益，相应数量的 RETH 被铸造并添加到 YieldPool 中，新质押的 RETH 所铸造的 PETH 会略微减少，但无论所铸造的 PETH 数量是多少，锁定时间到期后，用户都能销毁当时铸造的 PETH 将自己的质押的 RETH 完全赎回，这种设计是为了保证 PETH 的价格更好得和 ETH 的价格锚定并且增强用户的 ETH 质押收益。
- 注意：PETH 为质押本金代币，RETH 产生的质押收益由 YieldToken 所有
+注意：PETH 为质押本金代币，RETH 产生的质押收益由 YieldToken 所有。
 
 ### REY
-RETH YieldToken (REY) 代表对质押的 RETH 的收益权，通过质押 RETH 并指定一个锁定时间获得。REY 将 RETH 的质押收益单独剥离出来，REY 可以在二级市场上交易以及用于构建其他 DEFI 乐高。
+RETH YieldToken (REY) 代表对质押的 RETH 的收益权，通过质押 RETH 并指定一个锁定时间获得。REY 将 RETH 的质押收益单独剥离出来，REY 可以在二级市场上交易以及用于构建其他 DEFI 乐高。  
 
-与目前市场上其他协议的 YieldToken 不同，其他协议的 YieldToken 都是 NFT 或者特殊的 FT，他们都是非同质化的，这种特性导致了 YieldToken 流动性缺失，并且降低了协议的可组合性。
+与目前市场上其他协议的 YieldToken 不同，其他协议的 YieldToken 都是 NFT 或者特殊的 FT，他们都是非同质化的，这种特性导致了 YieldToken 流动性缺失，并且降低了协议的可组合性。  
 
-Outrun 的 RETH YieldToken 是真正的同质化 Token (FT)，流动性非常好，可组合性极强。每将0.001 RETH 锁定质押 1 天会铸造 1 个REY，将 x RETH 锁定质押 y 天就会铸造 1000xy 个 REY，所以理论上 1 REY 锚定 1 RETH 质押 1 天所产生的原生收益。
+Outrun 的 RETH YieldToken 是真正的同质化 Token (FT)，流动性非常好，可组合性极强。每将 1 RETH 锁定质押 1 天会铸造 1 个REY，将 _x_ RETH 锁定质押 _y_ 天就会铸造 _xy_ 个 REY，所以理论上 1 REY 锚定 1 RETH 质押 1 天所产生的原生收益。  
 
-REY 可以自由交易，并且可以无限制地即时销毁并赎回 YieldPool 中积累的原生收益，销毁时按销毁的 REY 数量占 REY 总量的比例赎回已产生原生收益。
+REY 可以自由交易，并且可以无限制地即时销毁并赎回 YieldPool 中积累的原生收益，销毁时按销毁的 REY 数量占 REY 总量的比例赎回已产生原生收益。  
 
 REY 的存在能帮助长期质押者获得更多的收入。由于销毁时按销毁的 REY 数量占 REY 总供应量的比例赎回已产生原生收益，这可能会产生无常损失 Impermanent Loss (IL)，然而这个 Impermanent Loss 所对应的无常收益 Impermanent Profit (IP) 会分配至长期质押者，从而提高长期质押者的收入。
 
@@ -53,7 +58,7 @@ REY 虽然看起来很简洁，但是由于 REY 可以自由交易，并且任�
 
 下面我们构建一个最小的模型来计算无常损失。
 
-假设 YieldPool 中此时的积累的原生收益为 0，我们将 1 REY 锚定 1 RETH 质押 1 天所产生的原生收益 Y。用户 A 质押了 a 个 RETH 并锁定 m 天，这会铸造 am 个 REY ，我们将此时其他用户看成一个整体，这个整体看作用户 B 质押了 b 个 RETH 并锁定 n 天，这会铸造 bn 个 REY 。
+假设 YieldPool 中此时的积累的原生收益为 0，我们将 1 REY 锚定 1 RETH 质押 1 天所产生的原生收益 _Y_。用户 _A_ 质押了 _a_ 个 RETH 并锁定 _m_ 天，这会铸造 _am_ 个 REY ，我们将此时其他用户看成一个整体，这个整体看作用户 _B_ 质押了 _b_ 个 RETH 并锁定 n 天，这会铸造 _bn_ 个 REY 。
 
 在 t 天之后  
 <div align="center">
@@ -61,13 +66,15 @@ REY 虽然看起来很简洁，但是由于 REY 可以自由交易，并且任�
 </div>
 用实际收益除以预期收益再减 1 可以得出 Impermanent profit and loss ratio无常盈亏率 (IPLR)
 
-再用 IPLR 乘以各自的实际收益 aty 与 bty 可得各自的无常盈亏 IPL  
+再用 _IPLR_ 乘以各自的实际收益 _aty_ 与 _bty_ 可得各自的无常盈亏 _IPL_  
+
 <div align="center">
     <img src="https://github.com/OutrunDao/Outrun/assets/32949831/1345b375-8d3a-467c-866e-53f3945e77fa" width="666" height="333">  
 </div>
+
 从上图可以得出，用户 A 的与用户 B 的无常盈亏守恒，如果用户 A 与 B 锁定的时间相同，则双方都没有无常盈亏。也就是说一个用户的无常盈亏和质押池中其他用户的加权平均天数相关。
 
-当然上面只是一个最小化模型，实际情况受到多方博弈的影响会更加复杂。所以我们会设定一个最长锁定时间限制 MaxLockInterval，用户锁定时间越靠近 MaxLockInterval，用户的 IL 越小, IP 越大，除此之外用户还可以通过在锁定时间到期时，立即赎回本金然后再质押铸造 REY 来减少 IL，获取更多 IP，当用户锁定时间为 MaxLockInterval 时一定不会有 IL 。
+当然上面只是一个最小化模型，实际情况受到多方博弈的影响会更加复杂。所以我们会设定一个最长锁定时间限制 MaxLockInterval，用户锁定时间越靠近 MaxLockInterval，用户的 _IL_ 越小, _IP_ 越大，除此之外用户还可以通过在锁定时间到期时，立即赎回本金然后再质押铸造 REY 来减少 _IL_，获取更多 _IP_，当用户锁定时间为 MaxLockInterval 时一定不会有 _IL_ 。
 
 通过上面的模型，Outrun 可以帮助长期质押者获得更多收益。我们认为 ETH 质押本身致力于使以太坊更去中心化与更安全，所以长期保护以太坊的用户更应该获得更多的奖励。
 
