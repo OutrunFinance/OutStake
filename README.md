@@ -1,3 +1,4 @@
+**Read this in chinese: [中文](README.cn.md)**  
 # Outrun -- Not Only Blast L2 Native Yield Stake Protocol
 _The first LSDFi protocol live on Blast._   
 _The first concentrated liquidity AMM with native yield._  
