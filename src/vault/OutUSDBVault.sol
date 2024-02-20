@@ -22,7 +22,6 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     uint256 public constant THOUSAND = 1000;
 
     address public immutable rUSD;
-    address public bot;
     address public revenuePool;
     address public yieldPool;
     uint256 public feeRate;
@@ -30,7 +29,6 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     /**
      * @param _owner - Address of the owner
      * @param _rUSD - Address of RUSD Token
-     * @param _bot - Address of the bot
      * @param _feeRate - Fee to revenue pool
      * @param _revenuePool - Revenue pool
      * @param _yieldPool - RUSD Yield pool
@@ -38,7 +36,6 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     constructor(
         address _owner,
         address _rUSD,
-        address _bot,
         address _revenuePool,
         address _yieldPool,
         uint256 _feeRate
@@ -47,14 +44,12 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
 
         rUSD = _rUSD;
         feeRate = _feeRate;
-        bot = _bot;
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
 
         USDB.configure(YieldMode.CLAIMABLE);
 
         emit SetFeeRate(_feeRate);
-        emit SetBot(_bot);
         emit SetRevenuePool(_revenuePool);
         emit SetYieldPool(_yieldPool);
     }
@@ -105,11 +100,6 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
 
             emit ClaimUSDBYield(amount);
         }
-    }
-
-    function setBot(address _bot) external override onlyOwner {
-        bot = _bot;
-        emit SetBot(_bot);
     }
 
     function setFeeRate(uint256 _feeRate) external override onlyOwner {

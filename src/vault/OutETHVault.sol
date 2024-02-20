@@ -21,7 +21,6 @@ contract OutETHVault is IOutETHVault, Ownable {
     uint256 public constant THOUSAND = 1000;
 
     address public immutable rETH;
-    address public bot;
     address public revenuePool;
     address public yieldPool;
     uint256 public feeRate;
@@ -29,15 +28,13 @@ contract OutETHVault is IOutETHVault, Ownable {
     /**
      * @param _owner - Address of the owner
      * @param _rETH - Address of RETH Token
-     * @param _bot - Address of the bot
      * @param _feeRate - Fee to revenue pool
-     * @param _revenuePool - Revenue pool
+     * @param _revenuePool - Revenue pool:The addr for owner getting fee
      * @param _yieldPool - RETH Yield pool
      */
     constructor(
         address _owner,
         address _rETH,
-        address _bot,
         address _revenuePool,
         address _yieldPool,
         uint256 _feeRate
@@ -46,14 +43,12 @@ contract OutETHVault is IOutETHVault, Ownable {
 
         rETH = _rETH;
         feeRate = _feeRate;
-        bot = _bot;
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
 
 		BLAST.configureClaimableYield();
 
         emit SetFeeRate(_feeRate);
-        emit SetBot(_bot);
         emit SetRevenuePool(_revenuePool);
         emit SetYieldPool(_yieldPool);
     }
@@ -103,11 +98,6 @@ contract OutETHVault is IOutETHVault, Ownable {
 
             emit ClaimETHYield(amount);
         }
-    }
-
-    function setBot(address _bot) external override onlyOwner {
-        bot = _bot;
-        emit SetBot(_bot);
     }
 
     function setFeeRate(uint256 _feeRate) external override onlyOwner {
