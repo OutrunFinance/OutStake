@@ -76,22 +76,21 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         );
 
         address user = msg.sender;
-        IERC20(rETH).safeTransferFrom(user, address(this), amountInRETH);
         uint256 amountInPETH = CalcPETHAmount(amountInRETH);
-        IPETH(pETH).mint(user, amountInPETH);
-        uint256 intervalTime = deadLine - block.timestamp;
-        uint amountInREY = Math.mulDiv(amountInRETH, intervalTime, DAY);
-        IREY(rey).mint(user, amountInREY);
-
         uint256 positionId = nextId();
         _positions[positionId] = Position(
-            positionId,
             amountInRETH,
             amountInPETH,
             user,
             deadLine,
             false
         );
+
+        IERC20(rETH).safeTransferFrom(user, address(this), amountInRETH);
+        IPETH(pETH).mint(user, amountInPETH);
+        uint256 intervalTime = deadLine - block.timestamp;
+        uint amountInREY = Math.mulDiv(amountInRETH, intervalTime, DAY);
+        IREY(rey).mint(user, amountInREY); 
 
         emit StakeRETH(user, amountInRETH, deadLine, positionId);
     }
@@ -114,12 +113,12 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         require(position.closed == false, "Position closed");
         require(position.PETHAmount == amountInPETH, "PETH amount not enough");
 
+        position.closed = true;
+        _positions[positionId] = position;
         IPETH(pETH).burn(user, amountInPETH);
         uint256 amountInRETH = position.RETHAmount;
         IERC20(rETH).safeTransfer(user, amountInRETH);
-        position.closed = true;
-        _positions[positionId] = position;
-
+        
         emit Withdraw(msg.sender, amountInRETH);
     }
 

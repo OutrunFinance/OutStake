@@ -74,22 +74,21 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         );
 
         address user = msg.sender;
-        IERC20(rUSD).safeTransferFrom(user, address(this), amountInRUSD);
         uint256 amountInPUSD = CalcPUSDAmount(amountInRUSD);
-        IPUSD(pUSD).mint(user, amountInPUSD);
-        uint256 intervalTime = deadLine - block.timestamp;
-        uint256 amountInRUY = Math.mulDiv(amountInRUSD, intervalTime, DAY);
-        IRUY(ruy).mint(user, amountInRUY);
-
         uint256 positionId = nextId();
         _positions[positionId] = Position(
-            positionId,
             amountInRUSD,
             amountInPUSD,
             user,
             deadLine,
             false
         );
+
+        IERC20(rUSD).safeTransferFrom(user, address(this), amountInRUSD);
+        IPUSD(pUSD).mint(user, amountInPUSD);
+        uint256 intervalTime = deadLine - block.timestamp;
+        uint256 amountInRUY = Math.mulDiv(amountInRUSD, intervalTime, DAY);
+        IRUY(ruy).mint(user, amountInRUY);   
 
         emit StakeRUSD(user, amountInRUSD, deadLine, positionId);
     }
@@ -112,11 +111,11 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         require(position.closed == false, "Position closed");
         require(position.PUSDAmount == amountInPUSD, "PUSD amount not enough");
 
+        position.closed = true;
+        _positions[positionId] = position;
         IPUSD(pUSD).burn(user, amountInPUSD);
         uint256 amountInRUSD = position.RUSDAmount;
         IERC20(rUSD).safeTransfer(user, amountInRUSD);
-        position.closed = true;
-        _positions[positionId] = position;
 
         emit Withdraw(msg.sender, amountInRUSD);
     }
