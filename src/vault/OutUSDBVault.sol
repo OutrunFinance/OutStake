@@ -18,7 +18,7 @@ import {IRUSD} from "../token/USDB//interfaces/IRUSD.sol";
 contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     using SafeERC20 for IERC20;
 
-    IERC20Rebasing public constant USDB = IERC20Rebasing(0x4200000000000000000000000000000000000022);
+    address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant THOUSAND = 1000;
 
     address public immutable rUSD;
@@ -47,7 +47,7 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
 
-        USDB.configure(YieldMode.CLAIMABLE);
+        IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
 
         emit SetFeeRate(_feeRate);
         emit SetRevenuePool(_revenuePool);
@@ -56,12 +56,11 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
 
     /**
      * @dev Allows user to deposit USDB and mint RUSD
+     * @notice User must have approved this contract to spend USDB
      */
-    function deposit() public payable override {
-        uint256 amount = msg.value;
-        require(amount > 0, "Invalid Amount");
-
+    function deposit(uint256 amount) external override {
         address user = msg.sender;
+        IERC20(USDB).safeTransferFrom(user, address(this), amount);
         IRUSD(rUSD).mint(user, amount);
 
         emit Deposit(user, amount);
@@ -75,7 +74,7 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         require(amount > 0, "Invalid Amount");
         address user = msg.sender;
         IRUSD(rUSD).burn(user, amount);
-        Address.sendValue(payable(user), amount);
+        IERC20(USDB).safeTransfer(user, amount);
 
         emit Withdraw(user, amount);
     }
@@ -84,13 +83,13 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
      * @dev Claim USDB yield to this contract
      */
     function claimUSDBYield() public override {
-        uint256 amount = USDB.getClaimableAmount(address(this));
+        uint256 amount = IERC20Rebasing(USDB).getClaimableAmount(address(this));
         if (amount > 0) {
-            USDB.claim(address(this), amount);
+            IERC20Rebasing(USDB).claim(address(this), amount);
             if (feeRate > 0) {
                 uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
                 require(revenuePool != address(0), "revenue pool not set");
-                Address.sendValue(payable(revenuePool), fee);
+                IERC20(USDB).safeTransfer(revenuePool, fee);
                 amount -= fee;
             }
 
