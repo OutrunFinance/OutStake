@@ -6,7 +6,6 @@ pragma solidity ^0.8.19;
  */
 interface IRETHStakeManager {
     struct Position {
-        uint256 positionId;
         uint256 RETHAmount;
         uint256 PETHAmount;
         address owner;

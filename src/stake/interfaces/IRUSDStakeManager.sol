@@ -6,7 +6,6 @@ pragma solidity ^0.8.19;
  */
 interface IRUSDStakeManager {
     struct Position {
-        uint256 positionId;
         uint256 RUSDAmount;
         uint256 PUSDAmount;
         address owner;
