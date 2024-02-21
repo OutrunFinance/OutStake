@@ -3,9 +3,11 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+import "../vault/interfaces/IOutETHVault.sol";
 import {IRETHYieldPool} from "./interfaces/IRETHYieldPool.sol";
 import {IRETH} from "../token/ETH/interfaces/IRETH.sol";
 import {IREY} from "../token/ETH/interfaces/IREY.sol";
@@ -13,17 +15,18 @@ import {IREY} from "../token/ETH/interfaces/IREY.sol";
 /**
  * @title RETH Yield Pool
  */
-contract RETHYieldPool is IRETHYieldPool {
+contract RETHYieldPool is IRETHYieldPool, Ownable {
     using SafeERC20 for IERC20;
 
     address public immutable rETH;
     address public immutable rey;
+    address public outETHVault;
 
     /**
      * @param _rETH - Address of RETH Token
      * @param _rey - Address of REY Token
      */
-    constructor(address _rETH, address _rey) {
+    constructor(address _rETH, address _rey, address _owner) Ownable(_owner){
         rETH = _rETH;
         rey = _rey;
     }
@@ -38,6 +41,7 @@ contract RETHYieldPool is IRETHYieldPool {
         address user = msg.sender;
         IREY(rey).burn(user, amountInREY);
 
+        IOutETHVault(outETHVault).claimETHYield();
         uint256 _yieldAmount = Math.mulDiv(
             IRETH(rETH).balanceOf(address(this)),
             amountInREY,
@@ -48,5 +52,8 @@ contract RETHYieldPool is IRETHYieldPool {
         emit Withdraw(user, amountInREY, _yieldAmount);
     }
 
-    receive() external payable {}
+    function setOutETHVault(address _outETHVault) external override onlyOwner {
+        outETHVault = _outETHVault;
+        emit SetOutETHVault(_outETHVault);
+    }
 }

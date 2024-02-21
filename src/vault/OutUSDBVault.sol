@@ -63,7 +63,6 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
 
         address user = msg.sender;
         IRUSD(rUSD).mint(user, amount);
-        claimUSDBYield();
 
         emit Deposit(user, amount);
     }
@@ -77,7 +76,6 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         address user = msg.sender;
         IRUSD(rUSD).burn(user, amount);
         Address.sendValue(payable(user), amount);
-        claimUSDBYield();
 
         emit Withdraw(user, amount);
     }
@@ -118,6 +116,4 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         yieldPool = _pool;
         emit SetYieldPool(_pool);
     }
-
-    receive() external payable {}
 }

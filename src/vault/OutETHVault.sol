@@ -62,7 +62,6 @@ contract OutETHVault is IOutETHVault, Ownable {
 
         address user = msg.sender;
         IRETH(rETH).mint(user, amount);
-        claimETHYield();
 
         emit Deposit(user, amount);
     }
@@ -76,7 +75,6 @@ contract OutETHVault is IOutETHVault, Ownable {
         address user = msg.sender;
         IRETH(rETH).burn(user, amount);
         Address.sendValue(payable(user), amount);
-        claimETHYield();
 
         emit Withdraw(user, amount);
     }
@@ -117,5 +115,7 @@ contract OutETHVault is IOutETHVault, Ownable {
         emit SetYieldPool(_pool);
     }
 
-    receive() external payable {}
+    receive() external payable {
+        deposit();
+    }
 }
