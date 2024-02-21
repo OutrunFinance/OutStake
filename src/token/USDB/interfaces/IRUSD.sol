@@ -11,7 +11,7 @@ interface IRUSD is IERC20 {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setOutUSDBVault(address _address) external;
+    function setOutUSDBVault(address _outUSDBVault) external;
     
-    event SetOutUSDBVault(address _address);
+    event SetOutUSDBVault(address _outUSDBVault);
 }

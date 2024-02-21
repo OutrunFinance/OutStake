@@ -11,7 +11,7 @@ interface IRETH is IERC20 {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setOutETHVault(address _address) external;
+    function setOutETHVault(address _outETHVault) external;
     
-    event SetOutETHVault(address _address);
+    event SetOutETHVault(address _outETHVault);
 }
