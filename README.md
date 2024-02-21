@@ -28,7 +28,7 @@ In the Outrun ecosystem, ETH exists in two forms:
 - PETH (Principal Ether)
 
 Additionally  
-- REY (RETH YieldToken) will be introduced to represent the yield rights of the staked RETH.
+- REY (RETH YieldToken) represents the yield rights of the staked RETH.
 
 ### RETH
 RETH is a stablecoin pegged to ETH, which can be obtained at a 1:1 ratio by pledging ETH to the OutETHVault.
