@@ -1,6 +1,6 @@
 [Gitbook](https://outrundao.gitbook.io/outrun/ "OutrunDao Official Doc")  
 **Read this in chinese: [中文](README.cn.md)**  
-# Outrun -- Not Only Blast L2 Native Yield Stake Protocol
+# Outrun -- Built entirely around native yield from Blast
 _The first LSDFi protocol live on Blast._   
 _The first concentrated liquidity AMM with native yield._  
 _The first decentralized algorithmic stablecoin pegged to ETH and USDB yields._ 

@@ -1,4 +1,4 @@
-# Outrun -- 不仅仅是 Blast 原生收益质押协议
+# Outrun -- 完全围绕Blast原生收益构建
 _Not Only Blast L2 Native Yield Stake Protocol_  
 _The first LSDFi protocol live on Blast._   
 _The first concentrated liquidity AMM with native yield._  
