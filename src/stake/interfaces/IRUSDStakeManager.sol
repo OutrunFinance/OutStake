@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0rETH
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 /**
  * @title IRUSDStakeManager interface
