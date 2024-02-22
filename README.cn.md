@@ -81,6 +81,9 @@ REY 虽然看起来很简洁，但是由于 REY 可以自由交易，并且任�
 ### Broader prospects
 REY 不仅仅是帮助 ETH 长期质押这获得更多收益的工具，它是一个真正的同质化 Yield Token，同时也是 Web3 第一个锚定 ETH 质押收益率的去中心化算法稳定币，在市场的博弈下 REY 始终与 ETH 质押收益率挂钩，当 REY 被低估时，用户可以从市场上购买 REY 然后销毁并从 YieldPool 赎回对应的收益。在未来 Outrun 会依托 REY 的特性和社区一起构建更多有意思的产品。
 
+### UML时序图
+![931b83d0b3a56216f901edd218a6251](https://github.com/OutrunDao/Outrun-Stake/assets/32949831/225590f2-16a3-4994-97ee-6f57a9b36ecc)
+
 ## Stake USDB
 USDB 原生收益质押解决方案与 ETH 大同小异，后续将会完善文档
 
