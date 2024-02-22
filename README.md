@@ -103,6 +103,9 @@ Based on the model presented above, Outrun can help long-term stakers earn more 
 ### Broader prospects
 REY is not just a tool to help ETH long-term stakers earn more income, it is a truly fungible Yield Token and also the first decentralized algorithmic stablecoin anchored to the ETH staking yield rate in Web3. In the market dynamics, REY remains linked to the ETH staking yield rate, when REY is undervalued, users can purchase REY from the market and then destroy it, redeeming the corresponding yield from the YieldPool. In the future, Outrun will leverage the features of REY and collaborate with the community to build more interesting products.
 
+### UML Sequence Diagram
+![931b83d0b3a56216f901edd218a6251](https://github.com/OutrunDao/Outrun-Stake/assets/32949831/8347240f-1399-49e0-a1a4-36b7c4f8517e)
+
 ## Stake USDB
 The native yield staking solution for USDB is similar to that of ETH, and documentation will be further improved in the future.
 
