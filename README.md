@@ -101,7 +101,7 @@ Of course, the above is just a minimal model. The actual situation will be more 
 Based on the model presented above, Outrun can help long-term stakers earn more income. We believe that ETH staking itself aims to make Ethereum more decentralized and secure. Therefore, users who contribute to the long-term protection of Ethereum should be rewarded more generously.
 
 ### Broader prospects
-REY is not just a tool to help ETH long-term stakers earn more income, it is a truly fungible Yield Token and also the first decentralized algorithmic stablecoin anchored to the ETH staking yield rate in Web3. In the market dynamics, REY remains linked to the ETH staking yield rate. In the future, Outrun will leverage this feature along with the community to build more interesting products.
+REY is not just a tool to help ETH long-term stakers earn more income, it is a truly fungible Yield Token and also the first decentralized algorithmic stablecoin anchored to the ETH staking yield rate in Web3. In the market dynamics, REY remains linked to the ETH staking yield rate, when REY is undervalued, users can purchase REY from the market and then destroy it, redeeming the corresponding yield from the YieldPool. In the future, Outrun will leverage the features of REY and collaborate with the community to build more interesting products.
 
 ## Stake USDB
 The native yield staking solution for USDB is similar to that of ETH, and documentation will be further improved in the future.
