@@ -39,7 +39,6 @@ contract RETHYieldPool is IRETHYieldPool, Ownable {
         require(amountInREY > 0, "Invalid Amount");
 
         address user = msg.sender;
-        IREY(rey).burn(user, amountInREY);
 
         IOutETHVault(outETHVault).claimETHYield();
         uint256 _yieldAmount = Math.mulDiv(
@@ -47,6 +46,7 @@ contract RETHYieldPool is IRETHYieldPool, Ownable {
             amountInREY,
             IREY(rey).totalSupply()
         );
+        IREY(rey).burn(user, amountInREY);
         IERC20(rETH).safeTransfer(user, _yieldAmount);
 
         emit Withdraw(user, amountInREY, _yieldAmount);

@@ -39,7 +39,6 @@ contract RUSDYieldPool is IRUSDYieldPool, Ownable {
         require(amountInRUY > 0, "Invalid Amount");
 
         address user = msg.sender;
-        IRUY(ruy).burn(user, amountInRUY);
 
         IOutUSDBVault(outUSDBVault).claimUSDBYield();
         uint256 _yieldAmount = Math.mulDiv(
@@ -47,6 +46,7 @@ contract RUSDYieldPool is IRUSDYieldPool, Ownable {
             amountInRUY,
             IRUY(ruy).totalSupply()
         );
+        IRUY(ruy).burn(user, amountInRUY);
         IERC20(rUSD).safeTransfer(user, _yieldAmount);
 
         emit Withdraw(user, amountInRUY, _yieldAmount);
