@@ -30,8 +30,8 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     address public immutable ruy;
 
     address public RUSDYieldPool;
-    uint256 public minIntervalTime;
-    uint256 public maxIntervalTime;
+    uint256 public minLockupDays;
+    uint256 public maxLockupDays;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -62,20 +62,20 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     /**
      * @dev Allows user to deposit RUSD, then mints PUSD and RUY for the user.
      * @param amountInRUSD - RUSD staked amount, amount % 1e18 == 0
-     * @param deadLine - User can withdraw principal after deadLine
+     * @param lockupDays - User can withdraw after lockupDays
      * @notice User must have approved this contract to spend RUSD
      */
-    function stake(uint256 amountInRUSD, uint256 deadLine) external override {
+    function stake(uint256 amountInRUSD, uint256 lockupDays) external override {
         require(amountInRUSD >= MINSTAKE, "Invalid Amount");
         require(
-            deadLine >= minIntervalTime + block.timestamp &&
-                deadLine <= maxIntervalTime + block.timestamp,
-            "LockTime Invalid"
+            lockupDays >= minLockupDays && lockupDays <= maxLockupDays,
+            "LockupDays Invalid"
         );
 
         address user = msg.sender;
         uint256 amountInPUSD = CalcPUSDAmount(amountInRUSD);
         uint256 positionId = nextId();
+        uint256 deadLine = block.timestamp + lockupDays * DAY;
         _positions[positionId] = Position(
             amountInRUSD,
             amountInPUSD,
@@ -86,8 +86,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
 
         IERC20(rUSD).safeTransferFrom(user, address(this), amountInRUSD);
         IPUSD(pUSD).mint(user, amountInPUSD);
-        uint256 intervalTime = deadLine - block.timestamp;
-        uint256 amountInRUY = Math.mulDiv(amountInRUSD, intervalTime, DAY);
+        uint256 amountInRUY = amountInRUSD * lockupDays;
         IRUY(ruy).mint(user, amountInRUY);   
 
         emit StakeRUSD(user, amountInRUSD, deadLine, positionId);
@@ -130,19 +129,19 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @param _minIntervalTime - Min lock interval time
+     * @param _minLockupDays - Min lockup days
      */
-    function setMinIntervalTime(uint256 _minIntervalTime) external onlyOwner {
-        minIntervalTime = _minIntervalTime;
-        emit SetMinIntervalTime(_minIntervalTime);
+    function setMinLockupDays(uint256 _minLockupDays) external onlyOwner {
+        minLockupDays = _minLockupDays;
+        emit SetMinLockupDays(_minLockupDays);
     }
     
     /**
-     * @param _maxIntervalTime - Max lock interval time
+     * @param _maxLockupDays - Max lockup days
      */
-    function setMaxIntervalTime(uint256 _maxIntervalTime) external onlyOwner {
-        maxIntervalTime = _maxIntervalTime;
-        emit SetMaxIntervalTime(_maxIntervalTime);
+    function setMaxLockupDays(uint256 _maxLockupDays) external onlyOwner {
+        maxLockupDays = _maxLockupDays;
+        emit SetMaxLockupDays(_maxLockupDays);
     }
 
     /**

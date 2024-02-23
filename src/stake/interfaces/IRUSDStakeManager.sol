@@ -15,7 +15,7 @@ interface IRUSDStakeManager {
 
     function positionsOf(uint256 positionId) external returns (Position memory);
 
-    function stake(uint256 amountInRUSD, uint256 deadLine) external;
+    function stake(uint256 amountInRUSD, uint256 lockupDays) external;
 
     function unStake(uint256 amountInPUSD, uint256 positionId) external;
 
@@ -23,9 +23,9 @@ interface IRUSDStakeManager {
 
     function setRUSDYieldPool(address pool) external;
 
-    function setMinIntervalTime(uint256 interval) external;
+    function setMinLockupDays(uint256 minLockupDays) external;
 
-    function setMaxIntervalTime(uint256 interval) external;
+    function setMaxLockupDays(uint256 maxLockupDays) external;
 
     event StakeRUSD(
         address indexed _account,
@@ -38,7 +38,7 @@ interface IRUSDStakeManager {
 
     event SetRUSDYieldPool(address _pool);
 
-    event SetMinIntervalTime(uint256 _minIntervalTime);
+    event SetMinLockupDays(uint256 _minLockupDays);
 
-    event SetMaxIntervalTime(uint256 _maxIntervalTime);
+    event SetMaxLockupDays(uint256 _maxLockupDays);
 }

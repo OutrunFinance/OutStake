@@ -30,8 +30,8 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     address public immutable rey;
 
     address public RETHYieldPool;
-    uint256 public minIntervalTime;
-    uint256 public maxIntervalTime;
+    uint256 public minLockupDays;
+    uint256 public maxLockupDays;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -64,20 +64,20 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      *
      * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
      * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
-     * @param deadLine - User can withdraw principal after deadLine
+     * @param lockupDays - User can withdraw after lockupDays
      * @notice User must have approved this contract to spend RETH
      */
-    function stake(uint256 amountInRETH, uint256 deadLine) external override {
+    function stake(uint256 amountInRETH, uint256 lockupDays) external override {
         require(amountInRETH >= MINSTAKE, "Invalid Amount");
         require(
-            deadLine >= minIntervalTime + block.timestamp &&
-                deadLine <= maxIntervalTime + block.timestamp,
-            "LockTime Invalid"
+            lockupDays >= minLockupDays && lockupDays <= maxLockupDays,
+            "LockupDays Invalid"
         );
 
         address user = msg.sender;
         uint256 amountInPETH = CalcPETHAmount(amountInRETH);
         uint256 positionId = nextId();
+        uint256 deadLine = block.timestamp + lockupDays * DAY;
         _positions[positionId] = Position(
             amountInRETH,
             amountInPETH,
@@ -88,8 +88,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
 
         IERC20(rETH).safeTransferFrom(user, address(this), amountInRETH);
         IPETH(pETH).mint(user, amountInPETH);
-        uint256 intervalTime = deadLine - block.timestamp;
-        uint amountInREY = Math.mulDiv(amountInRETH, intervalTime, DAY);
+        uint amountInREY = amountInRETH * lockupDays;
         IREY(rey).mint(user, amountInREY); 
 
         emit StakeRETH(user, amountInRETH, deadLine, positionId);
@@ -132,19 +131,19 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @param _minIntervalTime - Min lock interval time
+     * @param _minLockupDays - Min lockup days
      */
-    function setMinIntervalTime(uint256 _minIntervalTime) external onlyOwner {
-        minIntervalTime = _minIntervalTime;
-        emit SetMinIntervalTime(_minIntervalTime);
+    function setMinLockupDays(uint256 _minLockupDays) external onlyOwner {
+        minLockupDays = _minLockupDays;
+        emit SetMinLockupDays(_minLockupDays);
     }
     
     /**
-     * @param _maxIntervalTime - Max lock interval time
+     * @param _maxLockupDays - Max lockup days
      */
-    function setMaxIntervalTime(uint256 _maxIntervalTime) external onlyOwner {
-        maxIntervalTime = _maxIntervalTime;
-        emit SetMaxIntervalTime(_maxIntervalTime);
+    function setMaxLockupDays(uint256 _maxLockupDays) external onlyOwner {
+        maxLockupDays = _maxLockupDays;
+        emit SetMaxLockupDays(_maxLockupDays);
     }
 
     /**

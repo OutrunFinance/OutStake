@@ -15,7 +15,7 @@ interface IRETHStakeManager {
 
     function positionsOf(uint256 positionId) external returns (Position memory);
 
-    function stake(uint256 amountInRETH, uint256 deadLine) external;
+    function stake(uint256 amountInRETH, uint256 lockupDays) external;
 
     function unStake(uint256 amountInPETH, uint256 positionId) external;
 
@@ -23,9 +23,9 @@ interface IRETHStakeManager {
 
     function setRETHYieldPool(address pool) external;
 
-    function setMinIntervalTime(uint256 interval) external;
+    function setMinLockupDays(uint256 minLockupDays) external;
 
-    function setMaxIntervalTime(uint256 interval) external;
+    function setMaxLockupDays(uint256 maxLockupDays) external;
 
     event StakeRETH(
         address indexed _account,
@@ -38,7 +38,7 @@ interface IRETHStakeManager {
 
     event SetRETHYieldPool(address _pool);
 
-    event SetMinIntervalTime(uint256 _minIntervalTime);
+    event SetMinLockupDays(uint256 _minLockupDays);
 
-    event SetMaxIntervalTime(uint256 _maxIntervalTime);
+    event SetMaxLockupDays(uint256 _maxLockupDays);
 }
