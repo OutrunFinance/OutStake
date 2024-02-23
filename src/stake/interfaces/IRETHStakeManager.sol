@@ -15,30 +15,42 @@ interface IRETHStakeManager {
 
     function positionsOf(uint256 positionId) external returns (Position memory);
 
-    function stake(uint256 amountInRETH, uint256 deadLine) external;
+    function stake(uint256 amountInRETH, uint256 lockupDays) external;
 
-    function unStake(uint256 amountInPETH, uint256 positionId) external;
+    function unStake(uint256 positionId) external;
+
+    function extendLockTime(uint256 positionId, uint256 extendDays) external;
+    
+    function reduceLockTime(uint256 positionId, uint256 reduceDays) external;
 
     function getStakedRETH() external returns (uint256);
 
     function setRETHYieldPool(address pool) external;
 
-    function setMinIntervalTime(uint256 interval) external;
+    function setMinLockupDays(uint256 minLockupDays) external;
 
-    function setMaxIntervalTime(uint256 interval) external;
+    function setMaxLockupDays(uint256 maxLockupDays) external;
+
+    function setReduceLockFee(uint256 reduceLockFee) external;
 
     event StakeRETH(
+        uint256 indexed _positionId,
         address indexed _account,
         uint256 _amountInRETH,
-        uint256 _deadLine,
-        uint256 _positionId
+        uint256 _deadLine
     );
 
-    event Withdraw(address indexed _account, uint256 _amountInRETH);
+    event UnStake(uint256 indexed _positionId, address indexed _account, uint256 _amountInRETH);
+
+    event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 mintedREY);
+
+    event ReduceLockTime(uint256 indexed positionId, uint256 reduceDays, uint256 burnedREY);
 
     event SetRETHYieldPool(address _pool);
 
-    event SetMinIntervalTime(uint256 _minIntervalTime);
+    event SetMinLockupDays(uint256 _minLockupDays);
 
-    event SetMaxIntervalTime(uint256 _maxIntervalTime);
+    event SetMaxLockupDays(uint256 _maxLockupDays);
+
+    event SetReduceLockFee(uint256 _reduceLockFee);
 }
