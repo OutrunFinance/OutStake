@@ -64,7 +64,7 @@ REY can be freely traded and can be instantly destroyed and redeemed for the acc
 The existence of REY helps long-term stakers earn more income. While there might be impermanent loss (_IL_) incurred when destroying REY due to the proportional redemption of native yield based on the number of REY destroyed compared to the total REY supply, the corresponding impermanent profit (_IP_) is distributed to long-term stakers, thereby increasing their income.
 
 ### The mathematical model of REY
-Although REY appears straightforward, the fact that it can be freely traded and any user holding REY can redeem native yields at any time introduces a highly complex game theory process, thereby necessitating an extremely intricate mathematical model.
+While REY may appear simple on the surface, the ability for REY to be freely traded and for any REY holder to redeem native yields at any time introduces a highly complex game-theoretic process and mathematical model. 
 
 The following, we construct a minimal model to calculate impermanent profit and losses.
 
