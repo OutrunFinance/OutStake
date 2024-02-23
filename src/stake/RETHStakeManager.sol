@@ -32,6 +32,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     address public RETHYieldPool;
     uint256 public minLockupDays;
     uint256 public maxLockupDays;
+    uint256 public reduceLockFee;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -60,18 +61,16 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * 用户stake RETH，指定一个锁定到期时间deadLine，锁定到期前不可unstake，铸造相同数量的PETH和与锁定时间相关的收益代币REY
-     *
      * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
      * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
      * @param lockupDays - User can withdraw after lockupDays
      * @notice User must have approved this contract to spend RETH
      */
     function stake(uint256 amountInRETH, uint256 lockupDays) external override {
-        require(amountInRETH >= MINSTAKE, "Invalid Amount");
+        require(amountInRETH >= MINSTAKE, "Invalid amount");
         require(
             lockupDays >= minLockupDays && lockupDays <= maxLockupDays,
-            "LockupDays Invalid"
+            "LockupDays invalid"
         );
 
         address user = msg.sender;
@@ -91,34 +90,77 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         uint amountInREY = amountInRETH * lockupDays;
         IREY(rey).mint(user, amountInREY); 
 
-        emit StakeRETH(user, amountInRETH, deadLine, positionId);
+        emit StakeRETH(positionId, user, amountInRETH, deadLine);
     }
 
     /**
-     * 用户销毁PETH以将质押的RETH取出来, 锁定时间未过期不能unstake。
-     *
      * @dev Allows user to unstake funds
-     * @param amountInPETH - Amount of PETH for burn
      * @param positionId - Staked Principal Position Id
      * @notice User must have approved this contract to spend PETH
      */
-    function unStake(uint256 amountInPETH, uint256 positionId) external override {
-        require(amountInPETH > 0, "Invalid Amount");
-
+    function unStake(uint256 positionId) external override {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not Owner");
+        require(position.owner == user, "Not owner");
         require(position.deadLine <= block.timestamp, "Lock time not expired");
         require(position.closed == false, "Position closed");
-        require(position.PETHAmount == amountInPETH, "PETH amount not enough");
 
         position.closed = true;
         _positions[positionId] = position;
-        IPETH(pETH).burn(user, amountInPETH);
+        IPETH(pETH).burn(user, position.PETHAmount);
         uint256 amountInRETH = position.RETHAmount;
         IERC20(rETH).safeTransfer(user, amountInRETH);
         
-        emit Withdraw(msg.sender, amountInRETH);
+        emit UnStake(positionId, msg.sender, amountInRETH);
+    }
+
+    /**
+     * @dev Allows user to extend lock time
+     * @param positionId - Staked Principal Position Id
+     * @param extendDays - Extend lockup days
+     */
+    function extendLockTime(uint256 positionId, uint256 extendDays) external {
+        address user = msg.sender;
+        Position memory position = positionsOf(positionId);
+        require(position.owner == user, "Not owner");
+        require(position.deadLine > block.timestamp, "Lock time expired");
+
+        uint256 newDeadLine = position.deadLine + extendDays * DAY;
+        uint256 intervalDaysFromNow = (newDeadLine - block.timestamp) / DAY;
+        require(
+            intervalDaysFromNow >= minLockupDays && intervalDaysFromNow <= maxLockupDays,
+            "ExtendDays invalid"
+        );
+
+        position.deadLine = newDeadLine;
+        _positions[positionId] = position;
+
+        uint amountInREY = position.RETHAmount * extendDays;
+        IREY(rey).mint(user, amountInREY);
+
+        emit ExtendLockTime(positionId, extendDays, amountInREY);
+    }
+
+    /**
+     * @dev Allows user to extend lock time
+     * @param positionId - Staked Principal Position Id
+     * @param reduceDays - Reduce lockup days
+     * @notice User must have approved this contract to spend REY
+     */
+    function reduceLockTime(uint256 positionId, uint256 reduceDays) external {
+        address user = msg.sender;
+        Position memory position = positionsOf(positionId);
+        require(position.owner == user, "Not owner");
+        uint256 newDeadLine = position.deadLine - reduceDays * DAY;
+        require(newDeadLine >= block.timestamp, "Reduce too many days");
+
+        position.deadLine = newDeadLine;
+        _positions[positionId] = position;
+
+        uint amountInREY = position.RETHAmount * reduceDays * (1 + reduceLockFee / THOUSAND);
+        IREY(rey).burn(user, amountInREY);
+
+        emit ReduceLockTime(positionId, reduceDays, amountInREY);
     }
 
     function getStakedRETH() public view override returns (uint256) {
@@ -147,7 +189,17 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @dev Calculates amount of PETH 本金凭证算法
+     * @param _reduceLockFee - Reduce lock time fee
+     */
+    function setReduceLockFee(uint256 _reduceLockFee) external override onlyOwner {
+        require(_reduceLockFee <= THOUSAND, "ReduceLockFee must not exceed (100%)");
+
+        reduceLockFee = _reduceLockFee;
+        emit SetReduceLockFee(_reduceLockFee);
+    }
+
+    /**
+     * @dev Calculates amount of PETH
      */
     function CalcPETHAmount(uint256 amountInRETH) internal view returns (uint256) {
         uint256 totalShares = IRETH(pETH).totalSupply();
