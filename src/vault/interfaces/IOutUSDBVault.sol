@@ -2,9 +2,7 @@
 pragma solidity ^0.8.24;
 
 interface IOutUSDBVault {
-    function deposit(uint256 amount) external;
-
-    function withdraw(uint256 amount) external;
+    function withdraw(address user, uint256 amount) external;
 
     function claimUSDBYield() external;
 
@@ -13,10 +11,6 @@ interface IOutUSDBVault {
     function setRevenuePool(address _pool) external;
 
     function setYieldPool(address _pool) external;
-
-    event Deposit(address indexed _account, uint256 _amount);
-
-    event Withdraw(address indexed _account, uint256 _amount);
 
     event ClaimUSDBYield(uint256 amount);
 

@@ -25,6 +25,11 @@ contract OutETHVault is IOutETHVault, Ownable {
     address public yieldPool;
     uint256 public feeRate;
 
+    modifier onlyRETHContract() {
+        require(msg.sender == rETH, "Only RETH contract");
+        _;
+    }
+
     /**
      * @param _owner - Address of the owner
      * @param _rETH - Address of RETH Token
@@ -54,29 +59,12 @@ contract OutETHVault is IOutETHVault, Ownable {
     }
 
     /**
-     * @dev Allows user to deposit ETH and mint RETH
+     * @dev When user withdraw by RETH contract
+     * @param user - Address of User
+     * @param amount - Amount of ETH for withdraw
      */
-    function deposit() public payable override {
-        uint256 amount = msg.value;
-        require(amount > 0, "Invalid Amount");
-
-        address user = msg.sender;
-        IRETH(rETH).mint(user, amount);
-
-        emit Deposit(user, amount);
-    }
-
-    /**
-     * @dev Allows user to withdraw ETH by RETH
-     * @param amount - Amount of RETH for burn
-     */
-    function withdraw(uint256 amount) external override {
-        require(amount > 0, "Invalid Amount");
-        address user = msg.sender;
-        IRETH(rETH).burn(user, amount);
+    function withdraw(address user, uint256 amount) external override onlyRETHContract {
         Address.sendValue(payable(user), amount);
-
-        emit Withdraw(user, amount);
     }
 
     /**
@@ -86,10 +74,10 @@ contract OutETHVault is IOutETHVault, Ownable {
         uint256 amount = BLAST.claimAllYield(address(this), address(this));
         if (amount > 0) {
             if (feeRate > 0) {
-                uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
+                uint256 feeAmount = Math.mulDiv(amount, feeRate, THOUSAND);
                 require(revenuePool != address(0), "revenue pool not set");
-                Address.sendValue(payable(revenuePool), fee);
-                amount -= fee;
+                Address.sendValue(payable(revenuePool), feeAmount);
+                amount -= feeAmount;
             }
 
             IRETH(rETH).mint(yieldPool, amount);
@@ -115,7 +103,5 @@ contract OutETHVault is IOutETHVault, Ownable {
         emit SetYieldPool(_pool);
     }
 
-    receive() external payable {
-        deposit();
-    }
+    receive() external payable {}
 }

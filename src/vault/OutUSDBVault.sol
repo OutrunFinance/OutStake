@@ -26,6 +26,11 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     address public yieldPool;
     uint256 public feeRate;
 
+    modifier onlyRUSDContract() {
+        require(msg.sender == rUSD, "Only RUSD contract");
+        _;
+    }
+
     /**
      * @param _owner - Address of the owner
      * @param _rUSD - Address of RUSD Token
@@ -55,28 +60,12 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     }
 
     /**
-     * @dev Allows user to deposit USDB and mint RUSD
-     * @notice User must have approved this contract to spend USDB
+     * @dev When user withdraw by RUSD contract
+     * @param user - Address of User
+     * @param amount - Amount of USDB for withdraw
      */
-    function deposit(uint256 amount) external override {
-        address user = msg.sender;
-        IERC20(USDB).safeTransferFrom(user, address(this), amount);
-        IRUSD(rUSD).mint(user, amount);
-
-        emit Deposit(user, amount);
-    }
-
-    /**
-     * @dev Allows user to withdraw USDB by RUSD
-     * @param amount - Amount of RUSD for burn
-     */
-    function withdraw(uint256 amount) external override {
-        require(amount > 0, "Invalid Amount");
-        address user = msg.sender;
-        IRUSD(rUSD).burn(user, amount);
+    function withdraw(address user, uint256 amount) external override onlyRUSDContract {
         IERC20(USDB).safeTransfer(user, amount);
-
-        emit Withdraw(user, amount);
     }
 
     /**
@@ -87,10 +76,10 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         if (amount > 0) {
             IERC20Rebasing(USDB).claim(address(this), amount);
             if (feeRate > 0) {
-                uint256 fee = Math.mulDiv(amount, feeRate, THOUSAND);
+                uint256 feeAmount = Math.mulDiv(amount, feeRate, THOUSAND);
                 require(revenuePool != address(0), "revenue pool not set");
-                IERC20(USDB).safeTransfer(revenuePool, fee);
-                amount -= fee;
+                IERC20(USDB).safeTransfer(revenuePool, feeAmount);
+                amount -= feeAmount;
             }
 
             IRUSD(rUSD).mint(yieldPool, amount);

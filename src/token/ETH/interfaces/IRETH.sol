@@ -7,11 +7,17 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
   * @title RETH interface
   */
 interface IRETH is IERC20 {
-    function mint(address _account, uint256 _amount) external;
+    function deposit() payable external;
 
-    function burn(address _account, uint256 _amount) external;
+    function withdraw(uint256 amount) external;
+
+    function mint(address _account, uint256 _amount) external;
 
     function setOutETHVault(address _outETHVault) external;
     
+    event Deposit(address indexed _account, uint256 _amount);
+
+    event Withdraw(address indexed _account, uint256 _amount);
+
     event SetOutETHVault(address _outETHVault);
 }
