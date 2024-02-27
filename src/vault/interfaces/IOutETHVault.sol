@@ -2,6 +2,8 @@
 pragma solidity ^0.8.24;
 
 interface IOutETHVault {
+    function initialize() external;
+
     function withdraw(address user, uint256 amount) external;
 
     function claimETHYield() external;

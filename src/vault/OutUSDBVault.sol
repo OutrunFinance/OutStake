@@ -52,11 +52,16 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
 
-        IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
-
         emit SetFeeRate(_feeRate);
         emit SetRevenuePool(_revenuePool);
         emit SetYieldPool(_yieldPool);
+    }
+
+    /**
+     * @dev Initialize native yield claimable
+     */
+    function initialize() external override {
+        IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
     }
 
     /**

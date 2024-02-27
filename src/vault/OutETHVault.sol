@@ -51,11 +51,16 @@ contract OutETHVault is IOutETHVault, Ownable {
         revenuePool = _revenuePool;
         yieldPool = _yieldPool;
 
-		BLAST.configureClaimableYield();
-
         emit SetFeeRate(_feeRate);
         emit SetRevenuePool(_revenuePool);
         emit SetYieldPool(_yieldPool);
+    }
+
+    /**
+     * @dev Initialize native yield claimable
+     */
+    function initialize() external override {
+        BLAST.configureClaimableYield();
     }
 
     /**
