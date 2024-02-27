@@ -26,7 +26,7 @@ contract RETHYieldPool is IRETHYieldPool, Ownable {
      * @param _rETH - Address of RETH Token
      * @param _rey - Address of REY Token
      */
-    constructor(address _rETH, address _rey, address _owner) Ownable(_owner){
+    constructor(address _owner, address _rETH, address _rey) Ownable(_owner){
         rETH = _rETH;
         rey = _rey;
     }

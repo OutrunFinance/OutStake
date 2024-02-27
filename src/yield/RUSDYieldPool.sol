@@ -26,7 +26,7 @@ contract RUSDYieldPool is IRUSDYieldPool, Ownable {
      * @param _rUSD - Address of RUSD Token
      * @param _ruy - Address of RUY Token
      */
-    constructor(address _rUSD, address _ruy, address _owner) Ownable(_owner) {
+    constructor(address _owner, address _rUSD, address _ruy) Ownable(_owner) {
         rUSD = _rUSD;
         ruy = _ruy;
     }
