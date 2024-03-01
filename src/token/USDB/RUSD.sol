@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "./interfaces/IRUSD.sol";
-import "../../vault/interfaces/IOutUSDBVault.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+
+import "./interfaces/IRUSD.sol";
+import "../../vault/interfaces/IOutUSDBVault.sol";
 
 /**
  * @title Outrun USD Wrapped Token

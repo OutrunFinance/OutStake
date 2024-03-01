@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "./interfaces/IPETH.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+
+import "./interfaces/IPETH.sol";
 
 /**
  * @title Outrun Principal ETH Liquid Staked Token

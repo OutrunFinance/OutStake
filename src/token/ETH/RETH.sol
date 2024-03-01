@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "./interfaces/IRETH.sol";
-import "../../vault/interfaces/IOutETHVault.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+
+import "./interfaces/IRETH.sol";
+import "../../vault/interfaces/IOutETHVault.sol";
 
 /**
  * @title Outrun ETH Wrapped Token
