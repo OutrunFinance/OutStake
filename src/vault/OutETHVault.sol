@@ -35,14 +35,12 @@ contract OutETHVault is IOutETHVault, Ownable {
      * @param _owner - Address of the owner
      * @param _rETH - Address of RETH Token
      * @param _revenuePool - Revenue pool
-     * @param _RETHStakeManager - RETH stake manager
      * @param _feeRate - Fee to revenue pool
      */
     constructor(
         address _owner,
         address _rETH,
         address _revenuePool,
-        address _RETHStakeManager,
         uint256 _feeRate
     ) Ownable(_owner) {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
@@ -50,11 +48,9 @@ contract OutETHVault is IOutETHVault, Ownable {
         rETH = _rETH;
         feeRate = _feeRate;
         revenuePool = _revenuePool;
-        RETHStakeManager = _RETHStakeManager;
 
         emit SetFeeRate(_feeRate);
         emit SetRevenuePool(_revenuePool);
-        emit SetRETHStakeManager(_RETHStakeManager);
     }
 
     /**

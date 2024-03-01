@@ -36,14 +36,12 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
      * @param _owner - Address of the owner
      * @param _rUSD - Address of RUSD Token
      * @param _revenuePool - Revenue pool
-     * @param _RUSDStakeManager - RUSD stake manager
      * @param _feeRate - Fee to revenue pool
      */
     constructor(
         address _owner,
         address _rUSD,
         address _revenuePool,
-        address _RUSDStakeManager,
         uint256 _feeRate
     ) Ownable(_owner) {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
@@ -51,11 +49,9 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         rUSD = _rUSD;
         feeRate = _feeRate;
         revenuePool = _revenuePool;
-        RUSDStakeManager = _RUSDStakeManager;
 
         emit SetFeeRate(_feeRate);
         emit SetRevenuePool(_revenuePool);
-        emit SetRUSDStakeManager(_RUSDStakeManager);
     }
 
     /**
