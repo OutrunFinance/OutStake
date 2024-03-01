@@ -3,29 +3,47 @@ pragma solidity ^0.8.24;
 
 import "./BaseScript.s.sol";
 import "../src/token/ETH/RETH.sol";
+import "../src/token/ETH/PETH.sol";
 import "../src/token/ETH/REY.sol";
-import "../src/yield/RETHYieldPool.sol";
+import "../src/stake/RETHStakeManager.sol";
 import "../src/vault/OutETHVault.sol";
 
 contract OutrunScript is BaseScript {
     function run() public broadcaster {
         RETH reth = new RETH(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
-        REY rey = new REY(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        address rethAddress = address(reth);
 
-        RETHYieldPool yieldPool = new RETHYieldPool(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, address(reth), address(rey));
+        PETH peth = new PETH(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        address pethAddress = address(peth);
+
+        REY rey = new REY(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        address reyAddress = address(rey);
+
         OutETHVault vault = new OutETHVault(
             0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 
-            address(reth), 
+            rethAddress, 
             0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 
-            address(yieldPool), 
             100);
+        address vaultAddress = address(vault);
 
-        reth.setOutETHVault(address(vault));
-        rey.setRETHYieldPool(address(yieldPool));
+        RETHStakeManager stakeManager = new RETHStakeManager(
+            0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8,
+            rethAddress,
+            pethAddress,
+            reyAddress,
+            vaultAddress
+        );
+        address stakeAddress = address(stakeManager);
 
-        console.log("RETH deployed on %s", address(reth));
-        console.log("REY deployed on %s", address(rey));
-        console.log("RETHYieldPool deployed on %s", address(yieldPool));
-        console.log("OutETHVault deployed on %s", address(vault));
+        vault.initialize();
+        reth.setOutETHVault(vaultAddress);
+        peth.setRETHStakeManager(stakeAddress);
+        rey.setRETHStakeManager(stakeAddress);
+
+        console.log("RETH deployed on %s", rethAddress);
+        console.log("PETH deployed on %s", pethAddress);
+        console.log("REY deployed on %s", reyAddress);
+        console.log("OutETHVault deployed on %s", vaultAddress);
+        console.log("RETHStakeManager deployed on %s", stakeAddress);
     }
 }
