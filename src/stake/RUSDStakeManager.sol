@@ -2,17 +2,16 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import {IRUSDStakeManager} from "./interfaces/IRUSDStakeManager.sol";
-import {AutoIncrementId} from "../utils/AutoIncrementId.sol";
-import {IRUSD} from "../token/USDB/interfaces/IRUSD.sol";
-import {IPUSD} from "../token/USDB/interfaces/IPUSD.sol";
-import {IRUY} from "../token/USDB/interfaces/IRUY.sol";
+import "./interfaces/IRUSDStakeManager.sol";
+import "../vault/interfaces/IOutUSDBVault.sol";
+import "../utils/AutoIncrementId.sol";
+import "../token/USDB/interfaces/IRUSD.sol";
+import "../token/USDB/interfaces/IPUSD.sol";
+import "../token/USDB/interfaces/IRUY.sol";
 
 /**
  * @title RUSD Stake Manager Contract
@@ -29,35 +28,45 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     address public immutable pUSD;
     address public immutable ruy;
 
-    address public RUSDYieldPool;
+    address public outUSDBVault;
     uint256 public minLockupDays;
     uint256 public maxLockupDays;
     uint256 public reduceLockFee;
+    uint256 public totalYieldPool;
 
     mapping(uint256 positionId => Position) private _positions;
+
+    modifier onlyOutUSDBVault() {
+        require(msg.sender == outUSDBVault, "Access only by outUSDBVault");
+        _;
+    }
 
     /**
      * @param _owner - Address of the owner
      * @param _rUSD - Address of RUSD Token
      * @param _pUSD - Address of PUSD Token
      * @param _ruy - Address of RUY Token
-     * @param _RUSDYieldPool - Address of RUSDYieldPool
+     * @param _outUSDBVault - Address of outUSDBVault
      */
     constructor(
         address _owner,
         address _rUSD,
         address _pUSD,
         address _ruy,
-        address _RUSDYieldPool
+        address _outUSDBVault
     ) Ownable(_owner){
         rUSD = _rUSD;
         pUSD = _pUSD;
         ruy = _ruy;
-        RUSDYieldPool = _RUSDYieldPool;
+        outUSDBVault = _outUSDBVault;
     }
 
     function positionsOf(uint256 positionId) public view override returns (Position memory) {
         return _positions[positionId];
+    }
+
+    function getStakedRUSD() public view override returns (uint256) {
+        return IRUSD(rUSD).balanceOf(address(this));
     }
 
     /**
@@ -115,6 +124,27 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
+     * @dev Allows user burn RUY to  withdraw yield
+     * @param amountInRUY - Amount of RUY
+     */
+    function withdraw(uint256 amountInRUY) external override {
+        require(amountInRUY > 0, "Invalid Amount");
+
+        address user = msg.sender;
+
+        IOutUSDBVault(outUSDBVault).claimUSDBYield();
+        uint256 _yieldAmount = Math.mulDiv(
+            totalYieldPool,
+            amountInRUY,
+            IRUY(ruy).totalSupply()
+        );
+        IRUY(ruy).burn(user, amountInRUY);
+        IERC20(rUSD).safeTransfer(user, _yieldAmount);
+
+        emit Withdraw(user, amountInRUY, _yieldAmount);
+    }
+
+    /**
      * @dev Allows user to extend lock time
      * @param positionId - Staked Principal Position Id
      * @param extendDays - Extend lockup days
@@ -122,7 +152,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     function extendLockTime(uint256 positionId, uint256 extendDays) external {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not owner");
+        require(position.owner == user, "Not position owner");
         require(position.deadLine > block.timestamp, "Lock time expired");
 
         uint256 newDeadLine = position.deadLine + extendDays * DAY;
@@ -150,7 +180,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     function reduceLockTime(uint256 positionId, uint256 reduceDays) external {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not owner");
+        require(position.owner == user, "Not position owner");
         uint256 newDeadLine = position.deadLine - reduceDays * DAY;
         require(newDeadLine >= block.timestamp, "Reduce too many days");
 
@@ -163,13 +193,11 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         emit ReduceLockTime(positionId, reduceDays, amountInRUY);
     }
 
-    function getStakedRUSD() public view override returns (uint256) {
-        return IRUSD(rUSD).balanceOf(address(this)) + IRUSD(rUSD).balanceOf(RUSDYieldPool);
-    }
-
-    function setRUSDYieldPool(address _pool) external onlyOwner {
-        RUSDYieldPool = _pool;
-        emit SetRUSDYieldPool(_pool);
+    /**
+     * @param yieldAmount - Additional yield amount 
+     */
+    function updateYieldAmount(uint256 yieldAmount) external override onlyOutUSDBVault {
+        totalYieldPool += yieldAmount;
     }
 
     /**
@@ -199,6 +227,14 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
+     * @param _outUSDBVault - Address of outUSDBVault
+     */
+    function setOutUSDBVault(address _outUSDBVault) external override onlyOwner {
+        outUSDBVault = _outUSDBVault;
+        emit SetOutUSDBVault(_outUSDBVault);
+    }
+
+    /**
      * @dev Calculates amount of PUSD
      */
     function CalcPUSDAmount(uint256 amountInRUSD) internal view returns (uint256) {
@@ -210,6 +246,4 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
 
         return (amountInRUSD * totalShares) / yieldVault;
     }
-
-    receive() external payable {}
 }

@@ -2,17 +2,16 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import {IRETHStakeManager} from "./interfaces/IRETHStakeManager.sol";
-import {AutoIncrementId} from "../utils/AutoIncrementId.sol";
-import {IRETH} from "../token/ETH/interfaces/IRETH.sol";
-import {IPETH} from "../token/ETH/interfaces/IPETH.sol";
-import {IREY} from "../token/ETH/interfaces/IREY.sol";
+import "./interfaces/IRETHStakeManager.sol";
+import "../vault/interfaces/IOutETHVault.sol";
+import "../utils/AutoIncrementId.sol";
+import "../token/ETH/interfaces/IREY.sol";
+import "../token/ETH/interfaces/IRETH.sol";
+import "../token/ETH/interfaces/IPETH.sol";
 
 /**
  * @title RETH Stake Manager Contract
@@ -29,35 +28,45 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     address public immutable pETH;
     address public immutable rey;
 
-    address public RETHYieldPool;
+    address public outETHVault;
     uint256 public minLockupDays;
     uint256 public maxLockupDays;
     uint256 public reduceLockFee;
+    uint256 public totalYieldPool;
 
     mapping(uint256 positionId => Position) private _positions;
+
+    modifier onlyOutETHVault() {
+        require(msg.sender == outETHVault, "Access only by outETHVault");
+        _;
+    }
 
     /**
      * @param _owner - Address of the owner
      * @param _rETH - Address of RETH Token
      * @param _pETH - Address of PETH Token
      * @param _rey - Address of REY Token
-     * @param _RETHYieldPool - Address of RETHYieldPool
+     * @param _outETHVault - Address of OutETHVault
      */
     constructor(
         address _owner,
         address _rETH,
         address _pETH,
         address _rey,
-        address _RETHYieldPool
+        address _outETHVault
     ) Ownable(_owner){
         rETH = _rETH;
         pETH = _pETH;
         rey = _rey;
-        RETHYieldPool = _RETHYieldPool;
+        outETHVault = _outETHVault;
     }
 
     function positionsOf(uint256 positionId) public view override returns (Position memory) {
         return _positions[positionId];
+    }
+
+    function getStakedRETH() public view override returns (uint256) {
+        return IRETH(rETH).balanceOf(address(this));
     }
 
     /**
@@ -115,6 +124,27 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
+     * @dev Allows user burn REY to  withdraw yield
+     * @param amountInREY - Amount of REY
+     */
+    function withdraw(uint256 amountInREY) external override {
+        require(amountInREY > 0, "Invalid Amount");
+
+        address user = msg.sender;
+
+        IOutETHVault(outETHVault).claimETHYield();
+        uint256 _yieldAmount = Math.mulDiv(
+            totalYieldPool,
+            amountInREY,
+            IREY(rey).totalSupply()
+        );
+        IREY(rey).burn(user, amountInREY);
+        IERC20(rETH).safeTransfer(user, _yieldAmount);
+
+        emit Withdraw(user, amountInREY, _yieldAmount);
+    }
+
+    /**
      * @dev Allows user to extend lock time
      * @param positionId - Staked Principal Position Id
      * @param extendDays - Extend lockup days
@@ -122,7 +152,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     function extendLockTime(uint256 positionId, uint256 extendDays) external {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not owner");
+        require(position.owner == user, "Not position owner");
         require(position.deadLine > block.timestamp, "Lock time expired");
 
         uint256 newDeadLine = position.deadLine + extendDays * DAY;
@@ -150,7 +180,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     function reduceLockTime(uint256 positionId, uint256 reduceDays) external {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not owner");
+        require(position.owner == user, "Not position owner");
         uint256 newDeadLine = position.deadLine - reduceDays * DAY;
         require(newDeadLine >= block.timestamp, "Reduce too many days");
 
@@ -163,13 +193,11 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         emit ReduceLockTime(positionId, reduceDays, amountInREY);
     }
 
-    function getStakedRETH() public view override returns (uint256) {
-        return IRETH(rETH).balanceOf(address(this)) + IRETH(rETH).balanceOf(RETHYieldPool);
-    }
-
-    function setRETHYieldPool(address _pool) external onlyOwner {
-        RETHYieldPool = _pool;
-        emit SetRETHYieldPool(_pool);
+    /**
+     * @param yieldAmount - Additional yield amount 
+     */
+    function updateYieldAmount(uint256 yieldAmount) external override onlyOutETHVault {
+        totalYieldPool += yieldAmount;
     }
 
     /**
@@ -196,6 +224,14 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
 
         reduceLockFee = _reduceLockFee;
         emit SetReduceLockFee(_reduceLockFee);
+    }
+
+    /**
+     * @param _outETHVault - Address of outETHVault
+     */
+    function setOutETHVault(address _outETHVault) external override onlyOwner {
+        outETHVault = _outETHVault;
+        emit SetOutETHVault(_outETHVault);
     }
 
     /**

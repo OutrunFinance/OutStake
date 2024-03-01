@@ -8,8 +8,9 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../blast/IBlast.sol";
-import {IOutETHVault} from "./interfaces/IOutETHVault.sol";
-import {IRETH} from "../token/ETH//interfaces/IRETH.sol";
+import "../stake/interfaces/IRETHStakeManager.sol";
+import "./interfaces/IOutETHVault.sol";
+import "../token/ETH//interfaces/IRETH.sol";
 
 /**
  * @title ETH Vault Contract
@@ -21,8 +22,8 @@ contract OutETHVault is IOutETHVault, Ownable {
     uint256 public constant THOUSAND = 1000;
 
     address public immutable rETH;
+    address public RETHStakeManager;
     address public revenuePool;
-    address public yieldPool;
     uint256 public feeRate;
 
     modifier onlyRETHContract() {
@@ -33,15 +34,15 @@ contract OutETHVault is IOutETHVault, Ownable {
     /**
      * @param _owner - Address of the owner
      * @param _rETH - Address of RETH Token
+     * @param _revenuePool - Revenue pool
+     * @param _RETHStakeManager - RETH stake manager
      * @param _feeRate - Fee to revenue pool
-     * @param _revenuePool - Revenue pool:The addr for owner getting fee
-     * @param _yieldPool - RETH Yield pool
      */
     constructor(
         address _owner,
         address _rETH,
         address _revenuePool,
-        address _yieldPool,
+        address _RETHStakeManager,
         uint256 _feeRate
     ) Ownable(_owner) {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
@@ -49,11 +50,11 @@ contract OutETHVault is IOutETHVault, Ownable {
         rETH = _rETH;
         feeRate = _feeRate;
         revenuePool = _revenuePool;
-        yieldPool = _yieldPool;
+        RETHStakeManager = _RETHStakeManager;
 
         emit SetFeeRate(_feeRate);
         emit SetRevenuePool(_revenuePool);
-        emit SetYieldPool(_yieldPool);
+        emit SetRETHStakeManager(_RETHStakeManager);
     }
 
     /**
@@ -76,18 +77,19 @@ contract OutETHVault is IOutETHVault, Ownable {
      * @dev Claim ETH yield to this contract
      */
     function claimETHYield() public override {
-        uint256 amount = BLAST.claimAllYield(address(this), address(this));
-        if (amount > 0) {
+        uint256 yieldAmount = BLAST.claimAllYield(address(this), address(this));
+        if (yieldAmount > 0) {
             if (feeRate > 0) {
-                uint256 feeAmount = Math.mulDiv(amount, feeRate, THOUSAND);
+                uint256 feeAmount = Math.mulDiv(yieldAmount, feeRate, THOUSAND);
                 require(revenuePool != address(0), "revenue pool not set");
                 Address.sendValue(payable(revenuePool), feeAmount);
-                amount -= feeAmount;
+                yieldAmount -= feeAmount;
             }
 
-            IRETH(rETH).mint(yieldPool, amount);
+            IRETH(rETH).mint(RETHStakeManager, yieldAmount);
+            IRETHStakeManager(RETHStakeManager).updateYieldAmount(yieldAmount);
 
-            emit ClaimETHYield(amount);
+            emit ClaimETHYield(yieldAmount);
         }
     }
 
@@ -103,9 +105,9 @@ contract OutETHVault is IOutETHVault, Ownable {
         emit SetRevenuePool(_pool);
     }
 
-    function setYieldPool(address _pool) external override onlyOwner {
-        yieldPool = _pool;
-        emit SetYieldPool(_pool);
+    function setRETHStakeManager(address _RETHStakeManager) external override onlyOwner {
+        RETHStakeManager = _RETHStakeManager;
+        emit SetRETHStakeManager(_RETHStakeManager);
     }
 
     receive() external payable {}

@@ -12,7 +12,7 @@ interface IOutETHVault {
 
     function setRevenuePool(address _pool) external;
 
-    function setYieldPool(address _pool) external;
+    function setRETHStakeManager(address _RETHStakeManager) external;
 
     event ClaimETHYield(uint256 amount);
 
@@ -22,5 +22,5 @@ interface IOutETHVault {
 
     event SetRevenuePool(address _address);
 
-    event SetYieldPool(address _address);
+    event SetRETHStakeManager(address _address);
 }

@@ -12,7 +12,7 @@ interface IOutUSDBVault {
 
     function setRevenuePool(address _pool) external;
 
-    function setYieldPool(address _pool) external;
+    function setRUSDStakeManager(address _RUSDStakeManager) external;
 
     event ClaimUSDBYield(uint256 amount);
 
@@ -20,7 +20,7 @@ interface IOutUSDBVault {
 
     event SetBot(address _bot);
 
-    event SetRevenuePool(address _address);
+    event SetRevenuePool(address _pool);
 
-    event SetYieldPool(address _address);
+    event SetRUSDStakeManager(address _RUSDStakeManager);
 }

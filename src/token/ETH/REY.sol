@@ -1,34 +1,32 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "./interfaces/IREY.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+
+import "./interfaces/IREY.sol";
 
 /**
  * @title Outrun ETH yield token
  */
 contract REY is IREY, ERC20, Ownable {
     address public RETHStakeManager;
-    address public RETHYieldPool;
+
+    modifier onlyRETHStakeManager() {
+        require(msg.sender == RETHStakeManager, "Access only by RETHStakeManager");
+        _;
+    }
 
     constructor(address owner) ERC20("Outrun ETH yield token", "REY") Ownable(owner) {}
 
-    function burn(address account, uint256 amount) external override {
-        require(msg.sender == RETHYieldPool, "Access only by RETHYieldPool");
+    function burn(address account, uint256 amount) external override onlyRETHStakeManager {
         require(amount > 0, "Invalid Amount");
 
         _burn(account, amount);
     }
 
-    function mint(address _account, uint256 _amount) external override {
-        require(msg.sender == RETHStakeManager, "Access only by RETHStakeManager");
+    function mint(address _account, uint256 _amount) external override onlyRETHStakeManager {
         _mint(_account, _amount);
-    }
-
-    function setRETHYieldPool(address _RETHYieldPool) external override onlyOwner {
-        RETHYieldPool = _RETHYieldPool;
-        emit SetRETHYieldPool(_RETHYieldPool);
     }
 
     function setRETHStakeManager(address _RETHStakeManager) external override onlyOwner {

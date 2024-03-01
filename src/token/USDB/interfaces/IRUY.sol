@@ -11,13 +11,9 @@ interface IRUY is IERC20 {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setRUSDYieldPool(address _address) external;
-
     function setRUSDStakeManager(address _address) external;
 
     event Mint(address indexed _account, uint256 _amount);
-    
-    event SetRUSDYieldPool(address  _address);
 
     event SetRUSDStakeManager(address  _address);
 }

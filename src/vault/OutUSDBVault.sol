@@ -7,10 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+import "../stake/interfaces/IRUSDStakeManager.sol";
 import "../blast/IERC20Rebasing.sol";
+import "./interfaces/IOutUSDBVault.sol";
+import "../token/USDB//interfaces/IRUSD.sol";
 import {BlastModeEnum} from "../blast/BlastModeEnum.sol";
-import {IOutUSDBVault} from "./interfaces/IOutUSDBVault.sol";
-import {IRUSD} from "../token/USDB//interfaces/IRUSD.sol";
 
 /**
  * @title USDB Vault Contract
@@ -22,8 +23,8 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     uint256 public constant THOUSAND = 1000;
 
     address public immutable rUSD;
+    address public RUSDStakeManager;
     address public revenuePool;
-    address public yieldPool;
     uint256 public feeRate;
 
     modifier onlyRUSDContract() {
@@ -34,15 +35,15 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     /**
      * @param _owner - Address of the owner
      * @param _rUSD - Address of RUSD Token
-     * @param _feeRate - Fee to revenue pool
      * @param _revenuePool - Revenue pool
-     * @param _yieldPool - RUSD Yield pool
+     * @param _RUSDStakeManager - RUSD stake manager
+     * @param _feeRate - Fee to revenue pool
      */
     constructor(
         address _owner,
         address _rUSD,
         address _revenuePool,
-        address _yieldPool,
+        address _RUSDStakeManager,
         uint256 _feeRate
     ) Ownable(_owner) {
         require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
@@ -50,11 +51,11 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         rUSD = _rUSD;
         feeRate = _feeRate;
         revenuePool = _revenuePool;
-        yieldPool = _yieldPool;
+        RUSDStakeManager = _RUSDStakeManager;
 
         emit SetFeeRate(_feeRate);
         emit SetRevenuePool(_revenuePool);
-        emit SetYieldPool(_yieldPool);
+        emit SetRUSDStakeManager(_RUSDStakeManager);
     }
 
     /**
@@ -77,19 +78,20 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
      * @dev Claim USDB yield to this contract
      */
     function claimUSDBYield() public override {
-        uint256 amount = IERC20Rebasing(USDB).getClaimableAmount(address(this));
-        if (amount > 0) {
-            IERC20Rebasing(USDB).claim(address(this), amount);
+        uint256 yieldAmount = IERC20Rebasing(USDB).getClaimableAmount(address(this));
+        if (yieldAmount > 0) {
+            IERC20Rebasing(USDB).claim(address(this), yieldAmount);
             if (feeRate > 0) {
-                uint256 feeAmount = Math.mulDiv(amount, feeRate, THOUSAND);
+                uint256 feeAmount = Math.mulDiv(yieldAmount, feeRate, THOUSAND);
                 require(revenuePool != address(0), "revenue pool not set");
                 IERC20(USDB).safeTransfer(revenuePool, feeAmount);
-                amount -= feeAmount;
+                yieldAmount -= feeAmount;
             }
 
-            IRUSD(rUSD).mint(yieldPool, amount);
+            IRUSD(rUSD).mint(RUSDStakeManager, yieldAmount);
+            IRUSDStakeManager(RUSDStakeManager).updateYieldAmount(yieldAmount);
 
-            emit ClaimUSDBYield(amount);
+            emit ClaimUSDBYield(yieldAmount);
         }
     }
 
@@ -105,8 +107,8 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         emit SetRevenuePool(_pool);
     }
 
-    function setYieldPool(address _pool) external override onlyOwner {
-        yieldPool = _pool;
-        emit SetYieldPool(_pool);
+    function setRUSDStakeManager(address _RUSDStakeManager) external override onlyOwner {
+        RUSDStakeManager = _RUSDStakeManager;
+        emit SetRUSDStakeManager(_RUSDStakeManager);
     }
 }
