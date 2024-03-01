@@ -13,14 +13,18 @@ contract RUY is IRUY, ERC20, Ownable {
     address public RUSDStakeManager;
 
     modifier onlyRUSDStakeManager() {
-        require(msg.sender == RUSDStakeManager, "Access only by RUSDStakeManager");
+        if (msg.sender != RUSDStakeManager) {
+            revert PermissionDenied();
+        }
         _;
     }
 
     constructor(address owner) ERC20("Outrun USD yield token", "RUY") Ownable(owner) {}
 
     function burn(address account, uint256 amount) external override onlyRUSDStakeManager {
-        require(amount > 0, "Invalid Amount");
+        if (amount == 0) {
+            revert ZeroInput();
+        }
 
         _burn(account, amount);
     }

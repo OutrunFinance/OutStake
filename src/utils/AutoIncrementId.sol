@@ -5,7 +5,9 @@ abstract contract AutoIncrementId {
     uint256 public count = 0;
 
     function nextId() public returns (uint256) {
-        ++count;
-        return count;
+        unchecked {
+            ++count;
+            return count;
+        }
     }
 }

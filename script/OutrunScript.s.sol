@@ -31,7 +31,8 @@ contract OutrunScript is BaseScript {
             rethAddress,
             pethAddress,
             reyAddress,
-            vaultAddress
+            vaultAddress,
+            100
         );
         address stakeAddress = address(stakeManager);
 

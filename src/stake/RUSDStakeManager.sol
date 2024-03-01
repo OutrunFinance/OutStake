@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IRUSDStakeManager.sol";
@@ -37,7 +36,9 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     mapping(uint256 positionId => Position) private _positions;
 
     modifier onlyOutUSDBVault() {
-        require(msg.sender == outUSDBVault, "Access only by outUSDBVault");
+        if (msg.sender != outUSDBVault) {
+            revert PermissionDenied();
+        }
         _;
     }
 
@@ -47,18 +48,28 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param _pUSD - Address of PUSD Token
      * @param _ruy - Address of RUY Token
      * @param _outUSDBVault - Address of outUSDBVault
+     * @param _reduceLockFee - Reduce lock time fee
      */
     constructor(
         address _owner,
         address _rUSD,
         address _pUSD,
         address _ruy,
-        address _outUSDBVault
+        address _outUSDBVault,
+        uint256 _reduceLockFee
     ) Ownable(_owner){
+        if (_reduceLockFee > THOUSAND) {
+            revert ReduceLockFeeOverflow();
+        }
+
         rUSD = _rUSD;
         pUSD = _pUSD;
         ruy = _ruy;
         outUSDBVault = _outUSDBVault;
+        reduceLockFee = _reduceLockFee;
+
+        emit SetOutUSDBVault(_outUSDBVault);
+        emit SetReduceLockFee(_reduceLockFee);
     }
 
     function positionsOf(uint256 positionId) public view override returns (Position memory) {
@@ -76,30 +87,35 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @notice User must have approved this contract to spend RUSD
      */
     function stake(uint256 amountInRUSD, uint256 lockupDays) external override {
-        require(amountInRUSD >= MINSTAKE, "Invalid amount");
-        require(
-            lockupDays >= minLockupDays && lockupDays <= maxLockupDays,
-            "LockupDays invalid"
-        );
+        if (amountInRUSD < MINSTAKE) {
+            revert MinStakeInsufficient(MINSTAKE);
+        }
+        if (lockupDays < minLockupDays || lockupDays > maxLockupDays) {
+            revert InvalidLockupDays(minLockupDays, maxLockupDays);
+        }
 
         address user = msg.sender;
         uint256 amountInPUSD = CalcPUSDAmount(amountInRUSD);
         uint256 positionId = nextId();
-        uint256 deadLine = block.timestamp + lockupDays * DAY;
+        uint256 amountInRUY;
+        uint256 deadline;
+        unchecked {
+            deadline = block.timestamp + lockupDays * DAY;
+            amountInRUY = amountInRUSD * lockupDays;
+        }
         _positions[positionId] = Position(
             amountInRUSD,
             amountInPUSD,
             user,
-            deadLine,
+            deadline,
             false
         );
 
         IERC20(rUSD).safeTransferFrom(user, address(this), amountInRUSD);
         IPUSD(pUSD).mint(user, amountInPUSD);
-        uint256 amountInRUY = amountInRUSD * lockupDays;
         IRUY(ruy).mint(user, amountInRUY);   
 
-        emit StakeRUSD(positionId, user, amountInRUSD, deadLine);
+        emit StakeRUSD(positionId, user, amountInRUSD, deadline);
     }
 
     /**
@@ -110,9 +126,15 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     function unStake(uint256 positionId) external override {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not owner");
-        require(position.deadLine <= block.timestamp, "Lock time not expired");
-        require(position.closed == false, "Position closed");
+        if (position.owner != user) {
+            revert PermissionDenied();
+        }
+        if (position.deadline > block.timestamp) {
+            revert NotReachedDeadline(position.deadline);
+        }
+        if (position.closed) {
+            revert PositionClosed();
+        }
 
         position.closed = true;
         _positions[positionId] = position;
@@ -128,20 +150,21 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param amountInRUY - Amount of RUY
      */
     function withdraw(uint256 amountInRUY) external override {
-        require(amountInRUY > 0, "Invalid Amount");
-
-        address user = msg.sender;
+        if (amountInRUY == 0) {
+            revert ZeroInput();
+        }
 
         IOutUSDBVault(outUSDBVault).claimUSDBYield();
-        uint256 _yieldAmount = Math.mulDiv(
-            totalYieldPool,
-            amountInRUY,
-            IRUY(ruy).totalSupply()
-        );
-        IRUY(ruy).burn(user, amountInRUY);
-        IERC20(rUSD).safeTransfer(user, _yieldAmount);
+        uint256 yieldAmount;
+        unchecked {
+            yieldAmount = totalYieldPool * amountInRUY / IRUY(ruy).totalSupply();
+        }
 
-        emit Withdraw(user, amountInRUY, _yieldAmount);
+        address user = msg.sender;
+        IRUY(ruy).burn(user, amountInRUY);
+        IERC20(rUSD).safeTransfer(user, yieldAmount);
+
+        emit Withdraw(user, amountInRUY, yieldAmount);
     }
 
     /**
@@ -152,20 +175,24 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     function extendLockTime(uint256 positionId, uint256 extendDays) external {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not position owner");
-        require(position.deadLine > block.timestamp, "Lock time expired");
-
-        uint256 newDeadLine = position.deadLine + extendDays * DAY;
+        if (position.owner != user) {
+            revert PermissionDenied();
+        }
+        if (position.deadline <= block.timestamp) {
+            revert ReachedDeadline(position.deadline);
+        }
+        uint256 newDeadLine = position.deadline + extendDays * DAY;
         uint256 intervalDaysFromNow = (newDeadLine - block.timestamp) / DAY;
-        require(
-            intervalDaysFromNow >= minLockupDays && intervalDaysFromNow <= maxLockupDays,
-            "ExtendDays invalid"
-        );
+        if (intervalDaysFromNow < minLockupDays || intervalDaysFromNow > maxLockupDays) {
+            revert InvalidExtendDays();
+        }
 
-        position.deadLine = newDeadLine;
+        position.deadline = newDeadLine;
         _positions[positionId] = position;
-
-        uint amountInRUY = position.RUSDAmount * extendDays;
+        uint256 amountInRUY;
+        unchecked {
+            amountInRUY = position.RUSDAmount * extendDays;
+        }
         IRUY(ruy).mint(user, amountInRUY);
 
         emit ExtendLockTime(positionId, extendDays, amountInRUY);
@@ -180,14 +207,21 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     function reduceLockTime(uint256 positionId, uint256 reduceDays) external {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not position owner");
-        uint256 newDeadLine = position.deadLine - reduceDays * DAY;
-        require(newDeadLine >= block.timestamp, "Reduce too many days");
+        if (position.owner != user) {
+            revert PermissionDenied();
+        }
+        uint256 newDeadLine = position.deadline - reduceDays * DAY;
+        if (newDeadLine < block.timestamp) {
+            revert InvalidReduceDays();
+        }
 
-        position.deadLine = newDeadLine;
+        position.deadline = newDeadLine;
         _positions[positionId] = position;
 
-        uint amountInRUY = position.RUSDAmount * reduceDays * (1 + reduceLockFee / THOUSAND);
+        uint256 amountInRUY;
+        unchecked {
+            amountInRUY = position.RUSDAmount * reduceDays * (1 + reduceLockFee / THOUSAND);
+        }
         IRUY(ruy).burn(user, amountInRUY);
 
         emit ReduceLockTime(positionId, reduceDays, amountInRUY);
@@ -197,7 +231,9 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param yieldAmount - Additional yield amount 
      */
     function updateYieldAmount(uint256 yieldAmount) external override onlyOutUSDBVault {
-        totalYieldPool += yieldAmount;
+        unchecked {
+            totalYieldPool += yieldAmount;
+        }
     }
 
     /**
@@ -220,7 +256,9 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param _reduceLockFee - Reduce lock time fee
      */
     function setReduceLockFee(uint256 _reduceLockFee) external override onlyOwner {
-        require(_reduceLockFee <= THOUSAND, "ReduceLockFee must not exceed (100%)");
+        if (_reduceLockFee > THOUSAND) {
+            revert ReduceLockFeeOverflow();
+        }
 
         reduceLockFee = _reduceLockFee;
         emit SetReduceLockFee(_reduceLockFee);
@@ -244,6 +282,8 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         uint256 yieldVault = getStakedRUSD();
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        return (amountInRUSD * totalShares) / yieldVault;
+        unchecked {
+            return amountInRUSD * totalShares / yieldVault;
+        }
     }
 }

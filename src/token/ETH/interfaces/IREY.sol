@@ -7,6 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
   * @title Outrun ETH yield token interface
   */
 interface IREY is IERC20 {
+    error ZeroInput();
+
+    error PermissionDenied();
+
     function mint(address _account, uint256 _amount) external;
 
     function burn(address _account, uint256 _amount) external;

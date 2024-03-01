@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../stake/interfaces/IRUSDStakeManager.sol";
 import "../blast/IERC20Rebasing.sol";
@@ -28,7 +27,9 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     uint256 public feeRate;
 
     modifier onlyRUSDContract() {
-        require(msg.sender == rUSD, "Only RUSD contract");
+        if (msg.sender != rUSD) {
+            revert PermissionDenied();
+        }
         _;
     }
 
@@ -44,7 +45,9 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         address _revenuePool,
         uint256 _feeRate
     ) Ownable(_owner) {
-        require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
+        if (_feeRate > THOUSAND) {
+            revert FeeRateOverflow();
+        }
 
         rUSD = _rUSD;
         feeRate = _feeRate;
@@ -78,10 +81,11 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         if (yieldAmount > 0) {
             IERC20Rebasing(USDB).claim(address(this), yieldAmount);
             if (feeRate > 0) {
-                uint256 feeAmount = Math.mulDiv(yieldAmount, feeRate, THOUSAND);
-                require(revenuePool != address(0), "revenue pool not set");
-                IERC20(USDB).safeTransfer(revenuePool, feeAmount);
-                yieldAmount -= feeAmount;
+                unchecked {
+                    uint256 feeAmount = yieldAmount * feeRate / THOUSAND;
+                    IERC20(USDB).safeTransfer(revenuePool, feeAmount);
+                    yieldAmount -= feeAmount;
+                }
             }
 
             IRUSD(rUSD).mint(RUSDStakeManager, yieldAmount);
@@ -92,7 +96,9 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
     }
 
     function setFeeRate(uint256 _feeRate) external override onlyOwner {
-        require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
+        if (_feeRate > THOUSAND) {
+            revert FeeRateOverflow();
+        }
 
         feeRate = _feeRate;
         emit SetFeeRate(_feeRate);

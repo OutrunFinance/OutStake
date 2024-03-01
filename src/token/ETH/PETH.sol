@@ -13,17 +13,18 @@ contract PETH is IPETH, ERC20, Ownable {
     address public RETHStakeManager;
 
     modifier onlyRETHStakeManager() {
-        require(
-            msg.sender == RETHStakeManager,
-            "Access only by StakeManager"
-        );
+        if (msg.sender != RETHStakeManager) {
+            revert PermissionDenied();
+        }
         _;
     }
 
     constructor(address owner) ERC20("Principal Staked ETH", "PETH") Ownable(owner) {}
 
     function setRETHStakeManager(address _RETHStakeManager) external override onlyOwner {
-        require(_RETHStakeManager != address(0), "Zero address provided");
+        if (_RETHStakeManager == address(0)) {
+            revert ZeroInput();
+        }
 
         RETHStakeManager = _RETHStakeManager;
         emit SetRETHStakeManager(_RETHStakeManager);

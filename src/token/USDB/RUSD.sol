@@ -20,7 +20,9 @@ contract RUSD is IRUSD, ERC20, Ownable {
     address public outUSDBVault;
 
     modifier onlyOutUSDBVault() {
-        require(msg.sender == outUSDBVault, "Access only by OutUSDBVault");
+        if (msg.sender != outUSDBVault) {
+            revert PermissionDenied();
+        }
         _;
     }
 
@@ -31,7 +33,9 @@ contract RUSD is IRUSD, ERC20, Ownable {
      * @notice User must have approved this contract to spend USDB
      */
     function deposit(uint256 amount) external override {
-        require(amount > 0, "Invalid Amount");
+        if (amount == 0) {
+            revert ZeroInput();
+        }
         address user = msg.sender;
         IERC20(USDB).safeTransferFrom(user, outUSDBVault, amount);
         _mint(user, amount);
@@ -44,7 +48,9 @@ contract RUSD is IRUSD, ERC20, Ownable {
      * @param amount - Amount of RUSD for burn
      */
     function withdraw(uint256 amount) external override {
-        require(amount > 0, "Invalid Amount");
+        if (amount == 0) {
+            revert ZeroInput();
+        }
         address user = msg.sender;
         _burn(user, amount);
         IOutUSDBVault(outUSDBVault).withdraw(user, amount);

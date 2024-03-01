@@ -7,6 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
   * @title RETH interface
   */
 interface IRETH is IERC20 {
+    error ZeroInput();
+
+    error PermissionDenied();
+    
     function deposit() payable external;
 
     function withdraw(uint256 amount) external;

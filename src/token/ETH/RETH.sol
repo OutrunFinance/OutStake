@@ -15,7 +15,9 @@ contract RETH is IRETH, ERC20, Ownable {
     address public outETHVault;
 
     modifier onlyOutETHVault() {
-        require(msg.sender == outETHVault, "Access only by outETHVault");
+        if (msg.sender != outETHVault) {
+            revert PermissionDenied();
+        }
         _;
     }
 
@@ -26,7 +28,9 @@ contract RETH is IRETH, ERC20, Ownable {
      */
     function deposit() public payable override {
         uint256 amount = msg.value;
-        require(amount > 0, "Invalid Amount");
+        if (amount == 0) {
+            revert ZeroInput();
+        }
 
         address user = msg.sender;
         Address.sendValue(payable(outETHVault), amount);
@@ -40,7 +44,9 @@ contract RETH is IRETH, ERC20, Ownable {
      * @param amount - Amount of RETH for burn
      */
     function withdraw(uint256 amount) external override {
-        require(amount > 0, "Invalid Amount");
+        if (amount == 0) {
+            revert ZeroInput();
+        }
         address user = msg.sender;
         _burn(user, amount);
         IOutETHVault(outETHVault).withdraw(user, amount);

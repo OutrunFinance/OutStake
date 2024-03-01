@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../blast/IBlast.sol";
 import "../stake/interfaces/IRETHStakeManager.sol";
@@ -27,7 +26,9 @@ contract OutETHVault is IOutETHVault, Ownable {
     uint256 public feeRate;
 
     modifier onlyRETHContract() {
-        require(msg.sender == rETH, "Only RETH contract");
+        if (msg.sender != rETH) {
+            revert PermissionDenied();
+        }
         _;
     }
 
@@ -43,7 +44,9 @@ contract OutETHVault is IOutETHVault, Ownable {
         address _revenuePool,
         uint256 _feeRate
     ) Ownable(_owner) {
-        require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
+        if (_feeRate > THOUSAND) {
+            revert FeeRateOverflow();
+        }
 
         rETH = _rETH;
         feeRate = _feeRate;
@@ -76,10 +79,11 @@ contract OutETHVault is IOutETHVault, Ownable {
         uint256 yieldAmount = BLAST.claimAllYield(address(this), address(this));
         if (yieldAmount > 0) {
             if (feeRate > 0) {
-                uint256 feeAmount = Math.mulDiv(yieldAmount, feeRate, THOUSAND);
-                require(revenuePool != address(0), "revenue pool not set");
-                Address.sendValue(payable(revenuePool), feeAmount);
-                yieldAmount -= feeAmount;
+                unchecked {
+                    uint256 feeAmount = yieldAmount * feeRate / THOUSAND;
+                    Address.sendValue(payable(revenuePool), feeAmount);
+                    yieldAmount -= feeAmount;
+                }
             }
 
             IRETH(rETH).mint(RETHStakeManager, yieldAmount);
@@ -90,7 +94,9 @@ contract OutETHVault is IOutETHVault, Ownable {
     }
 
     function setFeeRate(uint256 _feeRate) external override onlyOwner {
-        require(_feeRate <= THOUSAND, "FeeRate must not exceed (100%)");
+        if (_feeRate > THOUSAND) {
+            revert FeeRateOverflow();
+        }
 
         feeRate = _feeRate;
         emit SetFeeRate(_feeRate);

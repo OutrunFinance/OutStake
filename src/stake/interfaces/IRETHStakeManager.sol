@@ -9,9 +9,29 @@ interface IRETHStakeManager {
         uint256 RETHAmount;
         uint256 PETHAmount;
         address owner;
-        uint256 deadLine;
+        uint256 deadline;
         bool closed;
     }
+
+    error ZeroInput();
+
+    error PermissionDenied();
+
+    error PositionClosed();
+
+    error ReachedDeadline(uint256 deadline);
+
+    error NotReachedDeadline(uint256 deadline);
+
+    error MinStakeInsufficient(uint256 minStake);
+
+    error InvalidLockupDays(uint256 minLockupDays, uint256 maxLockupDays);
+
+    error InvalidExtendDays();
+
+    error InvalidReduceDays();
+    
+    error ReduceLockFeeOverflow();
 
     function positionsOf(uint256 positionId) external returns (Position memory);
 
@@ -41,7 +61,7 @@ interface IRETHStakeManager {
         uint256 indexed _positionId,
         address indexed _account,
         uint256 _amountInRETH,
-        uint256 _deadLine
+        uint256 _deadline
     );
 
     event UnStake(uint256 indexed _positionId, address indexed _account, uint256 _amountInRETH);

@@ -7,6 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
   * @title RUSD interface
   */
 interface IRUSD is IERC20 {
+    error ZeroInput();
+
+    error PermissionDenied();
+
     function deposit(uint256 amount) external;
 
     function withdraw(uint256 amount) external;

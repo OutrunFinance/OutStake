@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IRETHStakeManager.sol";
@@ -37,7 +36,9 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     mapping(uint256 positionId => Position) private _positions;
 
     modifier onlyOutETHVault() {
-        require(msg.sender == outETHVault, "Access only by outETHVault");
+        if (msg.sender != outETHVault) {
+            revert PermissionDenied();
+        }
         _;
     }
 
@@ -47,18 +48,28 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param _pETH - Address of PETH Token
      * @param _rey - Address of REY Token
      * @param _outETHVault - Address of OutETHVault
+     * @param _reduceLockFee - Reduce lock time fee
      */
     constructor(
         address _owner,
         address _rETH,
         address _pETH,
         address _rey,
-        address _outETHVault
+        address _outETHVault,
+        uint256 _reduceLockFee
     ) Ownable(_owner){
+        if (_reduceLockFee > THOUSAND) {
+            revert ReduceLockFeeOverflow();
+        }
+
         rETH = _rETH;
         pETH = _pETH;
         rey = _rey;
         outETHVault = _outETHVault;
+        reduceLockFee = _reduceLockFee;
+
+        emit SetOutETHVault(_outETHVault);
+        emit SetReduceLockFee(_reduceLockFee);
     }
 
     function positionsOf(uint256 positionId) public view override returns (Position memory) {
@@ -76,30 +87,35 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @notice User must have approved this contract to spend RETH
      */
     function stake(uint256 amountInRETH, uint256 lockupDays) external override {
-        require(amountInRETH >= MINSTAKE, "Invalid amount");
-        require(
-            lockupDays >= minLockupDays && lockupDays <= maxLockupDays,
-            "LockupDays invalid"
-        );
+        if (amountInRETH < MINSTAKE) {
+            revert MinStakeInsufficient(MINSTAKE);
+        }
+        if (lockupDays < minLockupDays || lockupDays > maxLockupDays) {
+            revert InvalidLockupDays(minLockupDays, maxLockupDays);
+        }
 
         address user = msg.sender;
         uint256 amountInPETH = CalcPETHAmount(amountInRETH);
         uint256 positionId = nextId();
-        uint256 deadLine = block.timestamp + lockupDays * DAY;
+        uint256 deadline;
+        uint256 amountInREY;
+        unchecked {
+            deadline = block.timestamp + lockupDays * DAY;
+            amountInREY = amountInRETH * lockupDays;
+        }
         _positions[positionId] = Position(
             amountInRETH,
             amountInPETH,
             user,
-            deadLine,
+            deadline,
             false
         );
 
         IERC20(rETH).safeTransferFrom(user, address(this), amountInRETH);
         IPETH(pETH).mint(user, amountInPETH);
-        uint amountInREY = amountInRETH * lockupDays;
         IREY(rey).mint(user, amountInREY); 
 
-        emit StakeRETH(positionId, user, amountInRETH, deadLine);
+        emit StakeRETH(positionId, user, amountInRETH, deadline);
     }
 
     /**
@@ -110,9 +126,15 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     function unStake(uint256 positionId) external override {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not owner");
-        require(position.deadLine <= block.timestamp, "Lock time not expired");
-        require(position.closed == false, "Position closed");
+        if (position.owner != user) {
+            revert PermissionDenied();
+        }
+        if (position.deadline > block.timestamp) {
+            revert NotReachedDeadline(position.deadline);
+        }
+        if (position.closed) {
+            revert PositionClosed();
+        }
 
         position.closed = true;
         _positions[positionId] = position;
@@ -128,20 +150,21 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param amountInREY - Amount of REY
      */
     function withdraw(uint256 amountInREY) external override {
-        require(amountInREY > 0, "Invalid Amount");
-
-        address user = msg.sender;
+        if (amountInREY == 0) {
+            revert ZeroInput();
+        }
 
         IOutETHVault(outETHVault).claimETHYield();
-        uint256 _yieldAmount = Math.mulDiv(
-            totalYieldPool,
-            amountInREY,
-            IREY(rey).totalSupply()
-        );
-        IREY(rey).burn(user, amountInREY);
-        IERC20(rETH).safeTransfer(user, _yieldAmount);
+        uint256 yieldAmount;
+        unchecked {
+            yieldAmount = totalYieldPool * amountInREY / IREY(rey).totalSupply();
+        }
 
-        emit Withdraw(user, amountInREY, _yieldAmount);
+        address user = msg.sender;
+        IREY(rey).burn(user, amountInREY);
+        IERC20(rETH).safeTransfer(user, yieldAmount);
+
+        emit Withdraw(user, amountInREY, yieldAmount);
     }
 
     /**
@@ -152,20 +175,24 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     function extendLockTime(uint256 positionId, uint256 extendDays) external {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not position owner");
-        require(position.deadLine > block.timestamp, "Lock time expired");
-
-        uint256 newDeadLine = position.deadLine + extendDays * DAY;
+        if (position.owner != user) {
+            revert PermissionDenied();
+        }
+        if (position.deadline <= block.timestamp) {
+            revert ReachedDeadline(position.deadline);
+        }
+        uint256 newDeadLine = position.deadline + extendDays * DAY;
         uint256 intervalDaysFromNow = (newDeadLine - block.timestamp) / DAY;
-        require(
-            intervalDaysFromNow >= minLockupDays && intervalDaysFromNow <= maxLockupDays,
-            "ExtendDays invalid"
-        );
+        if (intervalDaysFromNow < minLockupDays || intervalDaysFromNow > maxLockupDays) {
+            revert InvalidExtendDays();
+        }
 
-        position.deadLine = newDeadLine;
+        position.deadline = newDeadLine;
         _positions[positionId] = position;
-
-        uint amountInREY = position.RETHAmount * extendDays;
+        uint256 amountInREY;
+        unchecked {
+            amountInREY = position.RETHAmount * extendDays;
+        }
         IREY(rey).mint(user, amountInREY);
 
         emit ExtendLockTime(positionId, extendDays, amountInREY);
@@ -180,14 +207,21 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     function reduceLockTime(uint256 positionId, uint256 reduceDays) external {
         address user = msg.sender;
         Position memory position = positionsOf(positionId);
-        require(position.owner == user, "Not position owner");
-        uint256 newDeadLine = position.deadLine - reduceDays * DAY;
-        require(newDeadLine >= block.timestamp, "Reduce too many days");
+        if (position.owner != user) {
+            revert PermissionDenied();
+        }
+        uint256 newDeadLine = position.deadline - reduceDays * DAY;
+        if (newDeadLine < block.timestamp) {
+            revert InvalidReduceDays();
+        }
 
-        position.deadLine = newDeadLine;
+        position.deadline = newDeadLine;
         _positions[positionId] = position;
 
-        uint amountInREY = position.RETHAmount * reduceDays * (1 + reduceLockFee / THOUSAND);
+        uint256 amountInREY;
+        unchecked {
+            amountInREY = position.RETHAmount * reduceDays * (1 + reduceLockFee / THOUSAND);
+        }
         IREY(rey).burn(user, amountInREY);
 
         emit ReduceLockTime(positionId, reduceDays, amountInREY);
@@ -197,7 +231,9 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param yieldAmount - Additional yield amount 
      */
     function updateYieldAmount(uint256 yieldAmount) external override onlyOutETHVault {
-        totalYieldPool += yieldAmount;
+        unchecked {
+            totalYieldPool += yieldAmount;
+        }
     }
 
     /**
@@ -220,7 +256,9 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param _reduceLockFee - Reduce lock time fee
      */
     function setReduceLockFee(uint256 _reduceLockFee) external override onlyOwner {
-        require(_reduceLockFee <= THOUSAND, "ReduceLockFee must not exceed (100%)");
+        if (_reduceLockFee > THOUSAND) {
+            revert ReduceLockFeeOverflow();
+        }
 
         reduceLockFee = _reduceLockFee;
         emit SetReduceLockFee(_reduceLockFee);
@@ -244,7 +282,9 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         uint256 yieldVault = getStakedRETH();
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
-        return (amountInRETH * totalShares) / yieldVault;
+        unchecked {
+            return amountInRETH * totalShares / yieldVault;
+        }
     }
 
     receive() external payable {}

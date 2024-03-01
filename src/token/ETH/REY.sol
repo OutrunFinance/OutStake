@@ -13,14 +13,18 @@ contract REY is IREY, ERC20, Ownable {
     address public RETHStakeManager;
 
     modifier onlyRETHStakeManager() {
-        require(msg.sender == RETHStakeManager, "Access only by RETHStakeManager");
+        if (msg.sender != RETHStakeManager) {
+            revert PermissionDenied();
+        }
         _;
     }
 
     constructor(address owner) ERC20("Outrun ETH yield token", "REY") Ownable(owner) {}
 
     function burn(address account, uint256 amount) external override onlyRETHStakeManager {
-        require(amount > 0, "Invalid Amount");
+        if (amount == 0) {
+            revert ZeroInput();
+        }
 
         _burn(account, amount);
     }

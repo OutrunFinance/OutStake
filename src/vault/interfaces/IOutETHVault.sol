@@ -2,6 +2,12 @@
 pragma solidity ^0.8.24;
 
 interface IOutETHVault {
+    error ZeroInput();
+
+    error PermissionDenied();
+
+    error FeeRateOverflow();
+
     function initialize() external;
 
     function withdraw(address user, uint256 amount) external;

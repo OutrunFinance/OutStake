@@ -13,17 +13,18 @@ contract PUSD is IPUSD, ERC20, Ownable {
     address public RUSDStakeManager;
 
     modifier onlyRUSDStakeManager() {
-        require(
-            msg.sender == RUSDStakeManager,
-            "Access only by StakeManager"
-        );
+        if (msg.sender != RUSDStakeManager) {
+            revert PermissionDenied();
+        }
         _;
     }
 
     constructor(address owner) ERC20("Principal Staked USD", "PUSD") Ownable(owner) {}
 
     function setRUSDStakeManager(address _RUSDStakeManager) external override onlyOwner {
-        require(_RUSDStakeManager != address(0), "Zero address provided");
+        if (_RUSDStakeManager == address(0)) {
+            revert ZeroInput();
+        }
 
         RUSDStakeManager = _RUSDStakeManager;
         emit SetRUSDStakeManager(_RUSDStakeManager);
