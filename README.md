@@ -79,16 +79,16 @@ After _t_ days:
 </div>
 
 
-The Impermanent Profit and Loss Ratio (_IPLR_) can be obtained by dividing the actual earnings by the expected earnings and then subtracting 1.  
-_IPLR_ = (Actual Earnings / Expected Earnings) - 1
+The Impermanent Profit and Loss Ratio (_IPnLR_) can be obtained by dividing the actual earnings by the expected earnings and then subtracting 1.  
+_IPnLR_ = (Actual Earnings / Expected Earnings) - 1
 
 <div align="center">
     <img src="https://github.com/OutrunDao/Outrun-Stake/assets/32949831/64da270a-3fbb-42b3-a3cf-939c784e4e34" width="270" height="135">  
 </div>
 
-The impermanent profit and loss (_IPL_) can be obtained by multiplying each user's impermanent profit and loss ratio (_IPLR_) by their respective expected earnings.  
-IPL_A = IPLR_A * Expected Profit_A  
-IPL_B = IPLR_B * Expected Profit_B  
+The impermanent profit and loss (_IPnL_) can be obtained by multiplying each user's impermanent profit and loss ratio (_IPnLR_) by their respective expected earnings.  
+_IPnLa_ = _IPnLRa_ * Expected Profit_A  
+_IPnLb_ = _IPnLRb_ * Expected Profit_B  
 
 <div align="center">
     <img src="https://github.com/OutrunDao/Outrun-Stake/assets/32949831/ec9ea667-228f-4027-b7f3-3942fa240ee3" width="320" height="160">  
