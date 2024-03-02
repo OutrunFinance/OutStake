@@ -8,7 +8,7 @@ import "../src/token/ETH/REY.sol";
 import "../src/stake/RETHStakeManager.sol";
 import "../src/vault/OutETHVault.sol";
 
-contract OutrunScript is BaseScript {
+contract OutstakeScript is BaseScript {
     function run() public broadcaster {
         RETH reth = new RETH(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
         address rethAddress = address(reth);
@@ -23,7 +23,7 @@ contract OutrunScript is BaseScript {
             0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 
             rethAddress, 
             0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 
-            100);
+            1000);
         address vaultAddress = address(vault);
 
         RETHStakeManager stakeManager = new RETHStakeManager(
@@ -32,11 +32,12 @@ contract OutrunScript is BaseScript {
             pethAddress,
             reyAddress,
             vaultAddress,
-            100
+            1000
         );
         address stakeAddress = address(stakeManager);
 
         vault.initialize();
+        vault.setFlashLoanFee(15, 5);
         reth.setOutETHVault(vaultAddress);
         peth.setRETHStakeManager(stakeAddress);
         rey.setRETHStakeManager(stakeAddress);
