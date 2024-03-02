@@ -19,7 +19,7 @@ import "../token/USDB/interfaces/IRUY.sol";
 contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
-    uint256 public constant THOUSAND = 1000;
+    uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e20;
     uint256 public constant DAY = 24 * 3600;
 
@@ -58,7 +58,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         address _outUSDBVault,
         uint256 _reduceLockFee
     ) Ownable(_owner){
-        if (_reduceLockFee > THOUSAND) {
+        if (_reduceLockFee > RATIO) {
             revert ReduceLockFeeOverflow();
         }
 
@@ -220,7 +220,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
 
         uint256 amountInRUY;
         unchecked {
-            amountInRUY = position.RUSDAmount * reduceDays * (1 + reduceLockFee / THOUSAND);
+            amountInRUY = position.RUSDAmount * reduceDays * (1 + reduceLockFee / RATIO);
         }
         IRUY(ruy).burn(user, amountInRUY);
 
@@ -256,7 +256,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param _reduceLockFee - Reduce lock time fee
      */
     function setReduceLockFee(uint256 _reduceLockFee) external override onlyOwner {
-        if (_reduceLockFee > THOUSAND) {
+        if (_reduceLockFee > RATIO) {
             revert ReduceLockFeeOverflow();
         }
 

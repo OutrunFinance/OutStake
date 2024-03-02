@@ -19,7 +19,7 @@ import "../token/ETH/interfaces/IPETH.sol";
 contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
-    uint256 public constant THOUSAND = 1000;
+    uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e16;
     uint256 public constant DAY = 24 * 3600;
 
@@ -58,7 +58,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         address _outETHVault,
         uint256 _reduceLockFee
     ) Ownable(_owner){
-        if (_reduceLockFee > THOUSAND) {
+        if (_reduceLockFee > RATIO) {
             revert ReduceLockFeeOverflow();
         }
 
@@ -220,7 +220,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
 
         uint256 amountInREY;
         unchecked {
-            amountInREY = position.RETHAmount * reduceDays * (1 + reduceLockFee / THOUSAND);
+            amountInREY = position.RETHAmount * reduceDays * (1 + reduceLockFee / RATIO);
         }
         IREY(rey).burn(user, amountInREY);
 
@@ -256,7 +256,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param _reduceLockFee - Reduce lock time fee
      */
     function setReduceLockFee(uint256 _reduceLockFee) external override onlyOwner {
-        if (_reduceLockFee > THOUSAND) {
+        if (_reduceLockFee > RATIO) {
             revert ReduceLockFeeOverflow();
         }
 
