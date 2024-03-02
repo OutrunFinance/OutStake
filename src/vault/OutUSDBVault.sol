@@ -117,11 +117,11 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         unchecked {
             providerFee = amount * flashLoanFee.providerFeeRate / RATIO;
             protocolFee = amount * flashLoanFee.protocolFeeRate / RATIO;
+            if (address(this).balance < balanceBefore + providerFee + protocolFee) {
+                revert FlashLoanRepayFailed();
+            }
         }
-        if (address(this).balance < balanceBefore + providerFee + protocolFee) {
-            revert FlashLoanRepayFailed();
-        }
-
+        
         IRUSD(rUSD).mint(RUSDStakeManager, providerFee);
         IERC20(USDB).safeTransfer(revenuePool, protocolFee);
 

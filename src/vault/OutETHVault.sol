@@ -116,11 +116,11 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
         unchecked {
             providerFee = amount * flashLoanFee.providerFeeRate / RATIO;
             protocolFee = amount * flashLoanFee.protocolFeeRate / RATIO;
+            if (address(this).balance < balanceBefore + providerFee + protocolFee) {
+                revert FlashLoanRepayFailed();
+            }
         }
-        if (address(this).balance < balanceBefore + providerFee + protocolFee) {
-            revert FlashLoanRepayFailed();
-        }
-
+        
         IRETH(rETH).mint(RETHStakeManager, providerFee);
         Address.sendValue(payable(revenuePool), protocolFee);
 
