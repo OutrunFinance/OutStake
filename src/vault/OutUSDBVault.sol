@@ -4,27 +4,30 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import "../stake/interfaces/IRUSDStakeManager.sol";
 import "../blast/IERC20Rebasing.sol";
 import "./interfaces/IOutUSDBVault.sol";
+import "./interfaces/IOutFlashCallee.sol";
 import "../token/USDB//interfaces/IRUSD.sol";
 import {BlastModeEnum} from "../blast/BlastModeEnum.sol";
 
 /**
  * @title USDB Vault Contract
  */
-contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
+contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum {
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
-    uint256 public constant THOUSAND = 1000;
+    uint256 public constant RATIO = 1000;
 
     address public immutable rUSD;
     address public RUSDStakeManager;
     address public revenuePool;
     uint256 public feeRate;
+    FlashLoanFee public flashLoanFee;
 
     modifier onlyRUSDContract() {
         if (msg.sender != rUSD) {
@@ -45,7 +48,7 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         address _revenuePool,
         uint256 _feeRate
     ) Ownable(_owner) {
-        if (_feeRate > THOUSAND) {
+        if (_feeRate > RATIO) {
             revert FeeRateOverflow();
         }
 
@@ -82,7 +85,7 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
             IERC20Rebasing(USDB).claim(address(this), yieldAmount);
             if (feeRate > 0) {
                 unchecked {
-                    uint256 feeAmount = yieldAmount * feeRate / THOUSAND;
+                    uint256 feeAmount = yieldAmount * feeRate / RATIO;
                     IERC20(USDB).safeTransfer(revenuePool, feeAmount);
                     yieldAmount -= feeAmount;
                 }
@@ -95,13 +98,52 @@ contract OutUSDBVault is IOutUSDBVault, Ownable, BlastModeEnum {
         }
     }
 
+     /**
+     * @dev Outrun USDB FlashLoan service
+     * @param receiver - Address of receiver
+     * @param amount - Amount of USDB loan
+     * @param data - Additional data
+     */
+    function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external override nonReentrant {
+        if (amount == 0 || receiver == address(0)) {
+            revert ZeroInput();
+        }
+        uint256 balanceBefore = IERC20(USDB).balanceOf(address(this));
+        IERC20(USDB).safeTransfer(receiver, amount);
+        IOutFlashCallee(receiver).execute(msg.sender, amount, data);
+
+        uint256 providerFee;
+        uint256 protocolFee;
+        unchecked {
+            providerFee = amount * flashLoanFee.providerFeeRate / RATIO;
+            protocolFee = amount * flashLoanFee.protocolFeeRate / RATIO;
+        }
+        if (address(this).balance < balanceBefore + providerFee + protocolFee) {
+            revert FlashLoanRepayFailed();
+        }
+
+        IRUSD(rUSD).mint(RUSDStakeManager, providerFee);
+        IERC20(USDB).safeTransfer(revenuePool, protocolFee);
+
+        emit FlashLoan(receiver, amount);
+    }
+
     function setFeeRate(uint256 _feeRate) external override onlyOwner {
-        if (_feeRate > THOUSAND) {
+        if (_feeRate > RATIO) {
             revert FeeRateOverflow();
         }
 
         feeRate = _feeRate;
         emit SetFeeRate(_feeRate);
+    }
+
+    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external override onlyOwner {
+        if (_providerFeeRate + _protocolFeeRate > RATIO) {
+            revert FeeRateOverflow();
+        }
+
+        flashLoanFee = FlashLoanFee(_providerFeeRate, _protocolFeeRate);
+        emit SetFlashLoanFee(_providerFeeRate, _protocolFeeRate);
     }
 
     function setRevenuePool(address _pool) external override onlyOwner {
