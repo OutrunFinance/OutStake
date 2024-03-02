@@ -21,7 +21,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
-    uint256 public constant RATIO = 1000;
+    uint256 public constant RATIO = 10000;
 
     address public immutable rUSD;
     address public RUSDStakeManager;
