@@ -4,26 +4,29 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import "../blast/IBlast.sol";
 import "../stake/interfaces/IRETHStakeManager.sol";
 import "./interfaces/IOutETHVault.sol";
+import "./interfaces/IOutFlashCallee.sol";
 import "../token/ETH//interfaces/IRETH.sol";
 
 /**
  * @title ETH Vault Contract
  */
-contract OutETHVault is IOutETHVault, Ownable {
+contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
-    uint256 public constant THOUSAND = 1000;
+    uint256 public constant RATIO = 10000;
 
     address public immutable rETH;
     address public RETHStakeManager;
     address public revenuePool;
     uint256 public feeRate;
+    FlashLoanFee public flashLoanFee;
 
     modifier onlyRETHContract() {
         if (msg.sender != rETH) {
@@ -37,6 +40,7 @@ contract OutETHVault is IOutETHVault, Ownable {
      * @param _rETH - Address of RETH Token
      * @param _revenuePool - Revenue pool
      * @param _feeRate - Fee to revenue pool
+     * @param _feeRate - Fee to revenue pool
      */
     constructor(
         address _owner,
@@ -44,7 +48,7 @@ contract OutETHVault is IOutETHVault, Ownable {
         address _revenuePool,
         uint256 _feeRate
     ) Ownable(_owner) {
-        if (_feeRate > THOUSAND) {
+        if (_feeRate > RATIO) {
             revert FeeRateOverflow();
         }
 
@@ -80,7 +84,7 @@ contract OutETHVault is IOutETHVault, Ownable {
         if (yieldAmount > 0) {
             if (feeRate > 0) {
                 unchecked {
-                    uint256 feeAmount = yieldAmount * feeRate / THOUSAND;
+                    uint256 feeAmount = yieldAmount * feeRate / RATIO;
                     Address.sendValue(payable(revenuePool), feeAmount);
                     yieldAmount -= feeAmount;
                 }
@@ -93,13 +97,52 @@ contract OutETHVault is IOutETHVault, Ownable {
         }
     }
 
+    /**
+     * @dev Outrun ETH FlashLoan service
+     * @param receiver - Address of receiver
+     * @param amount - Amount of ETH loan
+     * @param data - Additional data
+     */
+    function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external override nonReentrant {
+        if (amount == 0 || receiver == address(0)) {
+            revert ZeroInput();
+        }
+        uint256 balanceBefore = address(this).balance;
+        receiver.transfer(amount);
+        IOutFlashCallee(receiver).execute(msg.sender, amount, data);
+
+        uint256 providerFee;
+        uint256 protocolFee;
+        unchecked {
+            providerFee = amount * flashLoanFee.providerFeeRate / RATIO;
+            protocolFee = amount * flashLoanFee.protocolFeeRate / RATIO;
+            if (address(this).balance < balanceBefore + providerFee + protocolFee) {
+                revert FlashLoanRepayFailed();
+            }
+        }
+        
+        IRETH(rETH).mint(RETHStakeManager, providerFee);
+        Address.sendValue(payable(revenuePool), protocolFee);
+
+        emit FlashLoan(receiver, amount);
+    }
+
     function setFeeRate(uint256 _feeRate) external override onlyOwner {
-        if (_feeRate > THOUSAND) {
+        if (_feeRate > RATIO) {
             revert FeeRateOverflow();
         }
 
         feeRate = _feeRate;
         emit SetFeeRate(_feeRate);
+    }
+
+    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external override onlyOwner {
+        if (_providerFeeRate + _protocolFeeRate > RATIO) {
+            revert FeeRateOverflow();
+        }
+
+        flashLoanFee = FlashLoanFee(_providerFeeRate, _protocolFeeRate);
+        emit SetFlashLoanFee(_providerFeeRate, _protocolFeeRate);
     }
 
     function setRevenuePool(address _pool) external override onlyOwner {

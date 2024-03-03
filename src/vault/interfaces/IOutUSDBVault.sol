@@ -2,11 +2,18 @@
 pragma solidity ^0.8.24;
 
 interface IOutUSDBVault {
+    struct FlashLoanFee {
+        uint256 providerFeeRate;
+        uint256 protocolFeeRate;
+    }
+
     error ZeroInput();
 
     error PermissionDenied();
 
     error FeeRateOverflow();
+
+    error FlashLoanRepayFailed();
     
     function initialize() external;
     
@@ -14,17 +21,23 @@ interface IOutUSDBVault {
 
     function claimUSDBYield() external;
 
+    function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
+
     function setFeeRate(uint256 _feeRate) external;
+
+    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external;
 
     function setRevenuePool(address _pool) external;
 
     function setRUSDStakeManager(address _RUSDStakeManager) external;
 
     event ClaimUSDBYield(uint256 amount);
+    
+    event FlashLoan(address indexed receiver, uint256 amount);
 
     event SetFeeRate(uint256 _feeRate);
 
-    event SetBot(address _bot);
+    event SetFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate);
 
     event SetRevenuePool(address _pool);
 

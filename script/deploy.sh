@@ -4,4 +4,4 @@ forge clean && forge build
 # --constructor-args 0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8 0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8 0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8 0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8 100 \
 # --private-key $PRIVATE_KEY \
 # src/OutETHVault.sol:OutETHVault
-forge script OutrunScript.s.sol:OutrunScript --rpc-url sepolia --broadcast --verify --ffi -vvvv
+forge script OutstakeScript.s.sol:OutstakeScript --rpc-url sepolia --broadcast --verify --ffi -vvvv
