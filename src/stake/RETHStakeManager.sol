@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IRETHStakeManager.sol";
 import "../vault/interfaces/IOutETHVault.sol";
+import "../utils/Math.sol";
 import "../utils/AutoIncrementId.sol";
 import "../token/ETH/interfaces/IREY.sol";
 import "../token/ETH/interfaces/IRETH.sol";
@@ -26,11 +27,11 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     address public immutable rETH;
     address public immutable pETH;
     address public immutable rey;
-
     address public outETHVault;
+
     uint256 public minLockupDays;
     uint256 public maxLockupDays;
-    uint256 public reduceLockFee;
+    uint256 public forceUnstakeFee;
     uint256 public totalYieldPool;
 
     mapping(uint256 positionId => Position) private _positions;
@@ -48,28 +49,20 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param _pETH - Address of PETH Token
      * @param _rey - Address of REY Token
      * @param _outETHVault - Address of OutETHVault
-     * @param _reduceLockFee - Reduce lock time fee
      */
     constructor(
         address _owner,
         address _rETH,
         address _pETH,
         address _rey,
-        address _outETHVault,
-        uint256 _reduceLockFee
+        address _outETHVault
     ) Ownable(_owner){
-        if (_reduceLockFee > RATIO) {
-            revert ReduceLockFeeOverflow();
-        }
-
         rETH = _rETH;
         pETH = _pETH;
         rey = _rey;
         outETHVault = _outETHVault;
-        reduceLockFee = _reduceLockFee;
 
         emit SetOutETHVault(_outETHVault);
-        emit SetReduceLockFee(_reduceLockFee);
     }
 
     function positionsOf(uint256 positionId) public view override returns (Position memory) {
@@ -121,50 +114,43 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     /**
      * @dev Allows user to unstake funds
      * @param positionId - Staked Principal Position Id
-     * @notice User must have approved this contract to spend PETH
      */
-    function unStake(uint256 positionId) external override {
-        address user = msg.sender;
+    function unstake(uint256 positionId) external override {
         Position memory position = positionsOf(positionId);
-        if (position.owner != user) {
-            revert PermissionDenied();
+        
+        if (position.closed) {
+            revert PositionClosed();
         }
         if (position.deadline > block.timestamp) {
             revert NotReachedDeadline(position.deadline);
         }
-        if (position.closed) {
-            revert PositionClosed();
-        }
 
-        position.closed = true;
-        _positions[positionId] = position;
-        IPETH(pETH).burn(user, position.PETHAmount);
-        uint256 amountInRETH = position.RETHAmount;
-        IERC20(rETH).safeTransfer(user, amountInRETH);
-        
-        emit UnStake(positionId, msg.sender, amountInRETH);
+        _unstake(positionId, position, msg.sender, false);
     }
 
     /**
-     * @dev Allows user burn REY to  withdraw yield
-     * @param amountInREY - Amount of REY
+     * @dev Allows user force unstake
+     * @param positionId - Staked Principal Position Id
      */
-    function withdraw(uint256 amountInREY) external override {
-        if (amountInREY == 0) {
-            revert ZeroInput();
+    function forceUnstake(uint256 positionId) external {
+        address msgSender = msg.sender;
+        Position memory position = positionsOf(positionId);
+
+        if (position.closed) {
+            revert PositionClosed();
         }
-
-        IOutETHVault(outETHVault).claimETHYield();
-        uint256 yieldAmount;
-        unchecked {
-            yieldAmount = totalYieldPool * amountInREY / IREY(rey).totalSupply();
+        uint256 currentTime = block.timestamp;
+        if (position.deadline <= currentTime) {
+            _unstake(positionId, position, msg.sender, false);
+        } else {
+            uint256 amountInREY;
+            unchecked {
+                amountInREY = position.RETHAmount * Math.ceilDiv(position.deadline - currentTime, DAY);
+            }
+            IREY(rey).burn(msgSender, amountInREY);
+            position.deadline = currentTime;
+            _unstake(positionId, position, msgSender, true);
         }
-
-        address user = msg.sender;
-        IREY(rey).burn(user, amountInREY);
-        IERC20(rETH).safeTransfer(user, yieldAmount);
-
-        emit Withdraw(user, amountInREY, yieldAmount);
     }
 
     /**
@@ -178,11 +164,12 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         if (position.owner != user) {
             revert PermissionDenied();
         }
-        if (position.deadline <= block.timestamp) {
+        uint256 currentTime = block.timestamp;
+        if (position.deadline <= currentTime) {
             revert ReachedDeadline(position.deadline);
         }
         uint256 newDeadLine = position.deadline + extendDays * DAY;
-        uint256 intervalDaysFromNow = (newDeadLine - block.timestamp) / DAY;
+        uint256 intervalDaysFromNow = (newDeadLine - currentTime) / DAY;
         if (intervalDaysFromNow < minLockupDays || intervalDaysFromNow > maxLockupDays) {
             revert InvalidExtendDays();
         }
@@ -199,32 +186,25 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @dev Allows user to extend lock time
-     * @param positionId - Staked Principal Position Id
-     * @param reduceDays - Reduce lockup days
-     * @notice User must have approved this contract to spend REY
+     * @dev Allows user burn REY to  withdraw yield
+     * @param amountInREY - Amount of REY
      */
-    function reduceLockTime(uint256 positionId, uint256 reduceDays) external {
-        address user = msg.sender;
-        Position memory position = positionsOf(positionId);
-        if (position.owner != user) {
-            revert PermissionDenied();
-        }
-        uint256 newDeadLine = position.deadline - reduceDays * DAY;
-        if (newDeadLine < block.timestamp) {
-            revert InvalidReduceDays();
+    function withdrawYield(uint256 amountInREY) external override {
+        if (amountInREY == 0) {
+            revert ZeroInput();
         }
 
-        position.deadline = newDeadLine;
-        _positions[positionId] = position;
-
-        uint256 amountInREY;
+        IOutETHVault(outETHVault).claimETHYield();
+        uint256 yieldAmount;
         unchecked {
-            amountInREY = position.RETHAmount * reduceDays * (1 + reduceLockFee / RATIO);
+            yieldAmount = totalYieldPool * amountInREY / IREY(rey).totalSupply();
         }
-        IREY(rey).burn(user, amountInREY);
 
-        emit ReduceLockTime(positionId, reduceDays, amountInREY);
+        address user = msg.sender;
+        IREY(rey).burn(user, amountInREY);
+        IERC20(rETH).safeTransfer(user, yieldAmount);
+
+        emit WithdrawYield(user, amountInREY, yieldAmount);
     }
 
     /**
@@ -253,15 +233,15 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @param _reduceLockFee - Reduce lock time fee
+     * @param _forceUnstakeFee - Force unstake fee
      */
-    function setReduceLockFee(uint256 _reduceLockFee) external override onlyOwner {
-        if (_reduceLockFee > RATIO) {
-            revert ReduceLockFeeOverflow();
+    function setForceUnstakeFee(uint256 _forceUnstakeFee) external override onlyOwner {
+        if (_forceUnstakeFee > RATIO) {
+            revert ForceUnstakeFeeOverflow();
         }
 
-        reduceLockFee = _reduceLockFee;
-        emit SetReduceLockFee(_reduceLockFee);
+        forceUnstakeFee = _forceUnstakeFee;
+        emit SetForceUnstakeFee(_forceUnstakeFee);
     }
 
     /**
@@ -270,6 +250,30 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     function setOutETHVault(address _outETHVault) external override onlyOwner {
         outETHVault = _outETHVault;
         emit SetOutETHVault(_outETHVault);
+    }
+
+    function _unstake(uint256 positionId, Position memory position, address msgSender, bool feeOn) internal {
+        if (position.owner != msgSender) {
+            revert PermissionDenied();
+        }
+
+        position.closed = true;
+        _positions[positionId] = position;
+        IPETH(pETH).burn(msgSender, position.PETHAmount);
+
+        uint256 amountInRETH = position.RETHAmount;
+        if (feeOn) {
+            uint256 fee;
+            unchecked {
+                fee = amountInRETH * forceUnstakeFee / RATIO;
+                amountInRETH -= fee;
+            }
+            IRETH(rETH).withdraw(fee);
+            Address.sendValue(payable(IOutETHVault(outETHVault).revenuePool()), fee);
+        }
+        IERC20(rETH).safeTransfer(msgSender, amountInRETH);
+
+        emit Unstake(positionId, msgSender, amountInRETH);
     }
 
     /**

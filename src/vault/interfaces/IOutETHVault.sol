@@ -15,6 +15,8 @@ interface IOutETHVault {
 
     error FlashLoanRepayFailed();
 
+    function revenuePool() view external returns(address);
+
     function initialize() external;
 
     function withdraw(address user, uint256 amount) external;

@@ -14,6 +14,8 @@ interface IOutUSDBVault {
     error FeeRateOverflow();
 
     error FlashLoanRepayFailed();
+
+    function revenuePool() view external returns(address);
     
     function initialize() external;
     

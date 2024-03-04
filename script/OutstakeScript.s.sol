@@ -31,8 +31,7 @@ contract OutstakeScript is BaseScript {
             rethAddress,
             pethAddress,
             reyAddress,
-            vaultAddress,
-            1000
+            vaultAddress
         );
         address stakeAddress = address(stakeManager);
 
@@ -41,6 +40,7 @@ contract OutstakeScript is BaseScript {
         reth.setOutETHVault(vaultAddress);
         peth.setRETHStakeManager(stakeAddress);
         rey.setRETHStakeManager(stakeAddress);
+        stakeManager.setForceUnstakeFee(30);
 
         console.log("RETH deployed on %s", rethAddress);
         console.log("PETH deployed on %s", pethAddress);

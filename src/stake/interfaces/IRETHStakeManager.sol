@@ -31,7 +31,7 @@ interface IRETHStakeManager {
 
     error InvalidReduceDays();
     
-    error ReduceLockFeeOverflow();
+    error ForceUnstakeFeeOverflow();
 
     function positionsOf(uint256 positionId) external returns (Position memory);
 
@@ -39,21 +39,21 @@ interface IRETHStakeManager {
 
     function stake(uint256 amountInRETH, uint256 lockupDays) external;
 
-    function unStake(uint256 positionId) external;
+    function unstake(uint256 positionId) external;
 
-    function withdraw(uint256 amountInREY) external;
+    function forceUnstake(uint256 positionId) external;
 
     function extendLockTime(uint256 positionId, uint256 extendDays) external;
-    
-    function reduceLockTime(uint256 positionId, uint256 reduceDays) external;
+
+    function withdrawYield(uint256 amountInREY) external;
 
     function updateYieldAmount(uint256 yieldAmount) external;
 
-    function setMinLockupDays(uint256 minLockupDays) external;
+    function setMinLockupDays(uint256 _minLockupDays) external;
 
-    function setMaxLockupDays(uint256 maxLockupDays) external;
+    function setMaxLockupDays(uint256 _maxLockupDays) external;
 
-    function setReduceLockFee(uint256 reduceLockFee) external;
+    function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
 
     function setOutETHVault(address _outETHVault) external;
 
@@ -64,19 +64,19 @@ interface IRETHStakeManager {
         uint256 _deadline
     );
 
-    event UnStake(uint256 indexed _positionId, address indexed _account, uint256 _amountInRETH);
+    event Unstake(uint256 indexed _positionId, address indexed _account, uint256 _amountInRETH);
 
-    event Withdraw(address indexed user, uint256 amountInREY, uint256 yieldAmount);
+    event ForceUnstake(uint256 indexed positionId, uint256 burnedREY);
+
+    event WithdrawYield(address indexed user, uint256 amountInREY, uint256 yieldAmount);
 
     event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 mintedREY);
-
-    event ReduceLockTime(uint256 indexed positionId, uint256 reduceDays, uint256 burnedREY);
 
     event SetMinLockupDays(uint256 _minLockupDays);
 
     event SetMaxLockupDays(uint256 _maxLockupDays);
 
-    event SetReduceLockFee(uint256 _reduceLockFee);
+    event SetForceUnstakeFee(uint256 _forceUnstakeFee);
 
     event SetOutETHVault(address _outETHVault);
 }
