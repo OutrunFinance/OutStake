@@ -10,10 +10,10 @@ import "./interfaces/IRUY.sol";
  * @title Outrun USD yield token
  */
 contract RUY is IRUY, ERC20, Ownable {
-    address public RUSDStakeManager;
+    address private _RUSDStakeManager;
 
     modifier onlyRUSDStakeManager() {
-        if (msg.sender != RUSDStakeManager) {
+        if (msg.sender != _RUSDStakeManager) {
             revert PermissionDenied();
         }
         _;
@@ -21,20 +21,30 @@ contract RUY is IRUY, ERC20, Ownable {
 
     constructor(address owner) ERC20("Outrun USD yield token", "RUY") Ownable(owner) {}
 
-    function burn(address account, uint256 amount) external override onlyRUSDStakeManager {
-        if (amount == 0) {
-            revert ZeroInput();
-        }
-
-        _burn(account, amount);
+    function RUSDStakeManager() external view override returns (address) {
+        return _RUSDStakeManager;
     }
 
+    /**
+     * Only RUSDStakeManager can mint when the user stake RUSD
+     * @param _account Address who stake RUSD 
+     * @param _amount The amount of minted RUY
+     */
     function mint(address _account, uint256 _amount) external override onlyRUSDStakeManager {
         _mint(_account, _amount);
     }
 
-    function setRUSDStakeManager(address _RUSDStakeManager) external override onlyOwner {
-        RUSDStakeManager = _RUSDStakeManager;
-        emit SetRUSDStakeManager(_RUSDStakeManager);
+    /**
+     * Only RUSDStakeManager can burn when the user redempt the native yield
+     * @param _account Address who redempt the native yield
+     * @param _amount The amount of burned RUY
+     */
+    function burn(address _account, uint256 _amount) external override onlyRUSDStakeManager {
+        _burn(_account, _amount);
+    }
+
+    function setRUSDStakeManager(address _stakeManager) external override onlyOwner {
+        _RUSDStakeManager = _stakeManager;
+        emit SetRUSDStakeManager(_stakeManager);
     }
 }

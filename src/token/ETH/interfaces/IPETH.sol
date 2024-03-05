@@ -11,11 +11,13 @@ interface IPETH is IERC20 {
 
     error PermissionDenied();
 
+    function RETHStakeManager() external view returns (address);
+
     function mint(address _account, uint256 _amount) external;
 
     function burn(address _account, uint256 _amount) external;
 
-    function setRETHStakeManager(address _address) external;
+    function setRETHStakeManager(address _stakeManager) external;
 
-    event SetRETHStakeManager(address _address);
+    event SetRETHStakeManager(address _stakeManager);
 }

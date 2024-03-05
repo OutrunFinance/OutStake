@@ -10,6 +10,8 @@ interface IRETH is IERC20 {
     error ZeroInput();
 
     error PermissionDenied();
+
+    function outETHVault() external view returns (address);
     
     function deposit() payable external;
 
@@ -17,7 +19,7 @@ interface IRETH is IERC20 {
 
     function mint(address _account, uint256 _amount) external;
 
-    function setOutETHVault(address _outETHVault) external;
+    function setOutETHVault(address _vault) external;
     
     event Deposit(address indexed _account, uint256 _amount);
 

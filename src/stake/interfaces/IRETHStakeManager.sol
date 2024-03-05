@@ -33,14 +33,28 @@ interface IRETHStakeManager {
     
     error ForceUnstakeFeeOverflow();
 
-    function totalYieldPool() view external returns (uint256);
+    /** view **/
+    function outETHVault() external view returns (address);
 
-    function positionsOf(uint256 positionId) view external returns (Position memory);
+    function minLockupDays() external view returns (uint256);
 
-    function getStakedRETH() view external returns (uint256);
+    function maxLockupDays() external view returns (uint256);
 
-    function avgStakeDays() view external returns (uint256);
+    function forceUnstakeFee() external view returns (uint256);
 
+    function totalStaked() external view returns (uint256);
+
+    function totalYieldPool() external view returns (uint256);
+
+    function positionsOf(uint256 positionId) external view returns (Position memory);
+
+    function getStakedRETH() external view returns (uint256);
+
+    function avgStakeDays() external view returns (uint256);
+
+    function calcPETHAmount(uint256 amountInRETH) external view returns (uint256);
+
+    /** function **/
     function stake(uint256 amountInRETH, uint256 lockupDays) external;
 
     function unstake(uint256 positionId) external;
@@ -53,6 +67,7 @@ interface IRETHStakeManager {
 
     function updateYieldAmount(uint256 yieldAmount) external;
 
+    /** setter **/
     function setMinLockupDays(uint256 _minLockupDays) external;
 
     function setMaxLockupDays(uint256 _maxLockupDays) external;

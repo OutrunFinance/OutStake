@@ -32,15 +32,29 @@ interface IRUSDStakeManager {
     error InvalidReduceDays();
     
     error ForceUnstakeFeeOverflow();
-
-    function totalYieldPool() view external returns (uint256);
     
-    function positionsOf(uint256 positionId) view external returns (Position memory);
+    /** view **/
+    function outUSDBVault() external view returns (address);
 
-    function getStakedRUSD() view external returns (uint256);
+    function minLockupDays() external view returns (uint256);
 
-    function avgStakeDays() view external returns (uint256);
+    function maxLockupDays() external view returns (uint256);
 
+    function forceUnstakeFee() external view returns (uint256);
+
+    function totalStaked() external view returns (uint256);
+
+    function totalYieldPool() external view returns (uint256);
+
+    function positionsOf(uint256 positionId) external view returns (Position memory);
+
+    function getStakedRUSD() external view returns (uint256);
+
+    function avgStakeDays() external view returns (uint256);
+
+    function calcPUSDAmount(uint256 amountInRUSD) external view returns (uint256);
+
+    /** function **/
     function stake(uint256 amountInRUSD, uint256 lockupDays) external;
 
     function unstake(uint256 positionId) external;
@@ -53,6 +67,7 @@ interface IRUSDStakeManager {
 
     function updateYieldAmount(uint256 yieldAmount) external;
 
+    /** setter **/
     function setMinLockupDays(uint256 _minLockupDays) external;
 
     function setMaxLockupDays(uint256 _maxLockupDays) external;

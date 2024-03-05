@@ -27,46 +27,71 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     address public immutable rUSD;
     address public immutable pUSD;
     address public immutable ruy;
-    address public outUSDBVault;
 
-    uint256 public minLockupDays;
-    uint256 public maxLockupDays;
-    uint256 public forceUnstakeFee;
-    uint256 public totalYieldPool;
-    uint256 public totalStaked;
+    address private _outUSDBVault;
+    uint256 private _minLockupDays;
+    uint256 private _maxLockupDays;
+    uint256 private _forceUnstakeFee;
+    uint256 private _totalStaked;
+    uint256 private _totalYieldPool;
 
     mapping(uint256 positionId => Position) private _positions;
 
     modifier onlyOutUSDBVault() {
-        if (msg.sender != outUSDBVault) {
+        if (msg.sender != _outUSDBVault) {
             revert PermissionDenied();
         }
         _;
     }
 
     /**
-     * @param _owner - Address of the owner
-     * @param _rUSD - Address of RUSD Token
-     * @param _pUSD - Address of PUSD Token
-     * @param _ruy - Address of RUY Token
-     * @param _outUSDBVault - Address of outUSDBVault
+     * @param owner_ - Address of the owner
+     * @param rUSD_ - Address of RUSD Token
+     * @param pUSD_ - Address of PUSD Token
+     * @param ruy_ - Address of RUY Token
+     * @param outUSDBVault_ - Address of outUSDBVault
      */
     constructor(
-        address _owner,
-        address _rUSD,
-        address _pUSD,
-        address _ruy,
-        address _outUSDBVault
-    ) Ownable(_owner){
-        rUSD = _rUSD;
-        pUSD = _pUSD;
-        ruy = _ruy;
-        outUSDBVault = _outUSDBVault;
+        address owner_,
+        address rUSD_,
+        address pUSD_,
+        address ruy_,
+        address outUSDBVault_
+    ) Ownable(owner_){
+        rUSD = rUSD_;
+        pUSD = pUSD_;
+        ruy = ruy_;
+        _outUSDBVault = outUSDBVault_;
 
-        emit SetOutUSDBVault(_outUSDBVault);
+        emit SetOutUSDBVault(outUSDBVault_);
     }
 
-    function positionsOf(uint256 positionId) public view override returns (Position memory) {
+    /** view **/
+    function outUSDBVault() external view override returns (address) {
+        return _outUSDBVault;
+    }
+
+    function minLockupDays() external view override returns (uint256) {
+        return _minLockupDays;
+    }
+
+    function maxLockupDays() external view override returns (uint256) {
+        return _maxLockupDays;
+    }
+
+    function forceUnstakeFee() external view override returns (uint256) {
+        return _forceUnstakeFee;
+    }
+
+    function totalStaked() external view override returns (uint256) {
+        return _totalStaked;
+    }
+
+    function totalYieldPool() external view override returns (uint256) {
+        return _totalYieldPool;
+    }
+
+    function positionsOf(uint256 positionId) external view override returns (Position memory) {
         return _positions[positionId];
     }
 
@@ -74,10 +99,26 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         return IRUSD(rUSD).balanceOf(address(this));
     }
 
-    function avgStakeDays() view external override returns (uint256) {
-        return IERC20(ruy).totalSupply() / totalStaked;
+    function avgStakeDays() public view override returns (uint256) {
+        return IERC20(ruy).totalSupply() / _totalStaked;
     }
 
+    /**
+     * @dev Calculates amount of PUSD
+     */
+    function calcPUSDAmount(uint256 amountInRUSD) public view override returns (uint256) {
+        uint256 totalShares = IRUSD(pUSD).totalSupply();
+        totalShares = totalShares == 0 ? 1 : totalShares;
+
+        uint256 yieldVault = getStakedRUSD();
+        yieldVault = yieldVault == 0 ? 1 : yieldVault;
+
+        unchecked {
+            return amountInRUSD * totalShares / yieldVault;
+        }
+    }
+
+    /** function **/
     /**
      * @dev Allows user to deposit RUSD, then mints PUSD and RUY for the user.
      * @param amountInRUSD - RUSD staked amount, amount % 1e18 == 0
@@ -88,12 +129,12 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         if (amountInRUSD < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
-        if (lockupDays < minLockupDays || lockupDays > maxLockupDays) {
-            revert InvalidLockupDays(minLockupDays, maxLockupDays);
+        if (lockupDays < _minLockupDays || lockupDays > _maxLockupDays) {
+            revert InvalidLockupDays(_minLockupDays, _maxLockupDays);
         }
 
         address user = msg.sender;
-        uint256 amountInPUSD = CalcPUSDAmount(amountInRUSD);
+        uint256 amountInPUSD = calcPUSDAmount(amountInRUSD);
         uint256 positionId = nextId();
         uint256 amountInRUY;
         uint256 deadline;
@@ -121,7 +162,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param positionId - Staked Principal Position Id
      */
     function unstake(uint256 positionId) external override {
-        Position memory position = positionsOf(positionId);
+        Position memory position = _positions[positionId];
 
         if (position.deadline > block.timestamp) {
             revert NotReachedDeadline(position.deadline);
@@ -139,7 +180,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      */
     function forceUnstake(uint256 positionId) external {
         address msgSender = msg.sender;
-        Position memory position = positionsOf(positionId);
+        Position memory position = _positions[positionId];
 
         if (position.closed) {
             revert PositionClosed();
@@ -165,7 +206,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      */
     function extendLockTime(uint256 positionId, uint256 extendDays) external {
         address user = msg.sender;
-        Position memory position = positionsOf(positionId);
+        Position memory position = _positions[positionId];
         if (position.owner != user) {
             revert PermissionDenied();
         }
@@ -175,7 +216,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         }
         uint256 newDeadLine = position.deadline + extendDays * DAY;
         uint256 intervalDaysFromNow = (newDeadLine - currentTime) / DAY;
-        if (intervalDaysFromNow < minLockupDays || intervalDaysFromNow > maxLockupDays) {
+        if (intervalDaysFromNow < _minLockupDays || intervalDaysFromNow > _maxLockupDays) {
             revert InvalidExtendDays();
         }
 
@@ -199,10 +240,10 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
             revert ZeroInput();
         }
 
-        IOutUSDBVault(outUSDBVault).claimUSDBYield();
+        IOutUSDBVault(_outUSDBVault).claimUSDBYield();
         uint256 yieldAmount;
         unchecked {
-            yieldAmount = totalYieldPool * amountInRUY / IRUY(ruy).totalSupply();
+            yieldAmount = _totalYieldPool * amountInRUY / IRUY(ruy).totalSupply();
         }
 
         address user = msg.sender;
@@ -217,46 +258,48 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      */
     function updateYieldAmount(uint256 yieldAmount) external override onlyOutUSDBVault {
         unchecked {
-            totalYieldPool += yieldAmount;
+            _totalYieldPool += yieldAmount;
         }
     }
 
+    /** setter **/
     /**
-     * @param _minLockupDays - Min lockup days
+     * @param minLockupDays_ - Min lockup days
      */
-    function setMinLockupDays(uint256 _minLockupDays) external onlyOwner {
-        minLockupDays = _minLockupDays;
-        emit SetMinLockupDays(_minLockupDays);
+    function setMinLockupDays(uint256 minLockupDays_) external onlyOwner {
+        _minLockupDays = minLockupDays_;
+        emit SetMinLockupDays(minLockupDays_);
     }
     
     /**
-     * @param _maxLockupDays - Max lockup days
+     * @param maxLockupDays_ - Max lockup days
      */
-    function setMaxLockupDays(uint256 _maxLockupDays) external onlyOwner {
-        maxLockupDays = _maxLockupDays;
-        emit SetMaxLockupDays(_maxLockupDays);
+    function setMaxLockupDays(uint256 maxLockupDays_) external onlyOwner {
+        _maxLockupDays = maxLockupDays_;
+        emit SetMaxLockupDays(maxLockupDays_);
     }
 
     /**
-     * @param _forceUnstakeFee - Force unstake fee
+     * @param forceUnstakeFee_ - Force unstake fee
      */
-    function setForceUnstakeFee(uint256 _forceUnstakeFee) external override onlyOwner {
-        if (_forceUnstakeFee > RATIO) {
+    function setForceUnstakeFee(uint256 forceUnstakeFee_) external override onlyOwner {
+        if (forceUnstakeFee_ > RATIO) {
             revert ForceUnstakeFeeOverflow();
         }
 
-        forceUnstakeFee = _forceUnstakeFee;
-        emit SetForceUnstakeFee(_forceUnstakeFee);
+        _forceUnstakeFee = forceUnstakeFee_;
+        emit SetForceUnstakeFee(forceUnstakeFee_);
     }
 
     /**
-     * @param _outUSDBVault - Address of outUSDBVault
+     * @param outUSDBVault_ - Address of outUSDBVault
      */
-    function setOutUSDBVault(address _outUSDBVault) external override onlyOwner {
-        outUSDBVault = _outUSDBVault;
-        emit SetOutUSDBVault(_outUSDBVault);
+    function setOutUSDBVault(address outUSDBVault_) external override onlyOwner {
+        _outUSDBVault = outUSDBVault_;
+        emit SetOutUSDBVault(outUSDBVault_);
     }
 
+    /** internal **/
     function _unstake(uint256 positionId, Position memory position, address msgSender, bool feeOn) internal {
         if (position.owner != msgSender) {
             revert PermissionDenied();
@@ -270,29 +313,14 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         if (feeOn) {
             uint256 fee;
             unchecked {
-                fee = amountInRUSD * forceUnstakeFee / RATIO;
+                fee = amountInRUSD * _forceUnstakeFee / RATIO;
                 amountInRUSD -= fee;
             }
             IRUSD(rUSD).withdraw(fee);
-            IERC20(rUSD).safeTransfer(IOutUSDBVault(outUSDBVault).revenuePool(), fee);
+            IERC20(rUSD).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
         }
         IERC20(rUSD).safeTransfer(msgSender, amountInRUSD);
 
         emit Unstake(positionId, msgSender, amountInRUSD);
-    }
-    
-    /**
-     * @dev Calculates amount of PUSD
-     */
-    function CalcPUSDAmount(uint256 amountInRUSD) internal view returns (uint256) {
-        uint256 totalShares = IRUSD(pUSD).totalSupply();
-        totalShares = totalShares == 0 ? 1 : totalShares;
-
-        uint256 yieldVault = getStakedRUSD();
-        yieldVault = yieldVault == 0 ? 1 : yieldVault;
-
-        unchecked {
-            return amountInRUSD * totalShares / yieldVault;
-        }
     }
 }

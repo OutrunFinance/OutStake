@@ -17,16 +17,20 @@ contract RUSD is IRUSD, ERC20, Ownable {
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
-    address public outUSDBVault;
+    address private _outUSDBVault;
 
     modifier onlyOutUSDBVault() {
-        if (msg.sender != outUSDBVault) {
+        if (msg.sender != _outUSDBVault) {
             revert PermissionDenied();
         }
         _;
     }
 
     constructor(address owner) ERC20("Outrun Wrapped USDB", "RUSD") Ownable(owner) {}
+
+    function outUSDBVault() external view override returns (address) {
+        return _outUSDBVault;
+    }
 
     /**
      * @dev Allows user to deposit USDB and mint RUSD
@@ -37,13 +41,13 @@ contract RUSD is IRUSD, ERC20, Ownable {
             revert ZeroInput();
         }
         address user = msg.sender;
-        IERC20(USDB).safeTransferFrom(user, outUSDBVault, amount);
+        IERC20(USDB).safeTransferFrom(user, _outUSDBVault, amount);
         _mint(user, amount);
 
         emit Deposit(user, amount);
     }
 
-        /**
+    /**
      * @dev Allows user to withdraw USDB by RUSD
      * @param amount - Amount of RUSD for burn
      */
@@ -53,17 +57,20 @@ contract RUSD is IRUSD, ERC20, Ownable {
         }
         address user = msg.sender;
         _burn(user, amount);
-        IOutUSDBVault(outUSDBVault).withdraw(user, amount);
+        IOutUSDBVault(_outUSDBVault).withdraw(user, amount);
 
         emit Withdraw(user, amount);
     }
 
+    /**
+     * @dev OutETHVault fee
+     */
     function mint(address _account, uint256 _amount) external override onlyOutUSDBVault {
         _mint(_account, _amount);
     }
     
-    function setOutUSDBVault(address _outUSDBVault) external override onlyOwner {
-        outUSDBVault = _outUSDBVault;
-        emit SetOutUSDBVault(_outUSDBVault);
+    function setOutUSDBVault(address _vault) external override onlyOwner {
+        _outUSDBVault = _vault;
+        emit SetOutUSDBVault(_vault);
     }
 }

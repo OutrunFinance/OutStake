@@ -12,16 +12,20 @@ import "../../vault/interfaces/IOutETHVault.sol";
  * @title Outrun ETH Wrapped Token
  */
 contract RETH is IRETH, ERC20, Ownable {
-    address public outETHVault;
+    address private _outETHVault;
 
     modifier onlyOutETHVault() {
-        if (msg.sender != outETHVault) {
+        if (msg.sender != _outETHVault) {
             revert PermissionDenied();
         }
         _;
     }
 
     constructor(address owner) ERC20("Outrun Wrapped ETH", "RETH") Ownable(owner) {}
+
+    function outETHVault() external view override returns (address) {
+        return _outETHVault;
+    }
 
     /**
      * @dev Allows user to deposit ETH and mint RETH
@@ -33,7 +37,7 @@ contract RETH is IRETH, ERC20, Ownable {
         }
 
         address user = msg.sender;
-        Address.sendValue(payable(outETHVault), amount);
+        Address.sendValue(payable(_outETHVault), amount);
         _mint(user, amount);
 
         emit Deposit(user, amount);
@@ -49,18 +53,21 @@ contract RETH is IRETH, ERC20, Ownable {
         }
         address user = msg.sender;
         _burn(user, amount);
-        IOutETHVault(outETHVault).withdraw(user, amount);
+        IOutETHVault(_outETHVault).withdraw(user, amount);
 
         emit Withdraw(user, amount);
     }
 
+    /**
+     * @dev OutETHVault fee
+     */
     function mint(address _account, uint256 _amount) external override onlyOutETHVault {
         _mint(_account, _amount);
     }
 
-    function setOutETHVault(address _outETHVault) external override onlyOwner {
-        outETHVault = _outETHVault;
-        emit SetOutETHVault(_outETHVault);
+    function setOutETHVault(address _vault) external override onlyOwner {
+        _outETHVault = _vault;
+        emit SetOutETHVault(_vault);
     }
 
     receive() external payable {
