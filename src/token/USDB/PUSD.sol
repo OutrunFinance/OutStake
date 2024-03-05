@@ -10,10 +10,10 @@ import "./interfaces/IPUSD.sol";
  * @title Outrun Principal USD Liquid Staked Token
  */
 contract PUSD is IPUSD, ERC20, Ownable {
-    address public RUSDStakeManager;
+    address private _RUSDStakeManager;
 
     modifier onlyRUSDStakeManager() {
-        if (msg.sender != RUSDStakeManager) {
+        if (msg.sender != _RUSDStakeManager) {
             revert PermissionDenied();
         }
         _;
@@ -21,18 +21,13 @@ contract PUSD is IPUSD, ERC20, Ownable {
 
     constructor(address owner) ERC20("Principal Staked USD", "PUSD") Ownable(owner) {}
 
-    function setRUSDStakeManager(address _RUSDStakeManager) external override onlyOwner {
-        if (_RUSDStakeManager == address(0)) {
-            revert ZeroInput();
-        }
-
-        RUSDStakeManager = _RUSDStakeManager;
-        emit SetRUSDStakeManager(_RUSDStakeManager);
+    function RUSDStakeManager() external view override returns (address) {
+        return _RUSDStakeManager;
     }
 
     /**
-     * Only RUSDStakeManager can mint when the user deposit RUSD
-     * @param _account Address who deposit RUSD 
+     * Only RUSDStakeManager can mint when the user stake RUSD
+     * @param _account Address who stake RUSD 
      * @param _amount The amount of deposited RUSD
      */
     function mint(address _account, uint256 _amount) external override onlyRUSDStakeManager{
@@ -46,5 +41,10 @@ contract PUSD is IPUSD, ERC20, Ownable {
      */
     function burn(address _account, uint256 _amount) external override onlyRUSDStakeManager {
         _burn(_account, _amount);
+    }
+
+    function setRUSDStakeManager(address _stakeManager) external override onlyOwner {
+        _RUSDStakeManager = _stakeManager;
+        emit SetRUSDStakeManager(_stakeManager);
     }
 }

@@ -15,6 +15,16 @@ interface IOutETHVault {
 
     error FlashLoanRepayFailed();
 
+    /** view **/
+    function RETHStakeManager() external view returns (address);
+
+    function revenuePool() external view returns (address);
+
+    function feeRate() external view returns (uint256);
+
+    function flashLoanFee() external view returns (FlashLoanFee memory);
+
+    /** function **/
     function initialize() external;
 
     function withdraw(address user, uint256 amount) external;
@@ -23,6 +33,7 @@ interface IOutETHVault {
 
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
 
+    /** setter **/
     function setFeeRate(uint256 _feeRate) external;
 
     function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external;

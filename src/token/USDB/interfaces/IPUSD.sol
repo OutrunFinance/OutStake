@@ -10,12 +10,14 @@ interface IPUSD is IERC20 {
     error ZeroInput();
 
     error PermissionDenied();
+
+    function RUSDStakeManager() external view returns (address);
     
     function mint(address _account, uint256 _amount) external;
 
     function burn(address _account, uint256 _amount) external;
 
-    function setRUSDStakeManager(address _address) external;
+    function setRUSDStakeManager(address _stakeManager) external;
 
-    event SetRUSDStakeManager(address _address);
+    event SetRUSDStakeManager(address _stakeManager);
 }

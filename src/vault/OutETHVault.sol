@@ -21,12 +21,12 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
 
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
     uint256 public constant RATIO = 10000;
-
     address public immutable rETH;
-    address public RETHStakeManager;
-    address public revenuePool;
-    uint256 public feeRate;
-    FlashLoanFee public flashLoanFee;
+
+    address private _RETHStakeManager;
+    address private _revenuePool;
+    uint256 private _feeRate;
+    FlashLoanFee private _flashLoanFee;
 
     modifier onlyRETHContract() {
         if (msg.sender != rETH) {
@@ -36,30 +36,47 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @param _owner - Address of the owner
-     * @param _rETH - Address of RETH Token
-     * @param _revenuePool - Revenue pool
-     * @param _feeRate - Fee to revenue pool
-     * @param _feeRate - Fee to revenue pool
+     * @param owner_ - Address of the owner
+     * @param rETH_ - Address of RETH Token
+     * @param revenuePool_ - Revenue pool
+     * @param feeRate_ - FeeRate to revenue pool
      */
     constructor(
-        address _owner,
-        address _rETH,
-        address _revenuePool,
-        uint256 _feeRate
-    ) Ownable(_owner) {
-        if (_feeRate > RATIO) {
+        address owner_,
+        address rETH_,
+        address revenuePool_,
+        uint256 feeRate_
+    ) Ownable(owner_) {
+        if (feeRate_ > RATIO) {
             revert FeeRateOverflow();
         }
 
-        rETH = _rETH;
-        feeRate = _feeRate;
-        revenuePool = _revenuePool;
+        rETH = rETH_;
+        _feeRate = feeRate_;
+        _revenuePool = revenuePool_;
 
-        emit SetFeeRate(_feeRate);
-        emit SetRevenuePool(_revenuePool);
+        emit SetFeeRate(feeRate_);
+        emit SetRevenuePool(revenuePool_);
     }
 
+    /** view **/
+    function RETHStakeManager() external view returns (address) {
+        return _RETHStakeManager;
+    }
+
+    function revenuePool() external view returns (address) {
+        return _revenuePool;
+    }
+
+    function feeRate() external view returns (uint256) {
+        return _feeRate;
+    }
+
+    function flashLoanFee() external view returns (FlashLoanFee memory) {
+        return _flashLoanFee;
+    }
+
+    /** function **/
     /**
      * @dev Initialize native yield claimable
      */
@@ -82,16 +99,16 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
     function claimETHYield() public override {
         uint256 yieldAmount = BLAST.claimAllYield(address(this), address(this));
         if (yieldAmount > 0) {
-            if (feeRate > 0) {
+            if (_feeRate > 0) {
                 unchecked {
-                    uint256 feeAmount = yieldAmount * feeRate / RATIO;
-                    Address.sendValue(payable(revenuePool), feeAmount);
+                    uint256 feeAmount = yieldAmount * _feeRate / RATIO;
+                    Address.sendValue(payable(_revenuePool), feeAmount);
                     yieldAmount -= feeAmount;
                 }
             }
 
-            IRETH(rETH).mint(RETHStakeManager, yieldAmount);
-            IRETHStakeManager(RETHStakeManager).updateYieldAmount(yieldAmount);
+            IRETH(rETH).mint(_RETHStakeManager, yieldAmount);
+            IRETHStakeManager(_RETHStakeManager).updateYieldAmount(yieldAmount);
 
             emit ClaimETHYield(yieldAmount);
         }
@@ -114,26 +131,27 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
         uint256 providerFee;
         uint256 protocolFee;
         unchecked {
-            providerFee = amount * flashLoanFee.providerFeeRate / RATIO;
-            protocolFee = amount * flashLoanFee.protocolFeeRate / RATIO;
+            providerFee = amount * _flashLoanFee.providerFeeRate / RATIO;
+            protocolFee = amount * _flashLoanFee.protocolFeeRate / RATIO;
             if (address(this).balance < balanceBefore + providerFee + protocolFee) {
                 revert FlashLoanRepayFailed();
             }
         }
         
-        IRETH(rETH).mint(RETHStakeManager, providerFee);
-        Address.sendValue(payable(revenuePool), protocolFee);
+        IRETH(rETH).mint(_RETHStakeManager, providerFee);
+        Address.sendValue(payable(_revenuePool), protocolFee);
 
         emit FlashLoan(receiver, amount);
     }
 
-    function setFeeRate(uint256 _feeRate) external override onlyOwner {
-        if (_feeRate > RATIO) {
+    /** setter **/
+    function setFeeRate(uint256 feeRate_) external override onlyOwner {
+        if (feeRate_ > RATIO) {
             revert FeeRateOverflow();
         }
 
-        feeRate = _feeRate;
-        emit SetFeeRate(_feeRate);
+        _feeRate = feeRate_;
+        emit SetFeeRate(feeRate_);
     }
 
     function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external override onlyOwner {
@@ -141,18 +159,18 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
             revert FeeRateOverflow();
         }
 
-        flashLoanFee = FlashLoanFee(_providerFeeRate, _protocolFeeRate);
+        _flashLoanFee = FlashLoanFee(_providerFeeRate, _protocolFeeRate);
         emit SetFlashLoanFee(_providerFeeRate, _protocolFeeRate);
     }
 
     function setRevenuePool(address _pool) external override onlyOwner {
-        revenuePool = _pool;
+        _revenuePool = _pool;
         emit SetRevenuePool(_pool);
     }
 
-    function setRETHStakeManager(address _RETHStakeManager) external override onlyOwner {
-        RETHStakeManager = _RETHStakeManager;
-        emit SetRETHStakeManager(_RETHStakeManager);
+    function setRETHStakeManager(address _stakeManager) external override onlyOwner {
+        _RETHStakeManager = _stakeManager;
+        emit SetRETHStakeManager(_stakeManager);
     }
 
     receive() external payable {}
