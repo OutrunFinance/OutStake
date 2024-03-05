@@ -33,6 +33,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     uint256 public maxLockupDays;
     uint256 public forceUnstakeFee;
     uint256 public totalYieldPool;
+    uint256 public totalStaked;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -73,6 +74,10 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         return IRETH(rETH).balanceOf(address(this));
     }
 
+    function avgStakeDays() view external override returns (uint256) {
+        return IERC20(rey).totalSupply() / totalStaked;
+    }
+
     /**
      * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
      * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
@@ -93,6 +98,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         uint256 deadline;
         uint256 amountInREY;
         unchecked {
+            totalStaked += amountInRETH;
             deadline = block.timestamp + lockupDays * DAY;
             amountInREY = amountInRETH * lockupDays;
         }
@@ -262,6 +268,9 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         IPETH(pETH).burn(msgSender, position.PETHAmount);
 
         uint256 amountInRETH = position.RETHAmount;
+        unchecked {
+            totalStaked -= amountInRETH;
+        }
         if (feeOn) {
             uint256 fee;
             unchecked {

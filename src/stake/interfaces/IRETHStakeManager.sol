@@ -33,9 +33,13 @@ interface IRETHStakeManager {
     
     error ForceUnstakeFeeOverflow();
 
-    function positionsOf(uint256 positionId) external returns (Position memory);
+    function totalYieldPool() view external returns (uint256);
 
-    function getStakedRETH() external returns (uint256);
+    function positionsOf(uint256 positionId) view external returns (Position memory);
+
+    function getStakedRETH() view external returns (uint256);
+
+    function avgStakeDays() view external returns (uint256);
 
     function stake(uint256 amountInRETH, uint256 lockupDays) external;
 

@@ -32,10 +32,14 @@ interface IRUSDStakeManager {
     error InvalidReduceDays();
     
     error ForceUnstakeFeeOverflow();
-    
-    function positionsOf(uint256 positionId) external returns (Position memory);
 
-    function getStakedRUSD() external returns (uint256);
+    function totalYieldPool() view external returns (uint256);
+    
+    function positionsOf(uint256 positionId) view external returns (Position memory);
+
+    function getStakedRUSD() view external returns (uint256);
+
+    function avgStakeDays() view external returns (uint256);
 
     function stake(uint256 amountInRUSD, uint256 lockupDays) external;
 

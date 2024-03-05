@@ -33,6 +33,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     uint256 public maxLockupDays;
     uint256 public forceUnstakeFee;
     uint256 public totalYieldPool;
+    uint256 public totalStaked;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -71,6 +72,10 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
 
     function getStakedRUSD() public view override returns (uint256) {
         return IRUSD(rUSD).balanceOf(address(this));
+    }
+
+    function avgStakeDays() view external override returns (uint256) {
+        return IERC20(ruy).totalSupply() / totalStaked;
     }
 
     /**

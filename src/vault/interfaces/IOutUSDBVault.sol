@@ -15,7 +15,7 @@ interface IOutUSDBVault {
 
     error FlashLoanRepayFailed();
 
-    function revenuePool() view external returns(address);
+    function revenuePool() view external returns (address);
     
     function initialize() external;
     
