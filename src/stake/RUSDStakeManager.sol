@@ -103,9 +103,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         return IERC20(ruy).totalSupply() / _totalStaked;
     }
 
-    /**
-     * @dev Calculates amount of PUSD
-     */
     function calcPUSDAmount(uint256 amountInRUSD) public view override returns (uint256) {
         uint256 totalShares = IRUSD(pUSD).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;

@@ -103,9 +103,6 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         return IERC20(rey).totalSupply() / _totalStaked;
     }
 
-    /**
-     * @dev Calculates amount of PETH
-     */
     function calcPETHAmount(uint256 amountInRETH) public view override returns (uint256) {
         uint256 totalShares = IRETH(pETH).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
@@ -118,6 +115,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         }
     }
 
+    /** function **/
     /**
      * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
      * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
