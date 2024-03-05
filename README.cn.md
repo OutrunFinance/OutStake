@@ -64,9 +64,9 @@ REY 虽然看起来很简洁，但是由于 REY 可以自由交易，并且任�
 <div align="center">
     <img src="https://github.com/OutrunDao/Outrun/assets/32949831/67709b80-e5c4-4d25-be49-a4d0262c7cbf" width="400" height="200">  
 </div>
-用实际收益除以预期收益再减 1 可以得出 Impermanent profit and loss ratio无常盈亏率 (IPLR)
+用实际收益除以预期收益再减 1 可以得出 Impermanent profit and loss ratio无常盈亏率 (IPnLR)
 
-再用 _IPLR_ 乘以各自的实际收益 _aty_ 与 _bty_ 可得各自的无常盈亏 _IPL_  
+再用 _IPnLR_ 乘以各自的实际收益 _aty_ 与 _bty_ 可得各自的无常盈亏 _IPnL_  
 
 <div align="center">
     <img src="https://github.com/OutrunDao/Outrun/assets/32949831/1345b375-8d3a-467c-866e-53f3945e77fa" width="666" height="333">  
@@ -87,8 +87,15 @@ REY 不仅仅是帮助 ETH 长期质押这获得更多收益的工具，它是�
 ## Stake USDB
 USDB 原生收益质押解决方案与 ETH 大同小异，后续将会完善文档
 
+## FlashLoan
+FlashLoan闪电贷是一种在区块链上借入资产的新方式。与传统的担保贷款不同，闪电贷不需要任何抵押品、信用评分或管理来处理无担保贷款。FlashLoan经常被用于链上套利，清算等活动。  
+
+FlashLoan利用原子性允许用户在不提供抵押品的情况下借款。有两个注意事项需要提及。首先，无论何时你在闪电贷中借入资产，你都必须支付使用手续费用。其次，必须在借款的同一笔交易中偿还贷款。  
+
+Outrun提供闪电贷功能，套利者可以通过提供的接口使用该功能，借出用户质押的ETH或USDB，并在同一笔交易中归还。这样可以为质押者的提供更多的收益来源，提高资本利用率。
+
 # OutSwap
-我们将改进集中流动性自动做市商 Uniswap V3，将交易对产生的原生收益分配给被使用的流动性，从而提高做市商的收益。
+我们基于Uniswap V2自动化做市商做了相关改进，采用RETH与RUSD作为基础货币，同时做市商可以在不移除流动性的情况下领取做市收益以适配我们的FF launch，在未来我们将对协议不断升级，给用户带来更丝滑的体验。
 
 # FF LaunchPad
 还记得前段时间的铭文 Summer 吗？
