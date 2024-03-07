@@ -28,9 +28,9 @@ Outrun 生态系统中 ETH 有两种形式，RETH (Outrun Ether) 和 PETH (Princ
 ### RETH
 RETH 是一种与 ETH 挂钩的稳定币，可以通过向 OutETHVault 质押 ETH 来 1 : 1 获得。  
 
-因此 1 个RETH 始终代表 1 个 ETH，并且 RETH 在流通中的数量与 Outrun ETH 系统中的 ETH 数量相匹配，用户随时可以将 RETH 转换为 ETH。单独持有 RETH 并不会获得质押产生的原生收益的，应该将其视为持有 ETH 的类比。 
+因此 1 个RETH 始终代表 1 个 ETH，并且 RETH 在流通中的数量与 Outrun ETH 系统中的 ETH 数量相匹配，用户随时可以将 RETH 转换为 ETH。单独持有 RETH 并不会获得质押产生的原生收益的，应该将其视为持有 ETH 的类比。  
 
-RETH 挂钩率定义为在 1.00 汇率的两侧各 1％，这意味着保持 1 个 RETH 兑换 1.01-0.9900 ETH 的汇率。
+RETH 同时会作为在 Outswap 中的 Wrapped ETH.
 
 ### PETH
 PETH 是向 RETHStakeManager 质押 RETH 而铸造的质押本金代币，旨在积累 Blast 产生的原生收益并释放质押代币的流动性。
