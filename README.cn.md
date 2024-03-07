@@ -1,31 +1,37 @@
 # Outrun -- 完全围绕Blast原生收益构建
+
 _Not Only Blast L2 Native Yield Stake Protocol_  
-_The first LSDFi protocol live on Blast._   
+_The first LSDFi protocol live on Blast._
 _The first concentrated liquidity AMM with native yield._  
 _The first decentralized algorithmic stablecoin pegged to ETH and USDB yields._  
 
 ## Blast 是一个什么样的 L2?
+
 在 Blast 的[官方文档](https://docs.blast.io/about-blast "Blast官方文档")中可以看到
 > Blast 是唯一具有 ETH 和稳定币原生收益的以太坊 L2。Blast 收益来自 ETH 质押和 RWA 协议。这些去中心化协议的收益会自动传回给 Blast 用户。其他 L2 的默认利率为 0%。在 Blast 上，ETH 为 4%，稳定币为 5%。这种收益使得为 Dapp 创建新的商业模式成为可能，而这在其他 L2 上是不可能的。
 
 通过上面的描述我们可以知道，只要用户将 ETH 跨链到 Blast，用户的 EOA 钱包中就会自动开始产生原生收益。而智能合约中同样可以产生原生收益，不过此时的收益是由智能合约控制的，合约开发者可以通过 Blast 的接口提取收益。
   
 ## 怎样利用原生收益
-Blast 提供了一个接口来使合约可以控制合约内部资产所产生的原生收益。 详情：https://docs.blast.io/building/guides/eth-yield  
+
+Blast 提供了一个接口来使合约可以控制合约内部资产所产生的原生收益。 详情：<https://docs.blast.io/building/guides/eth-yield>  
 
 举个例子，开发一个 dex，用户建立交易资金池，将 ETH-TOKEN 流动性添加到流动性合约地址，那么在这个合约地址中的 ETH 也会开始 Yield，开发者可以选择将原生收益据为己有，可以全部返还给用户，可以用来给自己的产品引流，也可以分配给自身协议 Token 的持有者，或者构建一些更复杂的 DEFI 产品。这里的重点时是开发者控制这些 native yield。
 
 ## Why choose Outrun?
+
 Native Yield 是一个很有意思的特性，它使构建许多新的商业模式成为了可能。
 
-但是在这背后，对于用户来说，有一个很大的缺陷，或者说是未被重视的的地方 -- 那就是用户是否愿意将自己的原生收益让开发者控制，如果用户想要自己控制这些原生收益呢？ 
+但是在这背后，对于用户来说，有一个很大的缺陷，或者说是未被重视的的地方 -- 那就是用户是否愿意将自己的原生收益让开发者控制，如果用户想要自己控制这些原生收益呢？
 
 Outrun 的诞生就是用来解决这个问题的，Outrun 是领先的原生收益质押解决方案，通过使用 Outrun 进行质押，用户可以自己控制自己资产所产生的原生收益，并且用户的代币可以保持流动性，并且可以在一系列 DeFi 应用程序中使用，从而获得额外的奖励。
 
 ## Stake ETH
+
 Outrun 生态系统中 ETH 有两种形式，RETH (Outrun Ether) 和 PETH (Principal Ether)，此外还将引入 REY (RETH YieldToken) 代表对质押的 RETH 的收益权。
 
 ### RETH
+
 RETH 是一种与 ETH 挂钩的稳定币，可以通过向 OutETHVault 质押 ETH 来 1 : 1 获得。  
 
 因此 1 个RETH 始终代表 1 个 ETH，并且 RETH 在流通中的数量与 Outrun ETH 系统中的 ETH 数量相匹配，用户随时可以将 RETH 转换为 ETH。单独持有 RETH 并不会获得质押产生的原生收益的，应该将其视为持有 ETH 的类比。  
@@ -33,6 +39,7 @@ RETH 是一种与 ETH 挂钩的稳定币，可以通过向 OutETHVault 质押 ET
 RETH 同时会作为在 Outswap 中的 Wrapped ETH.
 
 ### PETH
+
 PETH 是向 RETHStakeManager 质押 RETH 而铸造的质押本金代币，旨在积累 Blast 产生的原生收益并释放质押代币的流动性。
 
 用户质押 RETH 时需要指定一个锁定时间从而铸造 PETH 与 YieldToken，PETH 数量并不是按质押的 RETH 来 1 : 1 铸造的，而是使用下面利息凭证比例算法来计算的。  
@@ -43,6 +50,7 @@ PETH 是向 RETHStakeManager 质押 RETH 而铸造的质押本金代币，旨在
 注意：PETH 为质押本金代币，RETH 产生的质押收益由 YieldToken 所有。
 
 ### REY
+
 RETH YieldToken (REY) 代表对质押的 RETH 的收益权，通过质押 RETH 并指定一个锁定时间获得。REY 将 RETH 的质押收益单独剥离出来，REY 可以在二级市场上交易以及用于构建其他 DEFI 乐高。  
 
 与目前市场上其他协议的 YieldToken 不同，其他协议的 YieldToken 都是 NFT 或者特殊的 FT，他们都是非同质化的，这种特性导致了 YieldToken 流动性缺失，并且降低了协议的可组合性。  
@@ -51,9 +59,10 @@ Outrun 的 RETH YieldToken 是真正的同质化 Token (FT)，流动性非常好
 
 REY 可以自由交易，并且可以无限制地即时销毁并赎回 YieldPool 中积累的原生收益，销毁时按销毁的 REY 数量占 REY 总量的比例赎回已产生原生收益。  
 
-REY 的存在能帮助长期质押者获得更多的收入。由于销毁时按销毁的 REY 数量占 REY 总供应量的比例赎回已产生原生收益，这可能会产生无常损失 Impermanent Loss (IL)，然而这个 Impermanent Loss 所对应的无常收益 Impermanent Profit (IP) 会分配至长期质押者，从而提高长期质押者的收入。
+REY 的存在能帮助长期质押者获得更多的收入。由于销毁时按销毁的 REY 数量占 REY 总供应量的比例赎回已产生原生收益，这可能会产生无常损失 Impermanent Loss (IL)，然而这个 IL 所对应的无常收益 Impermanent Profit (IP) 会分配至长期质押者，从而提高长期质押者的收入。
 
 ### REY的数学模型
+
 REY 虽然看起来很简洁，但是由于 REY 可以自由交易，并且任何持有 REY 的用户可以随时赎回原生收益，所以这其中会有一个非常复杂的博弈过程，从而引入一个极其复杂的数学模型。
 
 下面我们构建一个最小的模型来计算无常损失。
@@ -61,15 +70,23 @@ REY 虽然看起来很简洁，但是由于 REY 可以自由交易，并且任�
 假设 YieldPool 中此时的积累的原生收益为 0，我们将 1 REY 锚定 1 RETH 质押 1 天所产生的原生收益 _Y_。用户 _A_ 质押了 _a_ 个 RETH 并锁定 _m_ 天，这会铸造 _am_ 个 REY ，我们将此时其他用户看成一个整体，这个整体看作用户 _B_ 质押了 _b_ 个 RETH 并锁定 n 天，这会铸造 _bn_ 个 REY 。
 
 在 t 天之后  
+
 <div align="center">
-    <img src="https://github.com/OutrunDao/Outrun/assets/32949831/67709b80-e5c4-4d25-be49-a4d0262c7cbf" width="400" height="200">  
+    <img src="https://github.com/OutrunDao/Outrun-Stake/assets/32949831/a56994fd-b2d0-42df-9e29-65ae70e68da3" width="450" height="225">  
 </div>
-用实际收益除以预期收益再减 1 可以得出 Impermanent profit and loss ratio无常盈亏率 (IPnLR)
+
+用实际收益除以预期收益再减 1 可以得出无常盈亏率 (IPnLR)
+
+<div align="center">
+    <img src="https://github.com/OutrunDao/Outstake/assets/32949831/6c3f034d-192f-4a4f-a840-17934032be42" width="290" height="135">  
+</div>
 
 再用 _IPnLR_ 乘以各自的实际收益 _aty_ 与 _bty_ 可得各自的无常盈亏 _IPnL_  
+IPnLa = IPnLRa * Expected Profit_A
+IPnLb = IPnLRb * Expected Profit_B
 
 <div align="center">
-    <img src="https://github.com/OutrunDao/Outrun/assets/32949831/1345b375-8d3a-467c-866e-53f3945e77fa" width="666" height="333">  
+    <img src="https://github.com/OutrunDao/Outstake/assets/32949831/de77277e-d386-4e59-b982-d38022f02028" width="350" height="160">  
 </div>
 
 从上图可以得出，用户 A 的与用户 B 的无常盈亏守恒，如果用户 A 与 B 锁定的时间相同，则双方都没有无常盈亏。也就是说一个用户的无常盈亏和质押池中其他用户的加权平均天数相关。
@@ -79,15 +96,19 @@ REY 虽然看起来很简洁，但是由于 REY 可以自由交易，并且任�
 通过上面的模型，Outrun 可以帮助长期质押者获得更多收益。我们认为 ETH 质押本身致力于使以太坊更去中心化与更安全，所以长期保护以太坊的用户更应该获得更多的奖励。
 
 ### Broader prospects
+
 REY 不仅仅是帮助 ETH 长期质押这获得更多收益的工具，它是一个真正的同质化 Yield Token，同时也是 Web3 第一个锚定 ETH 质押收益率的去中心化算法稳定币，在市场的博弈下 REY 始终与 ETH 质押收益率挂钩，当 REY 被低估时，用户可以从市场上购买 REY 然后销毁并从 YieldPool 赎回对应的收益。在未来 Outrun 会依托 REY 的特性和社区一起构建更多有意思的产品。
 
 ### UML时序图
+
 ![931b83d0b3a56216f901edd218a6251](https://github.com/OutrunDao/Outrun-Stake/assets/32949831/225590f2-16a3-4994-97ee-6f57a9b36ecc)
 
 ## Stake USDB
+
 USDB 原生收益质押解决方案与 ETH 大同小异，后续将会完善文档
 
 ## FlashLoan
+
 FlashLoan闪电贷是一种在区块链上借入资产的新方式。与传统的担保贷款不同，闪电贷不需要任何抵押品、信用评分或管理来处理无担保贷款。FlashLoan经常被用于链上套利，清算等活动。  
 
 FlashLoan利用原子性允许用户在不提供抵押品的情况下借款。有两个注意事项需要提及。首先，无论何时你在闪电贷中借入资产，你都必须支付使用手续费用。其次，必须在借款的同一笔交易中偿还贷款。  
@@ -95,13 +116,15 @@ FlashLoan利用原子性允许用户在不提供抵押品的情况下借款。�
 Outrun提供闪电贷功能，套利者可以通过提供的接口使用该功能，借出用户质押的ETH或USDB，并在同一笔交易中归还。这样可以为质押者的提供更多的收益来源，提高资本利用率。
 
 # OutSwap
+
 我们基于Uniswap V2自动化做市商做了相关改进，采用RETH与RUSD作为基础货币，同时做市商可以在不移除流动性的情况下领取做市收益以适配我们的FF launch，在未来我们将对协议不断升级，给用户带来更丝滑的体验。
 
 # FF LaunchPad
+
 还记得前段时间的铭文 Summer 吗？
 
 试想一下将铭文的 FairLaunch 特性与 LaunchPad 结合会是什么样的呢？
 
-像铭文一样发行 ERC20 Token, 用户通过付费 mint token, 在 mint 的过程中 mint 的费用将会和合约中预留的一部分 Token 组成 LP 在 Outswap 上添加流动性，并设置自定义的交易手续费。LP 将锁定一段时间，到期后用户可以取出自己的 mint 费与预留 token 组成的 LP，而项目团队募集的资金是就是交易手续费以及锁定 LP 产生的 YieldToken。
+像铭文一样发行 ERC20 Token, 用户通过付费 mint token, 在 mint 的过程中 mint 的费用将会和合约中预留的部分 Token 组成交易对在 Outswap 上提供流动性。LP 将锁定一段时间，用户会获得锁定mint费而得到的 YieldToken, 锁定时间到期后用户可以取出自己的 mint 费与预留 token 组成的 LP，而项目团队募集的资金是就是 LP 锁定期间交易对交易手续费。在满足上述核心基本要求的情况下，我们还为项目方提供了自定义的 minter 与 deployer 合约以支持 LaunchPad 的灵活性。
 
-这种模式更加公平，更加对投资者友好，投资者相当于免费获得了项目方的代币，还以为防止项目团队像传统 IDO 一样募集大量资金后就不在继续用心开发产品，开发者想募集更多资金就需要在 LP 锁定期间不断迭代产品，让用户愿意交易自己的代币。
+这种模式更加公平，更加对投资者友好，投资者相当于免费获得了项目方的代币，还可以防止项目团队像传统 IDO 一样募集大量资金后就不在继续用心开发产品，项目方想募集更多资金就需要在 LP 锁定期间不断迭代产品，让用户愿意交易自己的代币，从而获得持续增长的现金流。
