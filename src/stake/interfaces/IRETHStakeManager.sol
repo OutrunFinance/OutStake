@@ -55,7 +55,7 @@ interface IRETHStakeManager {
     function calcPETHAmount(uint256 amountInRETH) external view returns (uint256);
 
     /** function **/
-    function stake(uint256 amountInRETH, uint256 lockupDays) external;
+    function stake(uint256 amountInRETH, uint256 lockupDays, address receiver) external;
 
     function unstake(uint256 positionId) external;
 
