@@ -120,10 +120,11 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @dev Allows user to deposit RUSD, then mints PUSD and RUY for the user.
      * @param amountInRUSD - RUSD staked amount, amount % 1e18 == 0
      * @param lockupDays - User can withdraw after lockupDays
+     * @param positionOwner - Owner of position
      * @param receiver - Receiver of PETH and REY
      * @notice User must have approved this contract to spend RUSD
      */
-    function stake(uint256 amountInRUSD, uint256 lockupDays, address receiver) external override {
+    function stake(uint256 amountInRUSD, uint256 lockupDays, address positionOwner, address receiver) external override {
         if (amountInRUSD < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
@@ -143,7 +144,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         _positions[positionId] = Position(
             amountInRUSD,
             amountInPUSD,
-            receiver,
+            positionOwner,
             deadline,
             false
         );
@@ -152,7 +153,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         IPUSD(pUSD).mint(receiver, amountInPUSD);
         IRUY(ruy).mint(receiver, amountInRUY);   
 
-        emit StakeRUSD(positionId, receiver, amountInRUSD, deadline);
+        emit StakeRUSD(positionId, positionOwner, amountInRUSD, deadline);
     }
 
     /**

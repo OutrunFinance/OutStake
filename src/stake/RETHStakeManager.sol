@@ -120,10 +120,11 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
      * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
      * @param lockupDays - User can withdraw after lockupDays
+      * @param positionOwner - Owner of position
      * @param receiver - Receiver of PETH and REY
      * @notice User must have approved this contract to spend RETH
      */
-    function stake(uint256 amountInRETH, uint256 lockupDays, address receiver) external override {
+    function stake(uint256 amountInRETH, uint256 lockupDays, address positionOwner, address receiver) external override {
         if (amountInRETH < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
@@ -144,7 +145,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         _positions[positionId] = Position(
             amountInRETH,
             amountInPETH,
-            receiver,
+            positionOwner,
             deadline,
             false
         );
@@ -153,7 +154,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         IPETH(pETH).mint(receiver, amountInPETH);
         IREY(rey).mint(receiver, amountInREY); 
 
-        emit StakeRETH(positionId, receiver, amountInRETH, deadline);
+        emit StakeRETH(positionId, positionOwner, amountInRETH, deadline);
     }
 
     /**
