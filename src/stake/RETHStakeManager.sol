@@ -29,11 +29,11 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     address public immutable rey;
 
     address private _outETHVault;
-    uint256 private _minLockupDays;
-    uint256 private _maxLockupDays;
     uint256 private _forceUnstakeFee;
     uint256 private _totalStaked;
     uint256 private _totalYieldPool;
+    uint16 private _minLockupDays;
+    uint16 private _maxLockupDays;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -71,14 +71,6 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         return _outETHVault;
     }
 
-    function minLockupDays() external view override returns (uint256) {
-        return _minLockupDays;
-    }
-
-    function maxLockupDays() external view override returns (uint256) {
-        return _maxLockupDays;
-    }
-
     function forceUnstakeFee() external view override returns (uint256) {
         return _forceUnstakeFee;
     }
@@ -91,7 +83,15 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         return _totalYieldPool;
     }
 
-    function positionsOf(uint256 positionId) public view override returns (Position memory) {
+    function minLockupDays() external view override returns (uint16) {
+        return _minLockupDays;
+    }
+
+    function maxLockupDays() external view override returns (uint16) {
+        return _maxLockupDays;
+    }
+
+    function positionsOf(uint256 positionId) external view override returns (Position memory) {
         return _positions[positionId];
     }
 
@@ -124,7 +124,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param receiver - Receiver of PETH and REY
      * @notice User must have approved this contract to spend RETH
      */
-    function stake(uint256 amountInRETH, uint256 lockupDays, address positionOwner, address receiver) external override {
+    function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address receiver) external override {
         if (amountInRETH < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
@@ -143,11 +143,11 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
             amountInREY = amountInRETH * lockupDays;
         }
         _positions[positionId] = Position(
-            amountInRETH,
-            amountInPETH,
-            positionOwner,
-            deadline,
-            false
+            uint96(amountInRETH),
+            uint96(amountInPETH),
+            uint56(deadline),
+            false,
+            positionOwner
         );
 
         IERC20(rETH).safeTransferFrom(msgSender, address(this), amountInRETH);
@@ -158,45 +158,49 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @dev Allows user to unstake funds
+     * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked Principal Position Id
      */
-    function unstake(uint256 positionId) external override {
-        Position memory position = positionsOf(positionId);
-        
-        if (position.closed) {
-            revert PositionClosed();
-        }
-        if (position.deadline > block.timestamp) {
-            revert NotReachedDeadline(position.deadline);
-        }
-
-        _unstake(positionId, position, msg.sender, false);
-    }
-
-    /**
-     * @dev Allows user force unstake
-     * @param positionId - Staked Principal Position Id
-     */
-    function forceUnstake(uint256 positionId) external {
+    function unstake(uint256 positionId) external {
         address msgSender = msg.sender;
-        Position memory position = positionsOf(positionId);
-
+        Position memory position = _positions[positionId];
         if (position.closed) {
             revert PositionClosed();
         }
+        if (position.owner != msgSender) {
+            revert PermissionDenied();
+        }
+
+        uint256 amountInRETH = position.RETHAmount;
+        unchecked {
+            _totalStaked -= amountInRETH;
+        }
+        IPETH(pETH).burn(msgSender, position.PETHAmount);
+
+        uint256 deadline = position.deadline;
         uint256 currentTime = block.timestamp;
-        if (position.deadline <= currentTime) {
-            _unstake(positionId, position, msg.sender, false);
-        } else {
+        if (deadline > currentTime) {
             uint256 amountInREY;
             unchecked {
-                amountInREY = position.RETHAmount * Math.ceilDiv(position.deadline - currentTime, DAY);
+                amountInREY = amountInRETH * Math.ceilDiv(deadline - currentTime, DAY);
             }
             IREY(rey).burn(msgSender, amountInREY);
-            position.deadline = currentTime;
-            _unstake(positionId, position, msgSender, true);
+            position.deadline = uint56(currentTime);
+
+            uint256 fee;
+            unchecked {
+                fee = amountInRETH * _forceUnstakeFee / RATIO;
+                amountInRETH -= fee;
+            }
+            IRETH(rETH).withdraw(fee);
+            Address.sendValue(payable(IOutETHVault(_outETHVault).revenuePool()), fee);
         }
+        IERC20(rETH).safeTransfer(msgSender, amountInRETH);
+
+        position.closed = true;
+        _positions[positionId] = position;
+
+        emit Unstake(positionId, msgSender, amountInRETH);
     }
 
     /**
@@ -206,7 +210,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      */
     function extendLockTime(uint256 positionId, uint256 extendDays) external {
         address user = msg.sender;
-        Position memory position = positionsOf(positionId);
+        Position memory position = _positions[positionId];
         if (position.owner != user) {
             revert PermissionDenied();
         }
@@ -220,7 +224,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
             revert InvalidExtendDays();
         }
 
-        position.deadline = newDeadLine;
+        position.deadline = uint56(newDeadLine);
         _positions[positionId] = position;
         uint256 amountInREY;
         unchecked {
@@ -266,7 +270,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     /**
      * @param minLockupDays_ - Min lockup days
      */
-    function setMinLockupDays(uint256 minLockupDays_) external onlyOwner {
+    function setMinLockupDays(uint16 minLockupDays_) external onlyOwner {
         _minLockupDays = minLockupDays_;
         emit SetMinLockupDays(minLockupDays_);
     }
@@ -274,7 +278,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     /**
      * @param maxLockupDays_ - Max lockup days
      */
-    function setMaxLockupDays(uint256 maxLockupDays_) external onlyOwner {
+    function setMaxLockupDays(uint16 maxLockupDays_) external onlyOwner {
         _maxLockupDays = maxLockupDays_;
         emit SetMaxLockupDays(maxLockupDays_);
     }
@@ -297,34 +301,6 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     function setOutETHVault(address outETHVault_) external override onlyOwner {
         _outETHVault = outETHVault_;
         emit SetOutETHVault(outETHVault_);
-    }
-
-    /** internal **/
-    function _unstake(uint256 positionId, Position memory position, address msgSender, bool feeOn) internal {
-        if (position.owner != msgSender) {
-            revert PermissionDenied();
-        }
-
-        position.closed = true;
-        _positions[positionId] = position;
-        IPETH(pETH).burn(msgSender, position.PETHAmount);
-
-        uint256 amountInRETH = position.RETHAmount;
-        unchecked {
-            _totalStaked -= amountInRETH;
-        }
-        if (feeOn) {
-            uint256 fee;
-            unchecked {
-                fee = amountInRETH * _forceUnstakeFee / RATIO;
-                amountInRETH -= fee;
-            }
-            IRETH(rETH).withdraw(fee);
-            Address.sendValue(payable(IOutETHVault(_outETHVault).revenuePool()), fee);
-        }
-        IERC20(rETH).safeTransfer(msgSender, amountInRETH);
-
-        emit Unstake(positionId, msgSender, amountInRETH);
     }
 
     receive() external payable {}

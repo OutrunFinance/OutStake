@@ -6,11 +6,11 @@ pragma solidity ^0.8.24;
  */
 interface IRETHStakeManager {
     struct Position {
-        uint256 RETHAmount;
-        uint256 PETHAmount;
-        address owner;
-        uint256 deadline;
+        uint96 RETHAmount;
+        uint96 PETHAmount;
+        uint56 deadline;
         bool closed;
+        address owner;
     }
 
     error ZeroInput();
@@ -20,8 +20,6 @@ interface IRETHStakeManager {
     error PositionClosed();
 
     error ReachedDeadline(uint256 deadline);
-
-    error NotReachedDeadline(uint256 deadline);
 
     error MinStakeInsufficient(uint256 minStake);
 
@@ -36,15 +34,15 @@ interface IRETHStakeManager {
     /** view **/
     function outETHVault() external view returns (address);
 
-    function minLockupDays() external view returns (uint256);
-
-    function maxLockupDays() external view returns (uint256);
-
     function forceUnstakeFee() external view returns (uint256);
 
     function totalStaked() external view returns (uint256);
 
     function totalYieldPool() external view returns (uint256);
+
+    function minLockupDays() external view returns (uint16);
+
+    function maxLockupDays() external view returns (uint16);
 
     function positionsOf(uint256 positionId) external view returns (Position memory);
 
@@ -55,11 +53,9 @@ interface IRETHStakeManager {
     function calcPETHAmount(uint256 amountInRETH) external view returns (uint256);
 
     /** function **/
-    function stake(uint256 amountInRETH, uint256 lockupDays, address positionOwner, address receiver) external;
+    function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address receiver) external;
 
     function unstake(uint256 positionId) external;
-
-    function forceUnstake(uint256 positionId) external;
 
     function extendLockTime(uint256 positionId, uint256 extendDays) external;
 
@@ -68,9 +64,9 @@ interface IRETHStakeManager {
     function updateYieldAmount(uint256 yieldAmount) external;
 
     /** setter **/
-    function setMinLockupDays(uint256 _minLockupDays) external;
+    function setMinLockupDays(uint16 _minLockupDays) external;
 
-    function setMaxLockupDays(uint256 _maxLockupDays) external;
+    function setMaxLockupDays(uint16 _maxLockupDays) external;
 
     function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
 
@@ -85,15 +81,13 @@ interface IRETHStakeManager {
 
     event Unstake(uint256 indexed _positionId, address indexed _account, uint256 _amountInRETH);
 
-    event ForceUnstake(uint256 indexed positionId, uint256 burnedREY);
-
     event WithdrawYield(address indexed user, uint256 amountInREY, uint256 yieldAmount);
 
     event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 mintedREY);
 
-    event SetMinLockupDays(uint256 _minLockupDays);
+    event SetMinLockupDays(uint16 _minLockupDays);
 
-    event SetMaxLockupDays(uint256 _maxLockupDays);
+    event SetMaxLockupDays(uint16 _maxLockupDays);
 
     event SetForceUnstakeFee(uint256 _forceUnstakeFee);
 

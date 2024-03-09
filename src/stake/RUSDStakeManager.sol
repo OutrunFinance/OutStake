@@ -29,11 +29,11 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     address public immutable ruy;
 
     address private _outUSDBVault;
-    uint256 private _minLockupDays;
-    uint256 private _maxLockupDays;
     uint256 private _forceUnstakeFee;
     uint256 private _totalStaked;
     uint256 private _totalYieldPool;
+    uint16 private _minLockupDays;
+    uint16 private _maxLockupDays;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -71,14 +71,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         return _outUSDBVault;
     }
 
-    function minLockupDays() external view override returns (uint256) {
-        return _minLockupDays;
-    }
-
-    function maxLockupDays() external view override returns (uint256) {
-        return _maxLockupDays;
-    }
-
     function forceUnstakeFee() external view override returns (uint256) {
         return _forceUnstakeFee;
     }
@@ -89,6 +81,14 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
 
     function totalYieldPool() external view override returns (uint256) {
         return _totalYieldPool;
+    }
+
+    function minLockupDays() external view override returns (uint16) {
+        return _minLockupDays;
+    }
+
+    function maxLockupDays() external view override returns (uint16) {
+        return _maxLockupDays;
     }
 
     function positionsOf(uint256 positionId) external view override returns (Position memory) {
@@ -124,7 +124,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param receiver - Receiver of PETH and REY
      * @notice User must have approved this contract to spend RUSD
      */
-    function stake(uint256 amountInRUSD, uint256 lockupDays, address positionOwner, address receiver) external override {
+    function stake(uint256 amountInRUSD, uint16 lockupDays, address positionOwner, address receiver) external override {
         if (amountInRUSD < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
@@ -142,11 +142,11 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
             amountInRUY = amountInRUSD * lockupDays;
         }
         _positions[positionId] = Position(
-            amountInRUSD,
-            amountInPUSD,
-            positionOwner,
-            deadline,
-            false
+            uint96(amountInRUSD),
+            uint96(amountInPUSD),
+            uint56(deadline),
+            false,
+            positionOwner
         );
 
         IERC20(rUSD).safeTransferFrom(msgSender, address(this), amountInRUSD);
@@ -157,45 +157,49 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     }
 
     /**
-     * @dev Allows user to unstake funds
+     * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked Principal Position Id
      */
-    function unstake(uint256 positionId) external override {
-        Position memory position = _positions[positionId];
-
-        if (position.deadline > block.timestamp) {
-            revert NotReachedDeadline(position.deadline);
-        }
-        if (position.closed) {
-            revert PositionClosed();
-        }
-
-        _unstake(positionId, position, msg.sender, false);
-    }
-
-    /**
-     * @dev Allows user force unstake
-     * @param positionId - Staked Principal Position Id
-     */
-    function forceUnstake(uint256 positionId) external {
+    function unstake(uint256 positionId) external {
         address msgSender = msg.sender;
         Position memory position = _positions[positionId];
-
         if (position.closed) {
             revert PositionClosed();
         }
+        if (position.owner != msgSender) {
+            revert PermissionDenied();
+        }
+
+        uint256 amountInRUSD = position.RUSDAmount;
+        unchecked {
+            _totalStaked -= amountInRUSD;
+        }
+        IPUSD(pUSD).burn(msgSender, position.PUSDAmount);
+
+        uint256 deadline = position.deadline;
         uint256 currentTime = block.timestamp;
-        if (position.deadline <= currentTime) {
-            _unstake(positionId, position, msg.sender, false);
-        } else {
+        if (deadline > currentTime) {
             uint256 amountInRUY;
             unchecked {
-                amountInRUY = position.RUSDAmount * Math.ceilDiv(position.deadline - currentTime, DAY);
+                amountInRUY = position.RUSDAmount * Math.ceilDiv(deadline - currentTime, DAY);
             }
             IRUY(ruy).burn(msgSender, amountInRUY);
-            position.deadline = currentTime;
-            _unstake(positionId, position, msgSender, true);
+            position.deadline = uint56(currentTime);
+            
+            uint256 fee;
+            unchecked {
+                fee = amountInRUSD * _forceUnstakeFee / RATIO;
+                amountInRUSD -= fee;
+            }
+            IRUSD(rUSD).withdraw(fee);
+            IERC20(rUSD).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
         }
+        IERC20(rUSD).safeTransfer(msgSender, amountInRUSD);
+
+        position.closed = true;
+        _positions[positionId] = position;
+
+        emit Unstake(positionId, msgSender, amountInRUSD);
     }
 
     /**
@@ -219,7 +223,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
             revert InvalidExtendDays();
         }
 
-        position.deadline = newDeadLine;
+        position.deadline = uint56(newDeadLine);
         _positions[positionId] = position;
         uint256 amountInRUY;
         unchecked {
@@ -265,7 +269,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     /**
      * @param minLockupDays_ - Min lockup days
      */
-    function setMinLockupDays(uint256 minLockupDays_) external onlyOwner {
+    function setMinLockupDays(uint16 minLockupDays_) external onlyOwner {
         _minLockupDays = minLockupDays_;
         emit SetMinLockupDays(minLockupDays_);
     }
@@ -273,7 +277,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     /**
      * @param maxLockupDays_ - Max lockup days
      */
-    function setMaxLockupDays(uint256 maxLockupDays_) external onlyOwner {
+    function setMaxLockupDays(uint16 maxLockupDays_) external onlyOwner {
         _maxLockupDays = maxLockupDays_;
         emit SetMaxLockupDays(maxLockupDays_);
     }
@@ -296,30 +300,5 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     function setOutUSDBVault(address outUSDBVault_) external override onlyOwner {
         _outUSDBVault = outUSDBVault_;
         emit SetOutUSDBVault(outUSDBVault_);
-    }
-
-    /** internal **/
-    function _unstake(uint256 positionId, Position memory position, address msgSender, bool feeOn) internal {
-        if (position.owner != msgSender) {
-            revert PermissionDenied();
-        }
-
-        position.closed = true;
-        _positions[positionId] = position;
-        IPUSD(pUSD).burn(msgSender, position.PUSDAmount);
-
-        uint256 amountInRUSD = position.RUSDAmount;
-        if (feeOn) {
-            uint256 fee;
-            unchecked {
-                fee = amountInRUSD * _forceUnstakeFee / RATIO;
-                amountInRUSD -= fee;
-            }
-            IRUSD(rUSD).withdraw(fee);
-            IERC20(rUSD).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
-        }
-        IERC20(rUSD).safeTransfer(msgSender, amountInRUSD);
-
-        emit Unstake(positionId, msgSender, amountInRUSD);
     }
 }
