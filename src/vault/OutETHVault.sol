@@ -127,7 +127,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
             revert ZeroInput();
         }
         uint256 balanceBefore = address(this).balance;
-        receiver.transfer(amount);
+        receiver.call{value: amount}("");
         IOutFlashCallee(receiver).execute(msg.sender, amount, data);
 
         uint256 providerFee;

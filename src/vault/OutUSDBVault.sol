@@ -137,7 +137,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         unchecked {
             providerFee = amount * _flashLoanFee.providerFeeRate / RATIO;
             protocolFee = amount * _flashLoanFee.protocolFeeRate / RATIO;
-            if (address(this).balance < balanceBefore + providerFee + protocolFee) {
+            if (IERC20(USDB).balanceOf(address(this)) < balanceBefore + providerFee + protocolFee) {
                 revert FlashLoanRepayFailed();
             }
         }
