@@ -97,23 +97,25 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
     /**
      * @dev Claim USDB yield to this contract
      */
-    function claimUSDBYield() public override {
-        uint256 yieldAmount = IERC20Rebasing(USDB).getClaimableAmount(address(this));
-        if (yieldAmount > 0) {
-            IERC20Rebasing(USDB).claim(address(this), yieldAmount);
+    function claimUSDBYield() public override returns (uint256) {
+        uint256 nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
+        if (nativeYield > 0) {
+            IERC20Rebasing(USDB).claim(address(this), nativeYield);
             if (_feeRate > 0) {
                 unchecked {
-                    uint256 feeAmount = yieldAmount * _feeRate / RATIO;
+                    uint256 feeAmount = nativeYield * _feeRate / RATIO;
                     IERC20(USDB).safeTransfer(_revenuePool, feeAmount);
-                    yieldAmount -= feeAmount;
+                    nativeYield -= feeAmount;
                 }
             }
 
-            IRUSD(rUSD).mint(_RUSDStakeManager, yieldAmount);
-            IRUSDStakeManager(_RUSDStakeManager).updateYieldAmount(yieldAmount);
+            IRUSD(rUSD).mint(_RUSDStakeManager, nativeYield);
+            IRUSDStakeManager(_RUSDStakeManager).updateYieldPool(nativeYield);
 
-            emit ClaimUSDBYield(yieldAmount);
+            emit ClaimUSDBYield(nativeYield);
         }
+
+        return nativeYield;
     }
 
      /**

@@ -96,22 +96,24 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
     /**
      * @dev Claim ETH yield to this contract
      */
-    function claimETHYield() public override {
-        uint256 yieldAmount = BLAST.claimAllYield(address(this), address(this));
-        if (yieldAmount > 0) {
+    function claimETHYield() public override returns (uint256) {
+        uint256 nativeYield = BLAST.claimAllYield(address(this), address(this));
+        if (nativeYield > 0) {
             if (_feeRate > 0) {
                 unchecked {
-                    uint256 feeAmount = yieldAmount * _feeRate / RATIO;
+                    uint256 feeAmount = nativeYield * _feeRate / RATIO;
                     Address.sendValue(payable(_revenuePool), feeAmount);
-                    yieldAmount -= feeAmount;
+                    nativeYield -= feeAmount;
                 }
             }
 
-            IRETH(rETH).mint(_RETHStakeManager, yieldAmount);
-            IRETHStakeManager(_RETHStakeManager).updateYieldAmount(yieldAmount);
+            IRETH(rETH).mint(_RETHStakeManager, nativeYield);
+            IRETHStakeManager(_RETHStakeManager).updateYieldPool(nativeYield);
 
-            emit ClaimETHYield(yieldAmount);
+            emit ClaimETHYield(nativeYield);
         }
+
+        return nativeYield;
     }
 
     /**

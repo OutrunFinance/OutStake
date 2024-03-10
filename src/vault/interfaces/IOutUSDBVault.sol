@@ -29,7 +29,7 @@ interface IOutUSDBVault {
     
     function withdraw(address user, uint256 amount) external;
 
-    function claimUSDBYield() external;
+    function claimUSDBYield() external returns (uint256);
 
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
 

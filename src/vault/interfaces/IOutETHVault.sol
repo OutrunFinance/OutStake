@@ -29,7 +29,7 @@ interface IOutETHVault {
 
     function withdraw(address user, uint256 amount) external;
 
-    function claimETHYield() external;
+    function claimETHYield() external returns (uint256);
 
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
 
