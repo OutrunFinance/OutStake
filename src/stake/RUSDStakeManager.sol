@@ -152,7 +152,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         IRUY(ruy).mint(receiver, amountInRUY);
 
         emit StakeRUSD(positionId, positionOwner, amountInRUSD, deadline);
-
         return (amountInPUSD, amountInRUY);
     }
 
@@ -198,7 +197,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         IERC20(rUSD).safeTransfer(msgSender, amountInRUSD);
 
         emit Unstake(positionId, msgSender, amountInRUSD);
-
         return amountInRUSD;
     }
 
@@ -232,7 +230,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         IRUY(ruy).mint(user, amountInRUY);
 
         emit ExtendLockTime(positionId, extendDays, amountInRUY);
-
         return amountInRUY;
     }
 
@@ -256,7 +253,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         IERC20(rUSD).safeTransfer(user, yieldAmount);
 
         emit WithdrawYield(user, amountInRUY, yieldAmount);
-
         return yieldAmount;
     }
 

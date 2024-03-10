@@ -152,7 +152,6 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         IREY(rey).mint(receiver, amountInREY);
 
         emit StakeRETH(positionId, positionOwner, amountInRETH, deadline);
-
         return (amountInPETH, amountInREY);
     }
 
@@ -198,7 +197,6 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         IERC20(rETH).safeTransfer(msgSender, amountInRETH);
 
         emit Unstake(positionId, msgSender, amountInRETH);
-
         return amountInRETH;
     }
 
@@ -232,7 +230,6 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         IREY(rey).mint(user, amountInREY);
 
         emit ExtendLockTime(positionId, extendDays, amountInREY);
-
         return amountInREY;
     }
 
@@ -256,7 +253,6 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         IERC20(rETH).safeTransfer(user, yieldAmount);
 
         emit WithdrawYield(user, amountInREY, yieldAmount);
-
         return yieldAmount;
     }
 
