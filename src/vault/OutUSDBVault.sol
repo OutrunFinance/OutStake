@@ -102,9 +102,12 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         if (nativeYield > 0) {
             IERC20Rebasing(USDB).claim(address(this), nativeYield);
             if (_feeRate > 0) {
+                uint256 feeAmount;
                 unchecked {
-                    uint256 feeAmount = nativeYield * _feeRate / RATIO;
-                    IERC20(USDB).safeTransfer(_revenuePool, feeAmount);
+                    feeAmount = nativeYield * _feeRate / RATIO;
+                }
+                IERC20(USDB).safeTransfer(_revenuePool, feeAmount);
+                unchecked {
                     nativeYield -= feeAmount;
                 }
             }
@@ -128,6 +131,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         if (amount == 0 || receiver == address(0)) {
             revert ZeroInput();
         }
+
         uint256 balanceBefore = IERC20(USDB).balanceOf(address(this));
         IERC20(USDB).safeTransfer(receiver, amount);
         IOutFlashCallee(receiver).execute(msg.sender, amount, data);
@@ -144,7 +148,6 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         
         IRUSD(rUSD).mint(_RUSDStakeManager, providerFee);
         IERC20(USDB).safeTransfer(_revenuePool, protocolFee);
-
         emit FlashLoan(receiver, amount);
     }
 

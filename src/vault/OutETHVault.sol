@@ -109,10 +109,9 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
 
             IRETH(rETH).mint(_RETHStakeManager, nativeYield);
             IRETHStakeManager(_RETHStakeManager).updateYieldPool(nativeYield);
-
-            emit ClaimETHYield(nativeYield);
         }
 
+        emit ClaimETHYield(nativeYield);
         return nativeYield;
     }
 
@@ -126,24 +125,26 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Ownable {
         if (amount == 0 || receiver == address(0)) {
             revert ZeroInput();
         }
+
         uint256 balanceBefore = address(this).balance;
-        receiver.call{value: amount}("");
-        IOutFlashCallee(receiver).execute(msg.sender, amount, data);
+        (bool success, ) = receiver.call{value: amount}("");
+        if (success) {
+            IOutFlashCallee(receiver).execute(msg.sender, amount, data);
 
-        uint256 providerFee;
-        uint256 protocolFee;
-        unchecked {
-            providerFee = amount * _flashLoanFee.providerFeeRate / RATIO;
-            protocolFee = amount * _flashLoanFee.protocolFeeRate / RATIO;
-            if (address(this).balance < balanceBefore + providerFee + protocolFee) {
-                revert FlashLoanRepayFailed();
+            uint256 providerFee;
+            uint256 protocolFee;
+            unchecked {
+                providerFee = amount * _flashLoanFee.providerFeeRate / RATIO;
+                protocolFee = amount * _flashLoanFee.protocolFeeRate / RATIO;
+                if (address(this).balance < balanceBefore + providerFee + protocolFee) {
+                    revert FlashLoanRepayFailed();
+                }
             }
+            
+            IRETH(rETH).mint(_RETHStakeManager, providerFee);
+            Address.sendValue(payable(_revenuePool), protocolFee);
+            emit FlashLoan(receiver, amount);
         }
-        
-        IRETH(rETH).mint(_RETHStakeManager, providerFee);
-        Address.sendValue(payable(_revenuePool), protocolFee);
-
-        emit FlashLoan(receiver, amount);
     }
 
     /** setter **/
