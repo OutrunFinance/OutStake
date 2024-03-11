@@ -16,7 +16,7 @@ _The first decentralized algorithmic stablecoin pegged to ETH and USDB yields._
 
 Blast 提供了一个接口来使合约可以控制合约内部资产所产生的原生收益。 详情：<https://docs.blast.io/building/guides/eth-yield>  
 
-举个例子，开发一个 dex，用户建立交易资金池，将 ETH-TOKEN 流动性添加到流动性合约地址，那么在这个合约地址中的 ETH 也会开始 Yield，开发者可以选择将原生收益据为己有，可以全部返还给用户，可以用来给自己的产品引流，也可以分配给自身协议 Token 的持有者，或者构建一些更复杂的 DEFI 产品。这里的重点时是开发者控制这些 native yield。
+举个例子，开发一个 dex，用户建立交易资金池，将 ETH/TOKEN 流动性添加到流动性合约地址，那么在这个合约地址中的 ETH 也会开始 Yield，开发者可以选择将原生收益据为己有，可以全部返还给用户，可以用来给自己的产品引流，也可以分配给自身协议 Token 的持有者，或者构建一些更复杂的 DEFI 产品。这里的重点是开发者控制了这些 native yield。
 
 ## Why choose Outrun?
 
