@@ -12,6 +12,8 @@ interface IRETH is IERC20 {
     error PermissionDenied();
 
     function outETHVault() external view returns (address);
+
+    function initialize(address _vault) external;
     
     function deposit() payable external;
 

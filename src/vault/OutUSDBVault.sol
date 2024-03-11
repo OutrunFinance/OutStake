@@ -1,23 +1,24 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "../stake/interfaces/IRUSDStakeManager.sol";
+import {BlastModeEnum} from "../blast/BlastModeEnum.sol";
 import "../blast/IERC20Rebasing.sol";
+import "../stake/interfaces/IRUSDStakeManager.sol";
+import "../utils/Initializable.sol";
+import "../token/USDB//interfaces/IRUSD.sol";
 import "./interfaces/IOutUSDBVault.sol";
 import "./interfaces/IOutFlashCallee.sol";
-import "../token/USDB//interfaces/IRUSD.sol";
-import {BlastModeEnum} from "../blast/BlastModeEnum.sol";
 
 /**
  * @title USDB Vault Contract
  */
-contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum {
+contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable, BlastModeEnum {
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
@@ -26,7 +27,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
 
     address private _RUSDStakeManager;
     address private _revenuePool;
-    uint256 private _feeRate;
+    uint256 private _protocolFee;
     FlashLoanFee private _flashLoanFee;
 
     modifier onlyRUSDContract() {
@@ -39,25 +40,12 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
     /**
      * @param owner_ - Address of the owner
      * @param rUSD_ - Address of RUSD Token
-     * @param revenuePool_ - Revenue pool
-     * @param feeRate_ - Fee to revenue pool
      */
     constructor(
         address owner_,
-        address rUSD_,
-        address revenuePool_,
-        uint256 feeRate_
+        address rUSD_
     ) Ownable(owner_) {
-        if (feeRate_ > RATIO) {
-            revert FeeRateOverflow();
-        }
-
         rUSD = rUSD_;
-        _feeRate = feeRate_;
-        _revenuePool = revenuePool_;
-
-        emit SetFeeRate(feeRate_);
-        emit SetRevenuePool(revenuePool_);
     }
 
     /** view **/
@@ -69,8 +57,8 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         return _revenuePool;
     }
 
-    function feeRate() external view returns (uint256) {
-        return _feeRate;
+    function protocolFee() external view returns (uint256) {
+        return _protocolFee;
     }
 
     function flashLoanFee() external view returns (FlashLoanFee memory) {
@@ -79,10 +67,25 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
 
     /** function **/
     /**
-     * @dev Initialize native yield claimable
+     * @dev Initializer
+     * @param stakeManager_ - Address of RUSDStakeManager
+     * @param revenuePool_ - Address of revenue pool
+     * @param protocolFee_ - Protocol fee rate
+     * @param providerFeeRate_ - Flashloan provider fee rate
+     * @param protocolFeeRate_ - Flashloan protocol fee rate
      */
-    function initialize() external override {
+    function initialize(
+        address stakeManager_, 
+        address revenuePool_, 
+        uint256 protocolFee_, 
+        uint256 providerFeeRate_, 
+        uint256 protocolFeeRate_
+    ) external override initializer {
         IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
+        setRUSDStakeManager(stakeManager_);
+        setRevenuePool(revenuePool_);
+        setProtocolFee(protocolFee_);
+        setFlashLoanFee(providerFeeRate_, protocolFeeRate_);
     }
 
     /**
@@ -101,10 +104,10 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         uint256 nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
         if (nativeYield > 0) {
             IERC20Rebasing(USDB).claim(address(this), nativeYield);
-            if (_feeRate > 0) {
+            if (_protocolFee > 0) {
                 uint256 feeAmount;
                 unchecked {
-                    feeAmount = nativeYield * _feeRate / RATIO;
+                    feeAmount = nativeYield * _protocolFee / RATIO;
                 }
                 IERC20(USDB).safeTransfer(_revenuePool, feeAmount);
                 unchecked {
@@ -136,32 +139,32 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         IERC20(USDB).safeTransfer(receiver, amount);
         IOutFlashCallee(receiver).execute(msg.sender, amount, data);
 
-        uint256 providerFee;
-        uint256 protocolFee;
+        uint256 providerFeeAmount;
+        uint256 protocolFeeAmount;
         unchecked {
-            providerFee = amount * _flashLoanFee.providerFeeRate / RATIO;
-            protocolFee = amount * _flashLoanFee.protocolFeeRate / RATIO;
-            if (IERC20(USDB).balanceOf(address(this)) < balanceBefore + providerFee + protocolFee) {
+            providerFeeAmount = amount * _flashLoanFee.providerFeeRate / RATIO;
+            protocolFeeAmount = amount * _flashLoanFee.protocolFeeRate / RATIO;
+            if (IERC20(USDB).balanceOf(address(this)) < balanceBefore + providerFeeAmount + protocolFeeAmount) {
                 revert FlashLoanRepayFailed();
             }
         }
         
-        IRUSD(rUSD).mint(_RUSDStakeManager, providerFee);
-        IERC20(USDB).safeTransfer(_revenuePool, protocolFee);
+        IRUSD(rUSD).mint(_RUSDStakeManager, providerFeeAmount);
+        IERC20(USDB).safeTransfer(_revenuePool, protocolFeeAmount);
         emit FlashLoan(receiver, amount);
     }
 
     /** setter **/
-    function setFeeRate(uint256 feeRate_) external override onlyOwner {
-        if (feeRate_ > RATIO) {
+    function setProtocolFee(uint256 protocolFee_) public override onlyOwner {
+        if (protocolFee_ > RATIO) {
             revert FeeRateOverflow();
         }
 
-        _feeRate = feeRate_;
-        emit SetFeeRate(feeRate_);
+        _protocolFee = protocolFee_;
+        emit SetProtocolFee(protocolFee_);
     }
 
-    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external override onlyOwner {
+    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) public override onlyOwner {
         if (_providerFeeRate + _protocolFeeRate > RATIO) {
             revert FeeRateOverflow();
         }
@@ -170,12 +173,12 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Ownable, BlastModeEnum 
         emit SetFlashLoanFee(_providerFeeRate, _protocolFeeRate);
     }
 
-    function setRevenuePool(address _pool) external override onlyOwner {
+    function setRevenuePool(address _pool) public override onlyOwner {
         _revenuePool = _pool;
         emit SetRevenuePool(_pool);
     }
 
-    function setRUSDStakeManager(address _stakeManager) external override onlyOwner {
+    function setRUSDStakeManager(address _stakeManager) public override onlyOwner {
         _RUSDStakeManager = _stakeManager;
         emit SetRUSDStakeManager(_stakeManager);
     }

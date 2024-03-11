@@ -19,28 +19,22 @@ contract OutstakeScript is BaseScript {
         REY rey = new REY(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
         address reyAddress = address(rey);
 
-        OutETHVault vault = new OutETHVault(
-            0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 
-            rethAddress, 
-            0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 
-            1000);
+        OutETHVault vault = new OutETHVault(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, rethAddress);
         address vaultAddress = address(vault);
 
         RETHStakeManager stakeManager = new RETHStakeManager(
             0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8,
             rethAddress,
             pethAddress,
-            reyAddress,
-            vaultAddress
+            reyAddress
         );
+        stakeManager.initialize(vaultAddress, 30, 7, 365);
         address stakeAddress = address(stakeManager);
 
-        vault.initialize();
-        vault.setFlashLoanFee(15, 5);
-        reth.setOutETHVault(vaultAddress);
-        peth.setRETHStakeManager(stakeAddress);
-        rey.setRETHStakeManager(stakeAddress);
-        stakeManager.setForceUnstakeFee(30);
+        vault.initialize(stakeAddress, 0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 100, 15, 5);
+        reth.initialize(vaultAddress);
+        peth.initialize(stakeAddress);
+        rey.initialize(stakeAddress);
 
         console.log("RETH deployed on %s", rethAddress);
         console.log("PETH deployed on %s", pethAddress);

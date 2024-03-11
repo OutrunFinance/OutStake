@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interfaces/IRETH.sol";
+import "../../utils/Initializable.sol";
 import "../../vault/interfaces/IOutETHVault.sol";
 
 /**
  * @title Outrun ETH Wrapped Token
  */
-contract RETH is IRETH, ERC20, Ownable {
+contract RETH is IRETH, ERC20, Initializable, Ownable {
     address private _outETHVault;
 
     modifier onlyOutETHVault() {
@@ -25,6 +26,14 @@ contract RETH is IRETH, ERC20, Ownable {
 
     function outETHVault() external view override returns (address) {
         return _outETHVault;
+    }
+
+    /**
+     * @dev Initializer
+     * @param _vault - Address of OutETHVault
+     */
+    function initialize(address _vault) external override initializer {
+        setOutETHVault(_vault);
     }
 
     /**
@@ -65,7 +74,7 @@ contract RETH is IRETH, ERC20, Ownable {
         _mint(_account, _amount);
     }
 
-    function setOutETHVault(address _vault) external override onlyOwner {
+    function setOutETHVault(address _vault) public override onlyOwner {
         _outETHVault = _vault;
         emit SetOutETHVault(_vault);
     }

@@ -13,6 +13,8 @@ interface IREY is IERC20 {
 
     function RETHStakeManager() external view returns (address);
 
+    function initialize(address stakeManager_) external;
+
     function mint(address _account, uint256 _amount) external;
 
     function burn(address _account, uint256 _amount) external;

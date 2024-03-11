@@ -53,6 +53,13 @@ interface IRUSDStakeManager {
     function calcPUSDAmount(uint256 amountInRUSD) external view returns (uint256);
 
     /** function **/
+    function initialize(
+        address outUSDBVault_, 
+        uint256 forceUnstakeFee_, 
+        uint16 minLockupDays_, 
+        uint16 maxLockupDays_
+    ) external;
+
     function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address receiver) external returns (uint256, uint256);
 
     function unstake(uint256 positionId) external returns (uint256) ;

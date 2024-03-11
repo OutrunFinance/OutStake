@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interfaces/IREY.sol";
+import "../../utils/Initializable.sol";
 
 /**
  * @title Outrun ETH yield token
  */
-contract REY is IREY, ERC20, Ownable {
+contract REY is IREY, ERC20, Initializable, Ownable {
     address public _RETHStakeManager;
 
     modifier onlyRETHStakeManager() {
@@ -23,6 +24,14 @@ contract REY is IREY, ERC20, Ownable {
 
     function RETHStakeManager() external view override returns (address) {
         return _RETHStakeManager;
+    }
+
+    /**
+     * @dev Initializer
+     * @param stakeManager_ - Address of RETHStakeManager
+     */
+    function initialize(address stakeManager_) external override initializer {
+        setRETHStakeManager(stakeManager_);
     }
 
     /**
@@ -43,7 +52,7 @@ contract REY is IREY, ERC20, Ownable {
         _burn(_account, _amount);
     }
 
-    function setRETHStakeManager(address _stakeManager) external override onlyOwner {
+    function setRETHStakeManager(address _stakeManager) public override onlyOwner {
         _RETHStakeManager = _stakeManager;
         emit SetRETHStakeManager(_stakeManager);
     }

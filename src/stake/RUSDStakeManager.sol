@@ -5,19 +5,20 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./interfaces/IRUSDStakeManager.sol";
-import "../vault/interfaces/IOutUSDBVault.sol";
 import "../utils/Math.sol";
+import "../utils/Initializable.sol";
 import "../utils/AutoIncrementId.sol";
 import "../token/USDB/interfaces/IRUSD.sol";
 import "../token/USDB/interfaces/IPUSD.sol";
 import "../token/USDB/interfaces/IRUY.sol";
+import "../vault/interfaces/IOutUSDBVault.sol";
+import "./interfaces/IRUSDStakeManager.sol";
 
 /**
  * @title RUSD Stake Manager Contract
  * @dev Handles Staking of RUSD
  */
-contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
+contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
@@ -30,10 +31,10 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
 
     address private _outUSDBVault;
     uint256 private _forceUnstakeFee;
-    uint256 private _totalStaked;
-    uint256 private _totalYieldPool;
     uint16 private _minLockupDays;
     uint16 private _maxLockupDays;
+    uint256 private _totalStaked;
+    uint256 private _totalYieldPool;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -49,20 +50,14 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
      * @param rUSD_ - Address of RUSD Token
      * @param pUSD_ - Address of PUSD Token
      * @param ruy_ - Address of RUY Token
-     * @param outUSDBVault_ - Address of outUSDBVault
      */
-    constructor(address owner_, address rUSD_, address pUSD_, address ruy_, address outUSDBVault_) Ownable(owner_) {
+    constructor(address owner_, address rUSD_, address pUSD_, address ruy_) Ownable(owner_) {
         rUSD = rUSD_;
         pUSD = pUSD_;
         ruy = ruy_;
-        _outUSDBVault = outUSDBVault_;
-
-        emit SetOutUSDBVault(outUSDBVault_);
     }
 
-    /**
-     * view *
-     */
+    /** view **/
     function outUSDBVault() external view override returns (address) {
         return _outUSDBVault;
     }
@@ -111,9 +106,26 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         }
     }
 
+    /** function **/
     /**
-     * function *
+     * @dev Initializer
+     * @param outUSDBVault_ - Address of OutUSDBVault
+     * @param minLockupDays_ - Min lockup days
+     * @param maxLockupDays_ - Max lockup days
+     * @param forceUnstakeFee_ - Force unstake fee
      */
+    function initialize(
+        address outUSDBVault_, 
+        uint256 forceUnstakeFee_, 
+        uint16 minLockupDays_, 
+        uint16 maxLockupDays_
+    ) external override initializer {
+        setOutUSDBVault(outUSDBVault_);
+        setForceUnstakeFee(forceUnstakeFee_);
+        setMinLockupDays(minLockupDays_);
+        setMaxLockupDays(maxLockupDays_);
+    }
+
     /**
      * @dev Allows user to deposit RUSD, then mints PUSD and RUY for the user.
      * @param amountInRUSD - RUSD staked amount, amount % 1e18 == 0
@@ -265,13 +277,11 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
         }
     }
 
-    /**
-     * setter *
-     */
+    /** setter **/
     /**
      * @param minLockupDays_ - Min lockup days
      */
-    function setMinLockupDays(uint16 minLockupDays_) external onlyOwner {
+    function setMinLockupDays(uint16 minLockupDays_) public onlyOwner {
         _minLockupDays = minLockupDays_;
         emit SetMinLockupDays(minLockupDays_);
     }
@@ -279,7 +289,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     /**
      * @param maxLockupDays_ - Max lockup days
      */
-    function setMaxLockupDays(uint16 maxLockupDays_) external onlyOwner {
+    function setMaxLockupDays(uint16 maxLockupDays_) public onlyOwner {
         _maxLockupDays = maxLockupDays_;
         emit SetMaxLockupDays(maxLockupDays_);
     }
@@ -287,7 +297,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     /**
      * @param forceUnstakeFee_ - Force unstake fee
      */
-    function setForceUnstakeFee(uint256 forceUnstakeFee_) external override onlyOwner {
+    function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
         if (forceUnstakeFee_ > RATIO) {
             revert ForceUnstakeFeeOverflow();
         }
@@ -299,7 +309,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Ownable, AutoIncrementId {
     /**
      * @param outUSDBVault_ - Address of outUSDBVault
      */
-    function setOutUSDBVault(address outUSDBVault_) external override onlyOwner {
+    function setOutUSDBVault(address outUSDBVault_) public override onlyOwner {
         _outUSDBVault = outUSDBVault_;
         emit SetOutUSDBVault(outUSDBVault_);
     }

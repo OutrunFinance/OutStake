@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 
 import "./interfaces/IRUSD.sol";
+import "../../utils/Initializable.sol";
 import "../../vault/interfaces/IOutUSDBVault.sol";
 
 /**
  * @title Outrun USD Wrapped Token
  */
-contract RUSD is IRUSD, ERC20, Ownable {
+contract RUSD is IRUSD, ERC20, Initializable, Ownable {
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
@@ -30,6 +31,14 @@ contract RUSD is IRUSD, ERC20, Ownable {
 
     function outUSDBVault() external view override returns (address) {
         return _outUSDBVault;
+    }
+
+    /**
+     * @dev Initializer
+     * @param _vault - Address of OutUSDBVault
+     */
+    function initialize(address _vault) external override initializer {
+        setOutUSDBVault(_vault);
     }
 
     /**
@@ -69,7 +78,7 @@ contract RUSD is IRUSD, ERC20, Ownable {
         _mint(_account, _amount);
     }
     
-    function setOutUSDBVault(address _vault) external override onlyOwner {
+    function setOutUSDBVault(address _vault) public override onlyOwner {
         _outUSDBVault = _vault;
         emit SetOutUSDBVault(_vault);
     }

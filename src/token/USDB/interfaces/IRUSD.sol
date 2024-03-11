@@ -13,6 +13,8 @@ interface IRUSD is IERC20 {
 
     function outUSDBVault() external view returns (address);
 
+    function initialize(address _vault) external;
+
     function deposit(uint256 amount) external;
 
     function withdraw(uint256 amount) external;

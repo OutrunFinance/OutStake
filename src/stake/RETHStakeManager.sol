@@ -1,23 +1,24 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./interfaces/IRETHStakeManager.sol";
-import "../vault/interfaces/IOutETHVault.sol";
 import "../utils/Math.sol";
+import "../utils/Initializable.sol";
 import "../utils/AutoIncrementId.sol";
 import "../token/ETH/interfaces/IREY.sol";
 import "../token/ETH/interfaces/IRETH.sol";
 import "../token/ETH/interfaces/IPETH.sol";
+import "../vault/interfaces/IOutETHVault.sol";
+import "./interfaces/IRETHStakeManager.sol";
 
 /**
  * @title RETH Stake Manager Contract
  * @dev Handles Staking of RETH
  */
-contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
+contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
@@ -30,10 +31,10 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
 
     address private _outETHVault;
     uint256 private _forceUnstakeFee;
-    uint256 private _totalStaked;
-    uint256 private _totalYieldPool;
     uint16 private _minLockupDays;
     uint16 private _maxLockupDays;
+    uint256 private _totalStaked;
+    uint256 private _totalYieldPool;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -49,20 +50,14 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
      * @param rETH_ - Address of RETH Token
      * @param pETH_ - Address of PETH Token
      * @param rey_ - Address of REY Token
-     * @param outETHVault_ - Address of OutETHVault
      */
-    constructor(address owner_, address rETH_, address pETH_, address rey_, address outETHVault_) Ownable(owner_) {
+    constructor(address owner_, address rETH_, address pETH_, address rey_) Ownable(owner_) {
         rETH = rETH_;
         pETH = pETH_;
         rey = rey_;
-        _outETHVault = outETHVault_;
-
-        emit SetOutETHVault(outETHVault_);
     }
 
-    /**
-     * view *
-     */
+    /** view **/
     function outETHVault() external view override returns (address) {
         return _outETHVault;
     }
@@ -111,9 +106,26 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         }
     }
 
+    /** function **/
     /**
-     * function *
+     * @dev Initializer
+     * @param outETHVault_ - Address of OutETHVault
+     * @param forceUnstakeFee_ - Force unstake fee
+     * @param minLockupDays_ - Min lockup days
+     * @param maxLockupDays_ - Max lockup days
      */
+    function initialize(
+        address outETHVault_,
+        uint256 forceUnstakeFee_, 
+        uint16 minLockupDays_, 
+        uint16 maxLockupDays_
+    ) external override initializer {
+        setOutETHVault(outETHVault_);
+        setForceUnstakeFee(forceUnstakeFee_);
+        setMinLockupDays(minLockupDays_);
+        setMaxLockupDays(maxLockupDays_);
+    }
+
     /**
      * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
      * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
@@ -265,13 +277,11 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
         }
     }
 
-    /**
-     * setter *
-     */
+    /** setter **/
     /**
      * @param minLockupDays_ - Min lockup days
      */
-    function setMinLockupDays(uint16 minLockupDays_) external onlyOwner {
+    function setMinLockupDays(uint16 minLockupDays_) public onlyOwner {
         _minLockupDays = minLockupDays_;
         emit SetMinLockupDays(minLockupDays_);
     }
@@ -279,7 +289,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     /**
      * @param maxLockupDays_ - Max lockup days
      */
-    function setMaxLockupDays(uint16 maxLockupDays_) external onlyOwner {
+    function setMaxLockupDays(uint16 maxLockupDays_) public onlyOwner {
         _maxLockupDays = maxLockupDays_;
         emit SetMaxLockupDays(maxLockupDays_);
     }
@@ -287,7 +297,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     /**
      * @param forceUnstakeFee_ - Force unstake fee
      */
-    function setForceUnstakeFee(uint256 forceUnstakeFee_) external override onlyOwner {
+    function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
         if (forceUnstakeFee_ > RATIO) {
             revert ForceUnstakeFeeOverflow();
         }
@@ -299,7 +309,7 @@ contract RETHStakeManager is IRETHStakeManager, Ownable, AutoIncrementId {
     /**
      * @param outETHVault_ - Address of outETHVault
      */
-    function setOutETHVault(address outETHVault_) external override onlyOwner {
+    function setOutETHVault(address outETHVault_) public override onlyOwner {
         _outETHVault = outETHVault_;
         emit SetOutETHVault(outETHVault_);
     }

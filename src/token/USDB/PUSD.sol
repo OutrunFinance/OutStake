@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interfaces/IPUSD.sol";
+import "../../utils/Initializable.sol";
 
 /**
  * @title Outrun Principal USD Liquid Staked Token
  */
-contract PUSD is IPUSD, ERC20, Ownable {
+contract PUSD is IPUSD, ERC20, Initializable, Ownable {
     address private _RUSDStakeManager;
 
     modifier onlyRUSDStakeManager() {
@@ -23,6 +24,14 @@ contract PUSD is IPUSD, ERC20, Ownable {
 
     function RUSDStakeManager() external view override returns (address) {
         return _RUSDStakeManager;
+    }
+
+    /**
+     * @dev Initializer
+     * @param stakeManager_ - Address of RUSDStakeManager
+     */
+    function initialize(address stakeManager_) external override initializer {
+        setRUSDStakeManager(stakeManager_);
     }
 
     /**
@@ -43,7 +52,7 @@ contract PUSD is IPUSD, ERC20, Ownable {
         _burn(_account, _amount);
     }
 
-    function setRUSDStakeManager(address _stakeManager) external override onlyOwner {
+    function setRUSDStakeManager(address _stakeManager) public override onlyOwner {
         _RUSDStakeManager = _stakeManager;
         emit SetRUSDStakeManager(_stakeManager);
     }
