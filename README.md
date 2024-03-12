@@ -2,7 +2,7 @@
 
 **Read this in chinese: [中文](README.cn.md)**  
 
-# Outrun -- Built entirely around native yield from Blast
+# Outstake -- Built entirely around native yield from Blast
 
 _Not Only Blast L2 Native Yield Stake Protocol_  
 _Outstake is the first LSDFi protocol live on Blast._  
@@ -131,21 +131,3 @@ FlashLoan is a new way of borrowing assets on the blockchain. Unlike traditional
 FlashLoan leverages atomicity to allow users to borrow without providing collateral. There are two important considerations to mention. Firstly, whenever you borrow assets in a FlashLoan, you must pay a usage fee. Secondly, the loan must be repaid in the same transaction it was borrowed.
 
 Outrun offers FlashLoan functionality, where arbitrageurs can borrow the user's pledged ETH or USDB through the provided interface and repay it in the same transaction. This can provide additional sources of income for stakers and improve capital efficiency.
-
-# OutSwap
-
-We have made improvements to our automated market maker based on Uniswap V2. We use RETH and RUSD as base currencies, allowing liquidity providers to claim LP rewards without removing liquidity to adapt to our FF launch. In the future, we will continuously upgrade the protocol to provide users with a smoother experience.
-
-# FF LaunchPad
-
-Do you remember the recent inscription Summer?
-
-Imagine combining inscription's FairLaunch feature with LaunchPad.
-
-FFLaunch combines OutrunDao's other two products, "Outstake" and "Outswap," leveraging their strengths to create the fairest token issuance method in history.
-
-Issuing ERC20 tokens like inscription, users can mint tokens by paying a fee. During the minting process, the fee along with a portion of tokens reserved in the contract form a trading pair to provide liquidity on Outswap. LP will be locked for a period, and users will receive YieldTokens by locking their minting fees (staking ETH). Upon the expiration of the lock-up period, users can withdraw their LP and remove liquidity. This is equivalent to users getting these tokens for free while simultaneously participating in the entire liquidity-building process of the project.
-
-For the project team, the funds they raise come from the trading fees collected by the trading pairs during the LP lockup period.With the core fundamental requirements mentioned above, we also provide customizable callee interfaces for project teams to support the flexibility of FFLaunch. This allows project teams to build their own unique launch logic on top of the Fair And Free foundation.
-
-Compared to traditional ICOs or IDOs, the FFLaunch model is fairer and more investor-friendly. Investors can obtain the project's tokens for free, while also preventing the project team from conducting rug pulls or abandoning further development of the product after raising a large amount of funds, as is common in traditional IDOs. To raise further funds, project teams must continuously iterate on products during the LP lock-up period, encouraging users to trade their tokens. This facilitates sustained growth in cash flow. Furthermore, the FFLaunch model fosters community-driven liquidity. Since tokens are essentially obtained for free, this encourages more liquidity to be pooled, thereby increasing the depth of the liquidity pool. This is crucial for a newly launched project.
