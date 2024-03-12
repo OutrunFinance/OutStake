@@ -2,11 +2,11 @@
 
 _Not Only Blast L2 Native Yield Stake Protocol_  
 _Outstake 是 Blast L2 上第一个完全围绕 Blast 原生收益构建 LSDFI 协议_  
-_我们构建了第一个与ETH和USDB原生收益率的去中心化算法稳定币_  
+_我们构建了第一个与 ETH 和 USDB 原生收益率的去中心化算法稳定币_  
 
 ## Blast 是一个什么样的 L2?
 
-在 Blast 的[官方文档](https://docs.blast.io/about-blast "Blast官方文档")中可以看到
+在 Blast 的[官方文档](https://docs.blast.io/about-blast "Blast 官方文档")中可以看到
 > Blast 是唯一具有 ETH 和稳定币原生收益的以太坊 L2。Blast 收益来自 ETH 质押和 RWA 协议。这些去中心化协议的收益会自动传回给 Blast 用户。其他 L2 的默认利率为 0%。在 Blast 上，ETH 为 4%，稳定币为 5%。这种收益使得为 Dapp 创建新的商业模式成为可能，而这在其他 L2 上是不可能的。
 
 通过上面的描述我们可以知道，只要用户将 ETH 跨链到 Blast，用户的 EOA 钱包中就会自动开始产生原生收益。而智能合约中同样可以产生原生收益，不过此时的收益是由智能合约控制的，合约开发者可以通过 Blast 的接口提取收益。
