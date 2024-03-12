@@ -4,9 +4,9 @@
 
 # Outrun -- Built entirely around native yield from Blast
 
-_The first LSDFi protocol live on Blast._  
-_The first concentrated liquidity AMM with native yield._  
-_The first decentralized algorithmic stablecoin pegged to ETH and USDB yields._
+_Not Only Blast L2 Native Yield Stake Protocol_  
+_Outstake is the first LSDFi protocol live on Blast._  
+_We built the first decentralized algorithmic stablecoin pegged to ETH and USDB yields._
 
 ## What's Blast?
 

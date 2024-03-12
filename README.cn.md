@@ -1,9 +1,8 @@
-# Outrun -- 完全围绕Blast原生收益构建
+# Outrun -- 完全围绕 Blast 原生收益构建
 
 _Not Only Blast L2 Native Yield Stake Protocol_  
-_The first LSDFi protocol live on Blast._
-_The first concentrated liquidity AMM with native yield._  
-_The first decentralized algorithmic stablecoin pegged to ETH and USDB yields._  
+_Outstake 是 Blast L2 上第一个完全围绕 Blast 原生收益构建 LSDFI 协议_  
+_我们构建了第一个与ETH和USDB原生收益率的去中心化算法稳定币_  
 
 ## Blast 是一个什么样的 L2?
 
