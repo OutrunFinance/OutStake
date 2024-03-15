@@ -60,7 +60,7 @@ interface IRETHStakeManager {
         uint16 maxLockupDays_
     ) external;
 
-    function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address receiver) external returns (uint256, uint256);
+    function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address pethTo, address reyTo) external returns (uint256, uint256);
 
     function unstake(uint256 positionId) external returns (uint256);
 

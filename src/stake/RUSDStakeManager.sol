@@ -131,10 +131,11 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
      * @param amountInRUSD - RUSD staked amount, amount % 1e18 == 0
      * @param lockupDays - User can withdraw after lockupDays
      * @param positionOwner - Owner of position
-     * @param receiver - Receiver of PETH and REY
+     * @param pusdTo - Receiver of PUSD
+     * @param ruyTo - Receiver of RUY
      * @notice User must have approved this contract to spend RUSD
      */
-    function stake(uint256 amountInRUSD, uint16 lockupDays, address positionOwner, address receiver)
+    function stake(uint256 amountInRUSD, uint16 lockupDays, address positionOwner, address pusdTo, address ruyTo)
         external
         override
         returns (uint256, uint256)
@@ -160,8 +161,8 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
             Position(uint96(amountInRUSD), uint96(amountInPUSD), uint56(deadline), false, positionOwner);
 
         IERC20(rUSD).safeTransferFrom(msgSender, address(this), amountInRUSD);
-        IPUSD(pUSD).mint(receiver, amountInPUSD);
-        IRUY(ruy).mint(receiver, amountInRUY);
+        IPUSD(pUSD).mint(pusdTo, amountInPUSD);
+        IRUY(ruy).mint(ruyTo, amountInRUY);
 
         emit StakeRUSD(positionId, positionOwner, amountInRUSD, deadline);
         return (amountInPUSD, amountInRUY);

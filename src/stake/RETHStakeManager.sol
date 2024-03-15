@@ -131,10 +131,11 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
      * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
      * @param lockupDays - User can withdraw after lockupDays
      * @param positionOwner - Owner of position
-     * @param receiver - Receiver of PETH and REY
+     * @param pethTo - Receiver of PETH
+     * @param reyTo - Receiver of REY
      * @notice User must have approved this contract to spend RETH
      */
-    function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address receiver)
+    function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address pethTo, address reyTo)
         external
         override
         returns (uint256, uint256)
@@ -160,8 +161,8 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
             Position(uint96(amountInRETH), uint96(amountInPETH), uint56(deadline), false, positionOwner);
 
         IERC20(rETH).safeTransferFrom(msgSender, address(this), amountInRETH);
-        IPETH(pETH).mint(receiver, amountInPETH);
-        IREY(rey).mint(receiver, amountInREY);
+        IPETH(pETH).mint(pethTo, amountInPETH);
+        IREY(rey).mint(reyTo, amountInREY);
 
         emit StakeRETH(positionId, positionOwner, amountInRETH, deadline);
         return (amountInPETH, amountInREY);
