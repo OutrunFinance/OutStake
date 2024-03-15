@@ -25,9 +25,9 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
     uint256 public constant MINSTAKE = 1e20;
     uint256 public constant DAY = 24 * 3600;
 
-    address public immutable rUSD;
-    address public immutable pUSD;
-    address public immutable ruy;
+    address public immutable RUSD;
+    address public immutable PUSD;
+    address public immutable RUY;
 
     address private _outUSDBVault;
     uint256 private _forceUnstakeFee;
@@ -46,15 +46,15 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
     }
 
     /**
-     * @param owner_ - Address of the owner
-     * @param rUSD_ - Address of RUSD Token
-     * @param pUSD_ - Address of PUSD Token
-     * @param ruy_ - Address of RUY Token
+     * @param owner - Address of the owner
+     * @param rusd - Address of RUSD Token
+     * @param pusd - Address of PUSD Token
+     * @param ruy - Address of RUY Token
      */
-    constructor(address owner_, address rUSD_, address pUSD_, address ruy_) Ownable(owner_) {
-        rUSD = rUSD_;
-        pUSD = pUSD_;
-        ruy = ruy_;
+    constructor(address owner, address rusd, address pusd, address ruy) Ownable(owner) {
+        RUSD = rusd;
+        PUSD = pusd;
+        RUY = ruy;
     }
 
     /** view **/
@@ -87,15 +87,15 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
     }
 
     function getStakedRUSD() public view override returns (uint256) {
-        return IRUSD(rUSD).balanceOf(address(this));
+        return IRUSD(RUSD).balanceOf(address(this));
     }
 
     function avgStakeDays() public view override returns (uint256) {
-        return IERC20(ruy).totalSupply() / _totalStaked;
+        return IERC20(RUY).totalSupply() / _totalStaked;
     }
 
     function calcPUSDAmount(uint256 amountInRUSD) public view override returns (uint256) {
-        uint256 totalShares = IRUSD(pUSD).totalSupply();
+        uint256 totalShares = IRUSD(PUSD).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
         uint256 yieldVault = getStakedRUSD();
@@ -160,9 +160,9 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
         _positions[positionId] =
             Position(uint96(amountInRUSD), uint96(amountInPUSD), uint56(deadline), false, positionOwner);
 
-        IERC20(rUSD).safeTransferFrom(msgSender, address(this), amountInRUSD);
-        IPUSD(pUSD).mint(pusdTo, amountInPUSD);
-        IRUY(ruy).mint(ruyTo, amountInRUY);
+        IERC20(RUSD).safeTransferFrom(msgSender, address(this), amountInRUSD);
+        IPUSD(PUSD).mint(pusdTo, amountInPUSD);
+        IRUY(RUY).mint(ruyTo, amountInRUY);
 
         emit StakeRUSD(positionId, positionOwner, amountInRUSD, deadline);
         return (amountInPUSD, amountInRUY);
@@ -187,7 +187,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
         unchecked {
             _totalStaked -= amountInRUSD;
         }
-        IPUSD(pUSD).burn(msgSender, position.PUSDAmount);
+        IPUSD(PUSD).burn(msgSender, position.PUSDAmount);
 
         uint256 deadline = position.deadline;
         uint256 currentTime = block.timestamp;
@@ -196,7 +196,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
             unchecked {
                 amountInRUY = position.RUSDAmount * Math.ceilDiv(deadline - currentTime, DAY);
             }
-            IRUY(ruy).burn(msgSender, amountInRUY);
+            IRUY(RUY).burn(msgSender, amountInRUY);
             position.deadline = uint56(currentTime);
 
             uint256 fee;
@@ -204,10 +204,10 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
                 fee = amountInRUSD * _forceUnstakeFee / RATIO;
                 amountInRUSD -= fee;
             }
-            IRUSD(rUSD).withdraw(fee);
-            IERC20(rUSD).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
+            IRUSD(RUSD).withdraw(fee);
+            IERC20(RUSD).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
         }
-        IERC20(rUSD).safeTransfer(msgSender, amountInRUSD);
+        IERC20(RUSD).safeTransfer(msgSender, amountInRUSD);
 
         emit Unstake(positionId, msgSender, amountInRUSD);
         return amountInRUSD;
@@ -240,7 +240,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
         unchecked {
             amountInRUY = position.RUSDAmount * extendDays;
         }
-        IRUY(ruy).mint(user, amountInRUY);
+        IRUY(RUY).mint(user, amountInRUY);
 
         emit ExtendLockTime(positionId, extendDays, amountInRUY);
         return amountInRUY;
@@ -258,12 +258,12 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
         IOutUSDBVault(_outUSDBVault).claimUSDBYield();
         uint256 yieldAmount;
         unchecked {
-            yieldAmount = _totalYieldPool * amountInRUY / IRUY(ruy).totalSupply();
+            yieldAmount = _totalYieldPool * amountInRUY / IRUY(RUY).totalSupply();
         }
 
         address user = msg.sender;
-        IRUY(ruy).burn(user, amountInRUY);
-        IERC20(rUSD).safeTransfer(user, yieldAmount);
+        IRUY(RUY).burn(user, amountInRUY);
+        IERC20(RUSD).safeTransfer(user, yieldAmount);
 
         emit WithdrawYield(user, amountInRUY, yieldAmount);
         return yieldAmount;

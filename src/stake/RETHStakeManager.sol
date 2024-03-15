@@ -25,9 +25,9 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
     uint256 public constant MINSTAKE = 1e16;
     uint256 public constant DAY = 24 * 3600;
 
-    address public immutable rETH;
-    address public immutable pETH;
-    address public immutable rey;
+    address public immutable RETH;
+    address public immutable PETH;
+    address public immutable REY;
 
     address private _outETHVault;
     uint256 private _forceUnstakeFee;
@@ -46,15 +46,15 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
     }
 
     /**
-     * @param owner_ - Address of the owner
-     * @param rETH_ - Address of RETH Token
-     * @param pETH_ - Address of PETH Token
-     * @param rey_ - Address of REY Token
+     * @param owner - Address of the owner
+     * @param reth - Address of RETH Token
+     * @param peth - Address of PETH Token
+     * @param rey - Address of REY Token
      */
-    constructor(address owner_, address rETH_, address pETH_, address rey_) Ownable(owner_) {
-        rETH = rETH_;
-        pETH = pETH_;
-        rey = rey_;
+    constructor(address owner, address reth, address peth, address rey) Ownable(owner) {
+        RETH = reth;
+        PETH = peth;
+        REY = rey;
     }
 
     /** view **/
@@ -87,15 +87,15 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
     }
 
     function getStakedRETH() public view override returns (uint256) {
-        return IRETH(rETH).balanceOf(address(this));
+        return IRETH(RETH).balanceOf(address(this));
     }
 
     function avgStakeDays() public view override returns (uint256) {
-        return IERC20(rey).totalSupply() / _totalStaked;
+        return IERC20(REY).totalSupply() / _totalStaked;
     }
 
     function calcPETHAmount(uint256 amountInRETH) public view override returns (uint256) {
-        uint256 totalShares = IRETH(pETH).totalSupply();
+        uint256 totalShares = IRETH(PETH).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
         uint256 yieldVault = getStakedRETH();
@@ -160,9 +160,9 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
         _positions[positionId] =
             Position(uint96(amountInRETH), uint96(amountInPETH), uint56(deadline), false, positionOwner);
 
-        IERC20(rETH).safeTransferFrom(msgSender, address(this), amountInRETH);
-        IPETH(pETH).mint(pethTo, amountInPETH);
-        IREY(rey).mint(reyTo, amountInREY);
+        IERC20(RETH).safeTransferFrom(msgSender, address(this), amountInRETH);
+        IPETH(PETH).mint(pethTo, amountInPETH);
+        IREY(REY).mint(reyTo, amountInREY);
 
         emit StakeRETH(positionId, positionOwner, amountInRETH, deadline);
         return (amountInPETH, amountInREY);
@@ -187,7 +187,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
         unchecked {
             _totalStaked -= amountInRETH;
         }
-        IPETH(pETH).burn(msgSender, position.PETHAmount);
+        IPETH(PETH).burn(msgSender, position.PETHAmount);
 
         uint256 deadline = position.deadline;
         uint256 currentTime = block.timestamp;
@@ -196,7 +196,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
             unchecked {
                 amountInREY = amountInRETH * Math.ceilDiv(deadline - currentTime, DAY);
             }
-            IREY(rey).burn(msgSender, amountInREY);
+            IREY(REY).burn(msgSender, amountInREY);
             position.deadline = uint56(currentTime);
 
             uint256 fee;
@@ -204,10 +204,10 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
                 fee = amountInRETH * _forceUnstakeFee / RATIO;
                 amountInRETH -= fee;
             }
-            IRETH(rETH).withdraw(fee);
+            IRETH(RETH).withdraw(fee);
             Address.sendValue(payable(IOutETHVault(_outETHVault).revenuePool()), fee);
         }        
-        IERC20(rETH).safeTransfer(msgSender, amountInRETH);
+        IERC20(RETH).safeTransfer(msgSender, amountInRETH);
 
         emit Unstake(positionId, msgSender, amountInRETH);
         return amountInRETH;
@@ -240,7 +240,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
         unchecked {
             amountInREY = position.RETHAmount * extendDays;
         }
-        IREY(rey).mint(user, amountInREY);
+        IREY(REY).mint(user, amountInREY);
 
         emit ExtendLockTime(positionId, extendDays, amountInREY);
         return amountInREY;
@@ -258,12 +258,12 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
         IOutETHVault(_outETHVault).claimETHYield();
         uint256 yieldAmount;
         unchecked {
-            yieldAmount = _totalYieldPool * amountInREY / IREY(rey).totalSupply();
+            yieldAmount = _totalYieldPool * amountInREY / IREY(REY).totalSupply();
         }
 
         address user = msg.sender;
-        IREY(rey).burn(user, amountInREY);
-        IERC20(rETH).safeTransfer(user, yieldAmount);
+        IREY(REY).burn(user, amountInREY);
+        IERC20(RETH).safeTransfer(user, yieldAmount);
 
         emit WithdrawYield(user, amountInREY, yieldAmount);
         return yieldAmount;

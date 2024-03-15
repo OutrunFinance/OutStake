@@ -22,7 +22,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
 
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
     uint256 public constant RATIO = 10000;
-    address public immutable rETH;
+    address public immutable RETH;
 
     address private _RETHStakeManager;
     address private _revenuePool;
@@ -30,21 +30,21 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
     FlashLoanFee private _flashLoanFee;
 
     modifier onlyRETHContract() {
-        if (msg.sender != rETH) {
+        if (msg.sender != RETH) {
             revert PermissionDenied();
         }
         _;
     }
 
     /**
-     * @param owner_ - Address of the owner
-     * @param rETH_ - Address of RETH Token
+     * @param owner - Address of the owner
+     * @param reth - Address of RETH Token
      */
     constructor(
-        address owner_,
-        address rETH_
-    ) Ownable(owner_) {
-        rETH = rETH_;
+        address owner,
+        address reth
+    ) Ownable(owner) {
+        RETH = reth;
     }
 
     /** view **/
@@ -110,7 +110,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
                 }
             }
 
-            IRETH(rETH).mint(_RETHStakeManager, nativeYield);
+            IRETH(RETH).mint(_RETHStakeManager, nativeYield);
             IRETHStakeManager(_RETHStakeManager).updateYieldPool(nativeYield);
         }
 
@@ -144,7 +144,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
                 }
             }
             
-            IRETH(rETH).mint(_RETHStakeManager, providerFeeAmount);
+            IRETH(RETH).mint(_RETHStakeManager, providerFeeAmount);
             Address.sendValue(payable(_revenuePool), protocolFeeAmount);
             emit FlashLoan(receiver, amount);
         }

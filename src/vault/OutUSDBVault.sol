@@ -23,7 +23,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant RATIO = 10000;
-    address public immutable rUSD;
+    address public immutable RUSD;
 
     address private _RUSDStakeManager;
     address private _revenuePool;
@@ -31,21 +31,21 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     FlashLoanFee private _flashLoanFee;
 
     modifier onlyRUSDContract() {
-        if (msg.sender != rUSD) {
+        if (msg.sender != RUSD) {
             revert PermissionDenied();
         }
         _;
     }
 
     /**
-     * @param owner_ - Address of the owner
-     * @param rUSD_ - Address of RUSD Token
+     * @param owner - Address of the owner
+     * @param rusd - Address of RUSD Token
      */
     constructor(
-        address owner_,
-        address rUSD_
-    ) Ownable(owner_) {
-        rUSD = rUSD_;
+        address owner,
+        address rusd
+    ) Ownable(owner) {
+        RUSD = rusd;
     }
 
     /** view **/
@@ -115,7 +115,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
                 }
             }
 
-            IRUSD(rUSD).mint(_RUSDStakeManager, nativeYield);
+            IRUSD(RUSD).mint(_RUSDStakeManager, nativeYield);
             IRUSDStakeManager(_RUSDStakeManager).updateYieldPool(nativeYield);
 
             emit ClaimUSDBYield(nativeYield);
@@ -149,7 +149,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
             }
         }
         
-        IRUSD(rUSD).mint(_RUSDStakeManager, providerFeeAmount);
+        IRUSD(RUSD).mint(_RUSDStakeManager, providerFeeAmount);
         IERC20(USDB).safeTransfer(_revenuePool, protocolFeeAmount);
         emit FlashLoan(receiver, amount);
     }
