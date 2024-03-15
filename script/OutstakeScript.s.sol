@@ -15,25 +15,25 @@ import "../src/vault/OutUSDBVault.sol";
 
 contract OutstakeScript is BaseScript {
     function run() public broadcaster {
-        deployETH();
+        // deployETH();
         deployUSDB();
     }
 
     function deployETH() internal {
-        RETH reth = new RETH(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        RETH reth = new RETH(0xcae21365145C467F8957607aE364fb29Ee073209);
         address rethAddress = address(reth);
 
-        PETH peth = new PETH(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        PETH peth = new PETH(0xcae21365145C467F8957607aE364fb29Ee073209);
         address pethAddress = address(peth);
 
-        REY rey = new REY(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        REY rey = new REY(0xcae21365145C467F8957607aE364fb29Ee073209);
         address reyAddress = address(rey);
 
-        OutETHVault vault = new OutETHVault(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, rethAddress);
+        OutETHVault vault = new OutETHVault(0xcae21365145C467F8957607aE364fb29Ee073209, rethAddress);
         address vaultAddress = address(vault);
 
         RETHStakeManager stakeManager = new RETHStakeManager(
-            0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8,
+            0xcae21365145C467F8957607aE364fb29Ee073209,
             rethAddress,
             pethAddress,
             reyAddress
@@ -41,7 +41,7 @@ contract OutstakeScript is BaseScript {
         stakeManager.initialize(vaultAddress, 30, 7, 365);
         address stakeAddress = address(stakeManager);
 
-        // vault.initialize(stakeAddress, 0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 100, 15, 5);
+        // vault.initialize(stakeAddress, 0xcae21365145C467F8957607aE364fb29Ee073209, 100, 15, 5);
         reth.initialize(vaultAddress);
         peth.initialize(stakeAddress);
         rey.initialize(stakeAddress);
@@ -54,20 +54,20 @@ contract OutstakeScript is BaseScript {
     }
 
     function deployUSDB() internal {
-        RUSD rusd = new RUSD(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        RUSD rusd = new RUSD(0xcae21365145C467F8957607aE364fb29Ee073209);
         address rusdAddress = address(rusd);
 
-        PUSD pusd = new PUSD(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        PUSD pusd = new PUSD(0xcae21365145C467F8957607aE364fb29Ee073209);
         address pusdAddress = address(pusd);
 
-        RUY ruy = new RUY(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8);
+        RUY ruy = new RUY(0xcae21365145C467F8957607aE364fb29Ee073209);
         address ruyAddress = address(ruy);
 
-        OutUSDBVault vault = new OutUSDBVault(0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, rusdAddress);
+        OutUSDBVault vault = new OutUSDBVault(0xcae21365145C467F8957607aE364fb29Ee073209, rusdAddress);
         address vaultAddress = address(vault);
 
         RUSDStakeManager stakeManager = new RUSDStakeManager(
-            0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8,
+            0xcae21365145C467F8957607aE364fb29Ee073209,
             rusdAddress,
             pusdAddress,
             ruyAddress
@@ -75,7 +75,7 @@ contract OutstakeScript is BaseScript {
         stakeManager.initialize(vaultAddress, 30, 7, 365);
         address stakeAddress = address(stakeManager);
 
-        // vault.initialize(stakeAddress, 0x20ae1f29849E8392BD83c3bCBD6bD5301a6656F8, 100, 15, 5);
+        // vault.initialize(stakeAddress, 0xcae21365145C467F8957607aE364fb29Ee073209, 100, 15, 5);
         rusd.initialize(vaultAddress);
         pusd.initialize(stakeAddress);
         ruy.initialize(stakeAddress);
