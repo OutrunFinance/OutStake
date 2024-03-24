@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "../blast/IBlastPoints.sol";
 import "../blast/GasManagerable.sol";
 import "../utils/Initializable.sol";
 import "../stake/interfaces/IRETHStakeManager.sol";
@@ -21,6 +22,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
+    address public immutable BLAST_POINTS_CONFIGER;
     address public immutable RETH;
 
     address private _RETHStakeManager;
@@ -39,9 +41,11 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
      * @param owner - Address of owner
      * @param gasManager - Address of gas manager
      * @param reth - Address of RETH Token
+     * @param pointsConfiger - Address of blast points configer
      */
-    constructor(address owner, address gasManager, address reth) Ownable(owner) GasManagerable(gasManager) {
+    constructor(address owner, address gasManager, address reth, address pointsConfiger) Ownable(owner) GasManagerable(gasManager) {
         RETH = reth;
+        BLAST_POINTS_CONFIGER = pointsConfiger;
     }
 
 
@@ -96,6 +100,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     /** function **/
     /**
      * @dev Initializer
+     * @param operator_ - Address of blast points operator
      * @param stakeManager_ - Address of RETHStakeManager
      * @param revenuePool_ - Address of revenue pool
      * @param protocolFee_ - Protocol fee rate
@@ -103,6 +108,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
      * @param protocolFeeRate_ - Flashloan protocol fee rate
      */
     function initialize(
+        address operator_,
         address stakeManager_, 
         address revenuePool_, 
         uint256 protocolFee_, 
@@ -111,6 +117,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     ) external override initializer {
         BLAST.configureClaimableGas();
         BLAST.configureClaimableYield();
+        configurePointsOperator(operator_);
         setRETHStakeManager(stakeManager_);
         setRevenuePool(revenuePool_);
         setProtocolFee(protocolFee_);
@@ -176,8 +183,14 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
             
             IRETH(RETH).mint(_RETHStakeManager, providerFeeAmount);
             Address.sendValue(payable(_revenuePool), protocolFeeAmount);
+
             emit FlashLoan(receiver, amount);
         }
+    }
+
+    function configurePointsOperator(address operator) public override onlyOwner {
+        IBlastPoints(BLAST_POINTS_CONFIGER).configurePointsOperator(operator);
+        emit ConfigurePointsOperator(operator);
     }
 
     receive() external payable {}

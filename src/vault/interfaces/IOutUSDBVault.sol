@@ -40,6 +40,7 @@ interface IOutUSDBVault {
 
     /** function **/
     function initialize(
+        address operator_,
         address stakeManager_, 
         address revenuePool_, 
         uint256 protocolFee_, 
@@ -51,13 +52,17 @@ interface IOutUSDBVault {
 
     function claimUSDBYield() external returns (uint256);
 
-    function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
+    function flashLoan(address receiver, uint256 amount, bytes calldata data) external;
+
+    function configurePointsOperator(address operator) external;
 
 
     /** event **/
     event ClaimUSDBYield(uint256 amount);
     
     event FlashLoan(address indexed receiver, uint256 amount);
+
+    event ConfigurePointsOperator(address operator);
 
     event SetProtocolFee(uint256 _protocolFee);
 

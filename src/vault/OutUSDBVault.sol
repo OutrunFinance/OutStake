@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {BlastModeEnum} from "../blast/BlastModeEnum.sol";
+import "../blast/IBlastPoints.sol";
 import "../blast/GasManagerable.sol";
 import "../blast/IERC20Rebasing.sol";
 import "../stake/interfaces/IRUSDStakeManager.sol";
@@ -24,6 +25,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant RATIO = 10000;
+    address public immutable BLAST_POINTS_CONFIGER;
     address public immutable RUSD;
 
     address private _RUSDStakeManager;
@@ -42,9 +44,11 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
      * @param owner - Address of owner
      * @param gasManager - Address of gas manager
      * @param rusd - Address of RUSD Token
+     * @param pointsConfiger - Address of blast points configer
      */
-    constructor(address owner, address gasManager, address rusd) Ownable(owner) GasManagerable(gasManager) {
+    constructor(address owner, address gasManager, address rusd, address pointsConfiger) Ownable(owner) GasManagerable(gasManager) {
         RUSD = rusd;
+        BLAST_POINTS_CONFIGER = pointsConfiger;
     }
 
 
@@ -99,6 +103,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     /** function **/
     /**
      * @dev Initializer
+     * @param operator_ - Address of blast points operator
      * @param stakeManager_ - Address of RUSDStakeManager
      * @param revenuePool_ - Address of revenue pool
      * @param protocolFee_ - Protocol fee rate
@@ -106,6 +111,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
      * @param protocolFeeRate_ - Flashloan protocol fee rate
      */
     function initialize(
+        address operator_,
         address stakeManager_, 
         address revenuePool_, 
         uint256 protocolFee_, 
@@ -114,6 +120,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     ) external override initializer {
         BLAST.configureClaimableGas();
         IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
+        configurePointsOperator(operator_);
         setRUSDStakeManager(stakeManager_);
         setRevenuePool(revenuePool_);
         setProtocolFee(protocolFee_);
@@ -183,6 +190,13 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
         
         IRUSD(RUSD).mint(_RUSDStakeManager, providerFeeAmount);
         IERC20(USDB).safeTransfer(_revenuePool, protocolFeeAmount);
+
         emit FlashLoan(receiver, amount);
     }
+
+    function configurePointsOperator(address operator) public override onlyOwner {
+        IBlastPoints(BLAST_POINTS_CONFIGER).configurePointsOperator(operator);
+        emit ConfigurePointsOperator(operator);
+    }
+
 }

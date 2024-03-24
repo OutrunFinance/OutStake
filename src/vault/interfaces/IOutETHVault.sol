@@ -40,6 +40,7 @@ interface IOutETHVault {
 
     /** function **/
     function initialize(
+        address operator_,
         address stakeManager_, 
         address revenuePool_, 
         uint256 protocolFee_, 
@@ -53,11 +54,15 @@ interface IOutETHVault {
 
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
 
+    function configurePointsOperator(address operator) external;
+
 
     /** event **/
     event ClaimETHYield(uint256 amount);
 
     event FlashLoan(address indexed receiver, uint256 amount);
+
+    event ConfigurePointsOperator(address operator);
 
     event SetProtocolFee(uint256 protocolFee_);
 
