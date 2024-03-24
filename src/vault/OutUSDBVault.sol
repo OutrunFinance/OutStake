@@ -162,7 +162,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
      * @param amount - Amount of USDB loan
      * @param data - Additional data
      */
-    function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external override nonReentrant {
+    function flashLoan(address receiver, uint256 amount, bytes calldata data) external override nonReentrant {
         if (amount == 0 || receiver == address(0)) {
             revert ZeroInput();
         }
