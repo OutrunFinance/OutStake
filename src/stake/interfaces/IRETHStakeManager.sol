@@ -13,6 +13,8 @@ interface IRETHStakeManager {
         address owner;
     }
 
+
+    /** error **/
     error ZeroInput();
 
     error PermissionDenied();
@@ -30,6 +32,7 @@ interface IRETHStakeManager {
     error InvalidReduceDays();
     
     error ForceUnstakeFeeOverflow();
+    
 
     /** view **/
     function outETHVault() external view returns (address);
@@ -52,6 +55,17 @@ interface IRETHStakeManager {
 
     function calcPETHAmount(uint256 amountInRETH) external view returns (uint256);
 
+
+    /** setter **/
+    function setMinLockupDays(uint16 _minLockupDays) external;
+
+    function setMaxLockupDays(uint16 _maxLockupDays) external;
+
+    function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
+
+    function setOutETHVault(address _outETHVault) external;
+
+
     /** function **/
     function initialize(
         address outETHVault_,
@@ -68,16 +82,17 @@ interface IRETHStakeManager {
 
     function withdrawYield(uint256 amountInREY) external returns (uint256);
 
-    function updateYieldPool(uint256 nativeYield) external;
+    function accumYieldPool(uint256 nativeYield) external;
 
-    /** setter **/
-    function setMinLockupDays(uint16 _minLockupDays) external;
 
-    function setMaxLockupDays(uint16 _maxLockupDays) external;
+    /** event **/
+    event SetMinLockupDays(uint16 _minLockupDays);
 
-    function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
+    event SetMaxLockupDays(uint16 _maxLockupDays);
 
-    function setOutETHVault(address _outETHVault) external;
+    event SetForceUnstakeFee(uint256 _forceUnstakeFee);
+
+    event SetOutETHVault(address _outETHVault);
 
     event StakeRETH(
         uint256 indexed _positionId,
@@ -91,12 +106,4 @@ interface IRETHStakeManager {
     event WithdrawYield(address indexed user, uint256 amountInREY, uint256 yieldAmount);
 
     event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 mintedREY);
-
-    event SetMinLockupDays(uint16 _minLockupDays);
-
-    event SetMaxLockupDays(uint16 _maxLockupDays);
-
-    event SetForceUnstakeFee(uint256 _forceUnstakeFee);
-
-    event SetOutETHVault(address _outETHVault);
 }

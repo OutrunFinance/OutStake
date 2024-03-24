@@ -7,6 +7,8 @@ interface IOutUSDBVault {
         uint256 protocolFeeRate;
     }
 
+
+    /** error **/
     error ZeroInput();
 
     error PermissionDenied();
@@ -14,6 +16,7 @@ interface IOutUSDBVault {
     error FeeRateOverflow();
 
     error FlashLoanRepayFailed();
+
 
     /** view **/
     function RUSDStakeManager() external view returns (address);
@@ -23,6 +26,17 @@ interface IOutUSDBVault {
     function protocolFee() external view returns (uint256);
 
     function flashLoanFee() external view returns (FlashLoanFee memory);
+
+
+    /** setter **/
+    function setProtocolFee(uint256 _protocolFee) external;
+
+    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external;
+
+    function setRevenuePool(address _pool) external;
+
+    function setRUSDStakeManager(address _RUSDStakeManager) external;
+
 
     /** function **/
     function initialize(
@@ -39,15 +53,8 @@ interface IOutUSDBVault {
 
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
 
-    /** setter **/
-    function setProtocolFee(uint256 _protocolFee) external;
 
-    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external;
-
-    function setRevenuePool(address _pool) external;
-
-    function setRUSDStakeManager(address _RUSDStakeManager) external;
-
+    /** event **/
     event ClaimUSDBYield(uint256 amount);
     
     event FlashLoan(address indexed receiver, uint256 amount);

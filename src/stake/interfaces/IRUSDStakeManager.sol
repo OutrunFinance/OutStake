@@ -13,6 +13,8 @@ interface IRUSDStakeManager {
         address owner;
     }
 
+
+    /** error **/
     error ZeroInput();
 
     error PermissionDenied();
@@ -31,6 +33,7 @@ interface IRUSDStakeManager {
     
     error ForceUnstakeFeeOverflow();
     
+
     /** view **/
     function outUSDBVault() external view returns (address);
 
@@ -52,6 +55,17 @@ interface IRUSDStakeManager {
 
     function calcPUSDAmount(uint256 amountInRUSD) external view returns (uint256);
 
+
+    /** setter **/
+    function setMinLockupDays(uint16 _minLockupDays) external;
+
+    function setMaxLockupDays(uint16 _maxLockupDays) external;
+
+    function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
+
+    function setOutUSDBVault(address _OutUSDBVault) external;
+
+
     /** function **/
     function initialize(
         address outUSDBVault_, 
@@ -68,17 +82,9 @@ interface IRUSDStakeManager {
 
     function withdrawYield(uint256 amountInRUY) external returns (uint256) ;
 
-    function updateYieldPool(uint256 nativeYield) external;
+    function accumYieldPool(uint256 nativeYield) external;
 
-    /** setter **/
-    function setMinLockupDays(uint16 _minLockupDays) external;
-
-    function setMaxLockupDays(uint16 _maxLockupDays) external;
-
-    function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
-
-    function setOutUSDBVault(address _OutUSDBVault) external;
-
+    /** event **/
     event StakeRUSD(
         uint256 indexed _positionId,
         address indexed _account,
