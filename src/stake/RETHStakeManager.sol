@@ -162,7 +162,6 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         uint16 minLockupDays_, 
         uint16 maxLockupDays_
     ) external override initializer {
-        BLAST.configureClaimableGas();
         setOutETHVault(outETHVault_);
         setForceUnstakeFee(forceUnstakeFee_);
         setMinLockupDays(minLockupDays_);

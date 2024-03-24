@@ -38,7 +38,6 @@ contract RUSD is IRUSD, ERC20, Initializable, Ownable, GasManagerable {
      * @param _vault - Address of OutUSDBVault
      */
     function initialize(address _vault) external override initializer {
-        BLAST.configureClaimableGas();
         setOutUSDBVault(_vault);
     }
 

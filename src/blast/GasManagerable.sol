@@ -21,6 +21,8 @@ abstract contract GasManagerable {
             revert InvalidGasManager(address(0));
         }
         _transferGasManager(initialGasManager);
+
+        BLAST.configureClaimableGas();
     }
 
     modifier onlyGasManager() {

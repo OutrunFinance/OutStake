@@ -32,7 +32,6 @@ contract PETH is IPETH, ERC20, Initializable, Ownable, GasManagerable {
      * @param stakeManager_ - Address of RETHStakeManager
      */
     function initialize(address stakeManager_) external override initializer {
-        BLAST.configureClaimableGas();
         setRETHStakeManager(stakeManager_);
     }
 

@@ -34,7 +34,6 @@ contract RETH is IRETH, ERC20, Initializable, Ownable, GasManagerable {
      * @param _vault - Address of OutETHVault
      */
     function initialize(address _vault) external override initializer {
-        BLAST.configureClaimableGas();
         setOutETHVault(_vault);
     }
 

@@ -161,7 +161,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         override
         initializer
     {
-        BLAST.configureClaimableGas();
         setOutUSDBVault(outUSDBVault_);
         setForceUnstakeFee(forceUnstakeFee_);
         setMinLockupDays(minLockupDays_);

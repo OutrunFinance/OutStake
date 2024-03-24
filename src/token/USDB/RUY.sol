@@ -32,7 +32,6 @@ contract RUY is IRUY, ERC20, Initializable, Ownable, GasManagerable {
      * @param stakeManager_ - Address of RUSDStakeManager
      */
     function initialize(address stakeManager_) external override initializer {
-        BLAST.configureClaimableGas();
         setRUSDStakeManager(stakeManager_);
     }
 
