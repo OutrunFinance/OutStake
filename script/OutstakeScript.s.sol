@@ -20,31 +20,32 @@ contract OutstakeScript is BaseScript {
     }
 
     function deployETH() internal {
-        RETH reth = new RETH(0xcae21365145C467F8957607aE364fb29Ee073209);
+        RETH reth = new RETH(owner, gasManager);
         address rethAddress = address(reth);
 
-        PETH peth = new PETH(0xcae21365145C467F8957607aE364fb29Ee073209);
+        PETH peth = new PETH(owner, gasManager);
         address pethAddress = address(peth);
 
-        REY rey = new REY(0xcae21365145C467F8957607aE364fb29Ee073209);
+        REY rey = new REY(owner, gasManager);
         address reyAddress = address(rey);
 
-        OutETHVault vault = new OutETHVault(0xcae21365145C467F8957607aE364fb29Ee073209, rethAddress);
+        OutETHVault vault = new OutETHVault(owner, gasManager, rethAddress);
         address vaultAddress = address(vault);
 
         RETHStakeManager stakeManager = new RETHStakeManager(
-            0xcae21365145C467F8957607aE364fb29Ee073209,
+            owner,
+            gasManager,
             rethAddress,
             pethAddress,
             reyAddress
         );
-        stakeManager.initialize(vaultAddress, 30, 7, 365);
         address stakeAddress = address(stakeManager);
-
-        // vault.initialize(stakeAddress, 0xcae21365145C467F8957607aE364fb29Ee073209, 100, 15, 5);
-        reth.initialize(vaultAddress);
-        peth.initialize(stakeAddress);
-        rey.initialize(stakeAddress);
+        
+        // vault.initialize(stakeAddress, REVENUE_POOL, 100, 15, 5);
+        // stakeManager.initialize(vaultAddress, 30, 7, 365);
+        // reth.initialize(vaultAddress);
+        // peth.initialize(stakeAddress);
+        // rey.initialize(stakeAddress);
 
         console.log("RETH deployed on %s", rethAddress);
         console.log("PETH deployed on %s", pethAddress);
@@ -54,31 +55,32 @@ contract OutstakeScript is BaseScript {
     }
 
     function deployUSDB() internal {
-        RUSD rusd = new RUSD(0xcae21365145C467F8957607aE364fb29Ee073209);
+        RUSD rusd = new RUSD(owner, gasManager);
         address rusdAddress = address(rusd);
 
-        PUSD pusd = new PUSD(0xcae21365145C467F8957607aE364fb29Ee073209);
+        PUSD pusd = new PUSD(owner, gasManager);
         address pusdAddress = address(pusd);
 
-        RUY ruy = new RUY(0xcae21365145C467F8957607aE364fb29Ee073209);
+        RUY ruy = new RUY(owner, gasManager);
         address ruyAddress = address(ruy);
 
-        OutUSDBVault vault = new OutUSDBVault(0xcae21365145C467F8957607aE364fb29Ee073209, rusdAddress);
+        OutUSDBVault vault = new OutUSDBVault(owner, gasManager, rusdAddress);
         address vaultAddress = address(vault);
 
         RUSDStakeManager stakeManager = new RUSDStakeManager(
-            0xcae21365145C467F8957607aE364fb29Ee073209,
+            owner, 
+            gasManager,
             rusdAddress,
             pusdAddress,
             ruyAddress
         );
-        stakeManager.initialize(vaultAddress, 30, 7, 365);
         address stakeAddress = address(stakeManager);
 
-        // vault.initialize(stakeAddress, 0xcae21365145C467F8957607aE364fb29Ee073209, 100, 15, 5);
-        rusd.initialize(vaultAddress);
-        pusd.initialize(stakeAddress);
-        ruy.initialize(stakeAddress);
+        // vault.initialize(stakeAddress, REVENUE_POOL, 100, 15, 5);
+        // stakeManager.initialize(vaultAddress, 30, 7, 365);
+        // rusd.initialize(vaultAddress);
+        // pusd.initialize(stakeAddress);
+        // ruy.initialize(stakeAddress);
 
         console.log("RUSD deployed on %s", rusdAddress);
         console.log("PUSD deployed on %s", pusdAddress);

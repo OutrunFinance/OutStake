@@ -5,12 +5,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interfaces/IRUY.sol";
+import "../../blast/GasManagerable.sol";
 import "../../utils/Initializable.sol";
 
 /**
  * @title Outrun USD yield token
  */
-contract RUY is IRUY, ERC20, Initializable, Ownable {
+contract RUY is IRUY, ERC20, Initializable, Ownable, GasManagerable {
     address private _RUSDStakeManager;
 
     modifier onlyRUSDStakeManager() {
@@ -20,7 +21,7 @@ contract RUY is IRUY, ERC20, Initializable, Ownable {
         _;
     }
 
-    constructor(address owner) ERC20("Outrun USD yield token", "RUY") Ownable(owner) {}
+    constructor(address owner, address gasManager) ERC20("Outrun USD yield token", "RUY") Ownable(owner) GasManagerable(gasManager) {}
 
     function RUSDStakeManager() external view override returns (address) {
         return _RUSDStakeManager;
@@ -31,11 +32,12 @@ contract RUY is IRUY, ERC20, Initializable, Ownable {
      * @param stakeManager_ - Address of RUSDStakeManager
      */
     function initialize(address stakeManager_) external override initializer {
+        BLAST.configureClaimableGas();
         setRUSDStakeManager(stakeManager_);
     }
 
     /**
-     * Only RUSDStakeManager can mint when the user stake RUSD
+     * @dev Only RUSDStakeManager can mint when the user stake RUSD
      * @param _account Address who stake RUSD 
      * @param _amount The amount of minted RUY
      */
@@ -44,7 +46,7 @@ contract RUY is IRUY, ERC20, Initializable, Ownable {
     }
 
     /**
-     * Only RUSDStakeManager can burn when the user redempt the native yield
+     * @dev Only RUSDStakeManager can burn when the user redempt the native yield
      * @param _account Address who redempt the native yield
      * @param _amount The amount of burned RUY
      */

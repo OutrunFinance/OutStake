@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../utils/Math.sol";
 import "../utils/Initializable.sol";
@@ -12,17 +12,18 @@ import "../token/USDB/interfaces/IRUSD.sol";
 import "../token/USDB/interfaces/IPUSD.sol";
 import "../token/USDB/interfaces/IRUY.sol";
 import "../vault/interfaces/IOutUSDBVault.sol";
+import "../blast/GasManagerable.sol";
 import "./interfaces/IRUSDStakeManager.sol";
 
 /**
  * @title RUSD Stake Manager Contract
  * @dev Handles Staking of RUSD
  */
-contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncrementId {
+contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
-    uint256 public constant MINSTAKE = 1e20;
+    uint256 public constant MINSTAKE = 1e18;
     uint256 public constant DAY = 24 * 3600;
 
     address public immutable RUSD;
@@ -46,16 +47,18 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
     }
 
     /**
-     * @param owner - Address of the owner
+     * @param owner - Address of owner
+     * @param gasManager - Address of gasManager
      * @param rusd - Address of RUSD Token
      * @param pusd - Address of PUSD Token
      * @param ruy - Address of RUY Token
      */
-    constructor(address owner, address rusd, address pusd, address ruy) Ownable(owner) {
+    constructor(address owner, address gasManager, address rusd, address pusd, address ruy) Ownable(owner) GasManagerable(gasManager) {
         RUSD = rusd;
         PUSD = pusd;
         RUY = ruy;
     }
+
 
     /** view **/
     function outUSDBVault() external view override returns (address) {
@@ -106,6 +109,45 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
         }
     }
 
+
+    /** setter **/
+    /**
+     * @param minLockupDays_ - Min lockup days
+     */
+    function setMinLockupDays(uint16 minLockupDays_) public override onlyOwner {
+        _minLockupDays = minLockupDays_;
+        emit SetMinLockupDays(minLockupDays_);
+    }
+
+    /**
+     * @param maxLockupDays_ - Max lockup days
+     */
+    function setMaxLockupDays(uint16 maxLockupDays_) public override onlyOwner {
+        _maxLockupDays = maxLockupDays_;
+        emit SetMaxLockupDays(maxLockupDays_);
+    }
+
+    /**
+     * @param forceUnstakeFee_ - Force unstake fee
+     */
+    function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
+        if (forceUnstakeFee_ > RATIO) {
+            revert ForceUnstakeFeeOverflow();
+        }
+
+        _forceUnstakeFee = forceUnstakeFee_;
+        emit SetForceUnstakeFee(forceUnstakeFee_);
+    }
+
+    /**
+     * @param outUSDBVault_ - Address of outUSDBVault
+     */
+    function setOutUSDBVault(address outUSDBVault_) public override onlyOwner {
+        _outUSDBVault = outUSDBVault_;
+        emit SetOutUSDBVault(outUSDBVault_);
+    }
+
+
     /** function **/
     /**
      * @dev Initializer
@@ -114,12 +156,12 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
      * @param maxLockupDays_ - Max lockup days
      * @param forceUnstakeFee_ - Force unstake fee
      */
-    function initialize(
-        address outUSDBVault_, 
-        uint256 forceUnstakeFee_, 
-        uint16 minLockupDays_, 
-        uint16 maxLockupDays_
-    ) external override initializer {
+    function initialize(address outUSDBVault_, uint256 forceUnstakeFee_, uint16 minLockupDays_, uint16 maxLockupDays_)
+        external
+        override
+        initializer
+    {
+        BLAST.configureClaimableGas();
         setOutUSDBVault(outUSDBVault_);
         setForceUnstakeFee(forceUnstakeFee_);
         setMinLockupDays(minLockupDays_);
@@ -172,7 +214,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked Principal Position Id
      */
-    function unstake(uint256 positionId) external returns (uint256) {
+    function unstake(uint256 positionId) external override returns (uint256) {
         address msgSender = msg.sender;
         Position storage position = _positions[positionId];
         if (position.closed) {
@@ -218,7 +260,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
      * @param positionId - Staked Principal Position Id
      * @param extendDays - Extend lockup days
      */
-    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256) {
+    function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256) {
         address user = msg.sender;
         Position storage position = _positions[positionId];
         if (position.owner != user) {
@@ -270,48 +312,12 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, AutoIncr
     }
 
     /**
+     * @dev Accumulate the native yielde
      * @param nativeYield - Additional native yield amount
      */
-    function updateYieldPool(uint256 nativeYield) external override onlyOutUSDBVault {
+    function accumYieldPool(uint256 nativeYield) external override onlyOutUSDBVault {
         unchecked {
             _totalYieldPool += nativeYield;
         }
-    }
-
-    /** setter **/
-    /**
-     * @param minLockupDays_ - Min lockup days
-     */
-    function setMinLockupDays(uint16 minLockupDays_) public onlyOwner {
-        _minLockupDays = minLockupDays_;
-        emit SetMinLockupDays(minLockupDays_);
-    }
-
-    /**
-     * @param maxLockupDays_ - Max lockup days
-     */
-    function setMaxLockupDays(uint16 maxLockupDays_) public onlyOwner {
-        _maxLockupDays = maxLockupDays_;
-        emit SetMaxLockupDays(maxLockupDays_);
-    }
-
-    /**
-     * @param forceUnstakeFee_ - Force unstake fee
-     */
-    function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
-        if (forceUnstakeFee_ > RATIO) {
-            revert ForceUnstakeFeeOverflow();
-        }
-
-        _forceUnstakeFee = forceUnstakeFee_;
-        emit SetForceUnstakeFee(forceUnstakeFee_);
-    }
-
-    /**
-     * @param outUSDBVault_ - Address of outUSDBVault
-     */
-    function setOutUSDBVault(address outUSDBVault_) public override onlyOwner {
-        _outUSDBVault = outUSDBVault_;
-        emit SetOutUSDBVault(outUSDBVault_);
     }
 }

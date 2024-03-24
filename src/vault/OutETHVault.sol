@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "../blast/IBlast.sol";
+import "../blast/GasManagerable.sol";
 import "../utils/Initializable.sol";
 import "../stake/interfaces/IRETHStakeManager.sol";
 import "../token/ETH//interfaces/IRETH.sol";
@@ -17,10 +17,9 @@ import "./interfaces/IOutFlashCallee.sol";
 /**
  * @title ETH Vault Contract
  */
-contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
+contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, GasManagerable {
     using SafeERC20 for IERC20;
 
-    IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);
     uint256 public constant RATIO = 10000;
     address public immutable RETH;
 
@@ -37,15 +36,14 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
     }
 
     /**
-     * @param owner - Address of the owner
+     * @param owner - Address of owner
+     * @param gasManager - Address of gas manager
      * @param reth - Address of RETH Token
      */
-    constructor(
-        address owner,
-        address reth
-    ) Ownable(owner) {
+    constructor(address owner, address gasManager, address reth) Ownable(owner) GasManagerable(gasManager) {
         RETH = reth;
     }
+
 
     /** view **/
     function RETHStakeManager() external view returns (address) {
@@ -64,6 +62,37 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
         return _flashLoanFee;
     }
 
+    
+    /** setter **/
+    function setProtocolFee(uint256 protocolFee_) public override onlyOwner {
+        if (protocolFee_ > RATIO) {
+            revert FeeRateOverflow();
+        }
+
+        _protocolFee = protocolFee_;
+        emit SetProtocolFee(protocolFee_);
+    }
+
+    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) public override onlyOwner {
+        if (_providerFeeRate + _protocolFeeRate > RATIO) {
+            revert FeeRateOverflow();
+        }
+
+        _flashLoanFee = FlashLoanFee(_providerFeeRate, _protocolFeeRate);
+        emit SetFlashLoanFee(_providerFeeRate, _protocolFeeRate);
+    }
+
+    function setRevenuePool(address _pool) public override onlyOwner {
+        _revenuePool = _pool;
+        emit SetRevenuePool(_pool);
+    }
+
+    function setRETHStakeManager(address _stakeManager) public override onlyOwner {
+        _RETHStakeManager = _stakeManager;
+        emit SetRETHStakeManager(_stakeManager);
+    }
+
+
     /** function **/
     /**
      * @dev Initializer
@@ -80,6 +109,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
         uint256 providerFeeRate_, 
         uint256 protocolFeeRate_
     ) external override initializer {
+        BLAST.configureClaimableGas();
         BLAST.configureClaimableYield();
         setRETHStakeManager(stakeManager_);
         setRevenuePool(revenuePool_);
@@ -111,7 +141,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
             }
 
             IRETH(RETH).mint(_RETHStakeManager, nativeYield);
-            IRETHStakeManager(_RETHStakeManager).updateYieldPool(nativeYield);
+            IRETHStakeManager(_RETHStakeManager).accumYieldPool(nativeYield);
         }
 
         emit ClaimETHYield(nativeYield);
@@ -132,7 +162,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
         uint256 balanceBefore = address(this).balance;
         (bool success, ) = receiver.call{value: amount}("");
         if (success) {
-            IOutFlashCallee(receiver).execute(msg.sender, amount, data);
+            IOutFlashCallee(receiver).onFlashLoan(msg.sender, amount, data);
 
             uint256 providerFeeAmount;
             uint256 protocolFeeAmount;
@@ -148,35 +178,6 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable {
             Address.sendValue(payable(_revenuePool), protocolFeeAmount);
             emit FlashLoan(receiver, amount);
         }
-    }
-
-    /** setter **/
-    function setProtocolFee(uint256 protocolFee_) public override onlyOwner {
-        if (protocolFee_ > RATIO) {
-            revert FeeRateOverflow();
-        }
-
-        _protocolFee = protocolFee_;
-        emit SetProtocolFee(protocolFee_);
-    }
-
-    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) public override onlyOwner {
-        if (_providerFeeRate + _protocolFeeRate > RATIO) {
-            revert FeeRateOverflow();
-        }
-
-        _flashLoanFee = FlashLoanFee(_providerFeeRate, _protocolFeeRate);
-        emit SetFlashLoanFee(_providerFeeRate, _protocolFeeRate);
-    }
-
-    function setRevenuePool(address _pool) public override onlyOwner {
-        _revenuePool = _pool;
-        emit SetRevenuePool(_pool);
-    }
-
-    function setRETHStakeManager(address _stakeManager) public override onlyOwner {
-        _RETHStakeManager = _stakeManager;
-        emit SetRETHStakeManager(_stakeManager);
     }
 
     receive() external payable {}

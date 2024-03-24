@@ -5,12 +5,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interfaces/IREY.sol";
+import "../../blast/GasManagerable.sol";
 import "../../utils/Initializable.sol";
 
 /**
  * @title Outrun ETH yield token
  */
-contract REY is IREY, ERC20, Initializable, Ownable {
+contract REY is IREY, ERC20, Initializable, Ownable, GasManagerable {
     address public _RETHStakeManager;
 
     modifier onlyRETHStakeManager() {
@@ -20,7 +21,7 @@ contract REY is IREY, ERC20, Initializable, Ownable {
         _;
     }
 
-    constructor(address owner) ERC20("Outrun ETH yield token", "REY") Ownable(owner) {}
+    constructor(address owner, address gasManager) ERC20("Outrun ETH yield token", "REY") Ownable(owner) GasManagerable(gasManager) {}
 
     function RETHStakeManager() external view override returns (address) {
         return _RETHStakeManager;
@@ -31,11 +32,12 @@ contract REY is IREY, ERC20, Initializable, Ownable {
      * @param stakeManager_ - Address of RETHStakeManager
      */
     function initialize(address stakeManager_) external override initializer {
+        BLAST.configureClaimableGas();
         setRETHStakeManager(stakeManager_);
     }
 
     /**
-     * Only RETHStakeManager can mint when the user stake RETH
+     * @dev Only RETHStakeManager can mint when the user stake RETH
      * @param _account Address who stake RETH 
      * @param _amount The amount of minted REY
      */
@@ -44,7 +46,7 @@ contract REY is IREY, ERC20, Initializable, Ownable {
     }
 
     /**
-     * Only RETHStakeManager can burn when the user redempt the native yield
+     * @dev Only RETHStakeManager can burn when the user redempt the native yield
      * @param _account Address who redempt the native yield
      * @param _amount The amount of burned REY
      */

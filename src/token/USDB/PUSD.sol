@@ -5,12 +5,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interfaces/IPUSD.sol";
+import "../../blast/GasManagerable.sol";
 import "../../utils/Initializable.sol";
 
 /**
  * @title Outrun Principal USD Liquid Staked Token
  */
-contract PUSD is IPUSD, ERC20, Initializable, Ownable {
+contract PUSD is IPUSD, ERC20, Initializable, Ownable, GasManagerable {
     address private _RUSDStakeManager;
 
     modifier onlyRUSDStakeManager() {
@@ -20,7 +21,7 @@ contract PUSD is IPUSD, ERC20, Initializable, Ownable {
         _;
     }
 
-    constructor(address owner) ERC20("Principal Staked USD", "PUSD") Ownable(owner) {}
+    constructor(address owner, address gasManager) ERC20("Principal Staked USD", "PUSD") Ownable(owner) GasManagerable(gasManager) {}
 
     function RUSDStakeManager() external view override returns (address) {
         return _RUSDStakeManager;
@@ -31,11 +32,12 @@ contract PUSD is IPUSD, ERC20, Initializable, Ownable {
      * @param stakeManager_ - Address of RUSDStakeManager
      */
     function initialize(address stakeManager_) external override initializer {
+        BLAST.configureClaimableGas();
         setRUSDStakeManager(stakeManager_);
     }
 
     /**
-     * Only RUSDStakeManager can mint when the user stake RUSD
+     * @dev Only RUSDStakeManager can mint when the user stake RUSD
      * @param _account Address who stake RUSD 
      * @param _amount The amount of deposited RUSD
      */
@@ -44,7 +46,7 @@ contract PUSD is IPUSD, ERC20, Initializable, Ownable {
     }
 
     /**
-     * Only RUSDStakeManager can burn when the user redempt the RUSD 
+     * @dev Only RUSDStakeManager can burn when the user redempt the RUSD 
      * @param _account Address who redempt the RUSD
      * @param _amount The amount of redempt RUSD
      */

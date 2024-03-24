@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interfaces/IRETH.sol";
 import "../../utils/Initializable.sol";
+import "../../blast/GasManagerable.sol";
 import "../../vault/interfaces/IOutETHVault.sol";
 
 /**
  * @title Outrun ETH Wrapped Token
  */
-contract RETH is IRETH, ERC20, Initializable, Ownable {
+contract RETH is IRETH, ERC20, Initializable, Ownable, GasManagerable {
     address private _outETHVault;
 
     modifier onlyOutETHVault() {
@@ -22,7 +23,7 @@ contract RETH is IRETH, ERC20, Initializable, Ownable {
         _;
     }
 
-    constructor(address owner) ERC20("Outrun Wrapped ETH", "RETH") Ownable(owner) {}
+    constructor(address owner, address gasManager) ERC20("Outrun Wrapped ETH", "RETH") Ownable(owner) GasManagerable(gasManager) {}
 
     function outETHVault() external view override returns (address) {
         return _outETHVault;
@@ -33,6 +34,7 @@ contract RETH is IRETH, ERC20, Initializable, Ownable {
      * @param _vault - Address of OutETHVault
      */
     function initialize(address _vault) external override initializer {
+        BLAST.configureClaimableGas();
         setOutETHVault(_vault);
     }
 

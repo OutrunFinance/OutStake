@@ -12,17 +12,18 @@ import "../token/ETH/interfaces/IREY.sol";
 import "../token/ETH/interfaces/IRETH.sol";
 import "../token/ETH/interfaces/IPETH.sol";
 import "../vault/interfaces/IOutETHVault.sol";
+import "../blast/GasManagerable.sol";
 import "./interfaces/IRETHStakeManager.sol";
 
 /**
  * @title RETH Stake Manager Contract
  * @dev Handles Staking of RETH
  */
-contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncrementId {
+contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
-    uint256 public constant MINSTAKE = 1e16;
+    uint256 public constant MINSTAKE = 1e15;
     uint256 public constant DAY = 24 * 3600;
 
     address public immutable RETH;
@@ -46,16 +47,18 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
     }
 
     /**
-     * @param owner - Address of the owner
+     * @param owner - Address of owner
+     * @param gasManager - Address of gas manager
      * @param reth - Address of RETH Token
      * @param peth - Address of PETH Token
      * @param rey - Address of REY Token
      */
-    constructor(address owner, address reth, address peth, address rey) Ownable(owner) {
+    constructor(address owner, address gasManager, address reth, address peth, address rey) Ownable(owner) GasManagerable(gasManager) {
         RETH = reth;
         PETH = peth;
         REY = rey;
     }
+
 
     /** view **/
     function outETHVault() external view override returns (address) {
@@ -106,6 +109,45 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
         }
     }
 
+
+    /** setter **/
+    /**
+     * @param minLockupDays_ - Min lockup days
+     */
+    function setMinLockupDays(uint16 minLockupDays_) public override onlyOwner {
+        _minLockupDays = minLockupDays_;
+        emit SetMinLockupDays(minLockupDays_);
+    }
+
+    /**
+     * @param maxLockupDays_ - Max lockup days
+     */
+    function setMaxLockupDays(uint16 maxLockupDays_) public override onlyOwner {
+        _maxLockupDays = maxLockupDays_;
+        emit SetMaxLockupDays(maxLockupDays_);
+    }
+
+    /**
+     * @param forceUnstakeFee_ - Force unstake fee
+     */
+    function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
+        if (forceUnstakeFee_ > RATIO) {
+            revert ForceUnstakeFeeOverflow();
+        }
+
+        _forceUnstakeFee = forceUnstakeFee_;
+        emit SetForceUnstakeFee(forceUnstakeFee_);
+    }
+
+    /**
+     * @param outETHVault_ - Address of outETHVault
+     */
+    function setOutETHVault(address outETHVault_) public override onlyOwner {
+        _outETHVault = outETHVault_;
+        emit SetOutETHVault(outETHVault_);
+    }
+
+    
     /** function **/
     /**
      * @dev Initializer
@@ -120,6 +162,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
         uint16 minLockupDays_, 
         uint16 maxLockupDays_
     ) external override initializer {
+        BLAST.configureClaimableGas();
         setOutETHVault(outETHVault_);
         setForceUnstakeFee(forceUnstakeFee_);
         setMinLockupDays(minLockupDays_);
@@ -172,7 +215,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked Principal Position Id
      */
-    function unstake(uint256 positionId) external returns (uint256) {
+    function unstake(uint256 positionId) external override returns (uint256) {
         address msgSender = msg.sender;
         Position storage position = _positions[positionId];
         if (position.closed) {
@@ -218,7 +261,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
      * @param positionId - Staked Principal Position Id
      * @param extendDays - Extend lockup days
      */
-    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256) {
+    function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256) {
         address user = msg.sender;
         Position memory position = _positions[positionId];
         if (position.owner != user) {
@@ -270,49 +313,13 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, AutoIncr
     }
 
     /**
+     * @dev Accumulate the native yield
      * @param nativeYield - Additional native yield amount
      */
-    function updateYieldPool(uint256 nativeYield) external override onlyOutETHVault {
+    function accumYieldPool(uint256 nativeYield) external override onlyOutETHVault {
         unchecked {
             _totalYieldPool += nativeYield;
         }
-    }
-
-    /** setter **/
-    /**
-     * @param minLockupDays_ - Min lockup days
-     */
-    function setMinLockupDays(uint16 minLockupDays_) public onlyOwner {
-        _minLockupDays = minLockupDays_;
-        emit SetMinLockupDays(minLockupDays_);
-    }
-
-    /**
-     * @param maxLockupDays_ - Max lockup days
-     */
-    function setMaxLockupDays(uint16 maxLockupDays_) public onlyOwner {
-        _maxLockupDays = maxLockupDays_;
-        emit SetMaxLockupDays(maxLockupDays_);
-    }
-
-    /**
-     * @param forceUnstakeFee_ - Force unstake fee
-     */
-    function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
-        if (forceUnstakeFee_ > RATIO) {
-            revert ForceUnstakeFeeOverflow();
-        }
-
-        _forceUnstakeFee = forceUnstakeFee_;
-        emit SetForceUnstakeFee(forceUnstakeFee_);
-    }
-
-    /**
-     * @param outETHVault_ - Address of outETHVault
-     */
-    function setOutETHVault(address outETHVault_) public override onlyOwner {
-        _outETHVault = outETHVault_;
-        emit SetOutETHVault(outETHVault_);
     }
 
     receive() external payable {}

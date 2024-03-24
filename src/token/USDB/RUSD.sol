@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IRUSD.sol";
 import "../../utils/Initializable.sol";
+import "../../blast/GasManagerable.sol";
 import "../../vault/interfaces/IOutUSDBVault.sol";
 
 /**
  * @title Outrun USD Wrapped Token
  */
-contract RUSD is IRUSD, ERC20, Initializable, Ownable {
+contract RUSD is IRUSD, ERC20, Initializable, Ownable, GasManagerable {
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
@@ -27,7 +27,7 @@ contract RUSD is IRUSD, ERC20, Initializable, Ownable {
         _;
     }
 
-    constructor(address owner) ERC20("Outrun Wrapped USDB", "RUSD") Ownable(owner) {}
+    constructor(address owner, address gasManager) ERC20("Outrun Wrapped USDB", "RUSD") Ownable(owner) GasManagerable(gasManager) {}
 
     function outUSDBVault() external view override returns (address) {
         return _outUSDBVault;
@@ -38,6 +38,7 @@ contract RUSD is IRUSD, ERC20, Initializable, Ownable {
      * @param _vault - Address of OutUSDBVault
      */
     function initialize(address _vault) external override initializer {
+        BLAST.configureClaimableGas();
         setOutUSDBVault(_vault);
     }
 

@@ -5,12 +5,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./interfaces/IPETH.sol";
+import "../../blast/GasManagerable.sol";
 import "../../utils/Initializable.sol";
 
 /**
  * @title Outrun Principal ETH Liquid Staked Token
  */
-contract PETH is IPETH, ERC20, Initializable, Ownable {
+contract PETH is IPETH, ERC20, Initializable, Ownable, GasManagerable {
     address private _RETHStakeManager;
 
     modifier onlyRETHStakeManager() {
@@ -20,7 +21,7 @@ contract PETH is IPETH, ERC20, Initializable, Ownable {
         _;
     }
 
-    constructor(address owner) ERC20("Principal Staked ETH", "PETH") Ownable(owner) {}
+    constructor(address owner, address gasManager) ERC20("Principal Staked ETH", "PETH") Ownable(owner) GasManagerable(gasManager) {}
 
     function RETHStakeManager() external view override returns (address) {
         return _RETHStakeManager;
@@ -31,11 +32,12 @@ contract PETH is IPETH, ERC20, Initializable, Ownable {
      * @param stakeManager_ - Address of RETHStakeManager
      */
     function initialize(address stakeManager_) external override initializer {
+        BLAST.configureClaimableGas();
         setRETHStakeManager(stakeManager_);
     }
 
     /**
-     * Only RETHStakeManager can mint when the user stake RETH
+     * @dev Only RETHStakeManager can mint when the user stake RETH
      * @param _account Address who stake RETH 
      * @param _amount The amount of deposited RETH
      */
@@ -44,7 +46,7 @@ contract PETH is IPETH, ERC20, Initializable, Ownable {
     }
 
     /**
-     * Only RETHStakeManager can burn when the user redempt the RETH 
+     * @dev Only RETHStakeManager can burn when the user redempt the RETH 
      * @param _account Address who redempt the RETH
      * @param _amount The amount of redempt RETH
      */
