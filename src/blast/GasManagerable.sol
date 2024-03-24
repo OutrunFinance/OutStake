@@ -38,6 +38,14 @@ abstract contract GasManagerable {
     }
 
     /**
+     * @dev Read all gas remaining balance 
+     */
+    function readGasBalance() external view onlyGasManager returns (uint256) {
+        (, uint256 gasBanlance, , ) = BLAST.readGasParams(address(this));
+        return gasBanlance;
+    }
+
+    /**
      * @dev Claim max gas of this contract
      * @param recipient - Address of receive gas
      */
