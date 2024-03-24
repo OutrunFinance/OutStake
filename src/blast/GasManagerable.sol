@@ -12,7 +12,7 @@ abstract contract GasManagerable {
 
     error InvalidGasManager(address gasManager);
 
-    event ClaimMaxGas(address recipient, uint256 gasAmount);
+    event ClaimMaxGas(address indexed recipient, uint256 gasAmount);
 
     event GasManagerTransferred(address indexed previousGasManager, address indexed newGasManager);
 
