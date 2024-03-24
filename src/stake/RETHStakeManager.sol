@@ -290,7 +290,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
     }
 
     /**
-     * @dev Allows user burn REY to  withdraw yield
+     * @dev Allows user burn REY to withdraw yield
      * @param amountInREY - Amount of REY
      */
     function withdrawYield(uint256 amountInREY) external override returns (uint256) {
