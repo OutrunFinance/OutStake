@@ -46,8 +46,6 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     constructor(address owner, address gasManager, address reth, address pointsConfiger) Ownable(owner) GasManagerable(gasManager) {
         RETH = reth;
         BLAST_POINTS_CONFIGER = pointsConfiger;
-
-        BLAST.configureClaimableYield();
     }
 
 
@@ -117,6 +115,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
         uint256 providerFeeRate_, 
         uint256 protocolFeeRate_
     ) external override initializer {
+        BLAST.configureClaimableYield();
         configurePointsOperator(operator_);
         setRETHStakeManager(stakeManager_);
         setRevenuePool(revenuePool_);

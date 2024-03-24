@@ -49,8 +49,6 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     constructor(address owner, address gasManager, address rusd, address pointsConfiger) Ownable(owner) GasManagerable(gasManager) {
         RUSD = rusd;
         BLAST_POINTS_CONFIGER = pointsConfiger;
-
-        IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
     }
 
 
@@ -120,6 +118,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
         uint256 providerFeeRate_, 
         uint256 protocolFeeRate_
     ) external override initializer {
+        IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
         configurePointsOperator(operator_);
         setRUSDStakeManager(stakeManager_);
         setRevenuePool(revenuePool_);
