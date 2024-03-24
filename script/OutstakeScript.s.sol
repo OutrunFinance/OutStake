@@ -14,12 +14,25 @@ import "../src/vault/OutETHVault.sol";
 import "../src/vault/OutUSDBVault.sol";
 
 contract OutstakeScript is BaseScript {
+    address internal owner;
+    address internal gasManager;
+    address internal revenuePool;
+    address internal blastPoints;
+    address internal operator;
+
     function run() public broadcaster {
+        owner = vm.envAddress("OWNER");
+        revenuePool = vm.envAddress("REVENUE_POOL");
+        gasManager = vm.envAddress("GAS_MANAGER");
+        blastPoints = vm.envAddress("BLAST_POINTS");
+        operator = vm.envAddress("OPERATOR");
+        
         deployETH();
         deployUSDB();
     }
 
     function deployETH() internal {
+
         RETH reth = new RETH(owner, gasManager);
         address rethAddress = address(reth);
 
