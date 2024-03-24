@@ -4,8 +4,12 @@ pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 
 abstract contract BaseScript is Script {
-    address owner;
-    address gasManager;
+    address internal owner;
+    address internal gasManager;
+    address internal revenuePool;
+    address internal blastPoints;
+    address internal operator;
+
     uint256 internal privateKey;
     address internal deployer;
     string internal mnemonic;
@@ -14,7 +18,10 @@ abstract contract BaseScript is Script {
         //mnemonic = vm.envString("MNEMONIC");
         privateKey = vm.envUint("PRIVATE_KEY");
         owner = vm.envAddress("OWNER");
+        revenuePool = vm.envAddress("REVENUE_POOL");
         gasManager = vm.envAddress("GAS_MANAGER");
+        blastPoints = vm.envAddress("BLAST_POINTS");
+        operator = vm.envAddress("OPERATOR");
         deployer = vm.rememberKey(privateKey);
     }
 

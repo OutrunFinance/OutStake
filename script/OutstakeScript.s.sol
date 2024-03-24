@@ -29,7 +29,7 @@ contract OutstakeScript is BaseScript {
         REY rey = new REY(owner, gasManager);
         address reyAddress = address(rey);
 
-        OutETHVault vault = new OutETHVault(owner, gasManager, rethAddress);
+        OutETHVault vault = new OutETHVault(owner, gasManager, rethAddress, blastPoints);
         address vaultAddress = address(vault);
 
         RETHStakeManager stakeManager = new RETHStakeManager(
@@ -41,11 +41,11 @@ contract OutstakeScript is BaseScript {
         );
         address stakeAddress = address(stakeManager);
         
-        // vault.initialize(stakeAddress, REVENUE_POOL, 100, 15, 5);
-        // stakeManager.initialize(vaultAddress, 30, 7, 365);
-        // reth.initialize(vaultAddress);
-        // peth.initialize(stakeAddress);
-        // rey.initialize(stakeAddress);
+        vault.initialize(operator, stakeAddress, revenuePool, 100, 15, 5);
+        stakeManager.initialize(vaultAddress, 30, 7, 365);
+        reth.initialize(vaultAddress);
+        peth.initialize(stakeAddress);
+        rey.initialize(stakeAddress);
 
         console.log("RETH deployed on %s", rethAddress);
         console.log("PETH deployed on %s", pethAddress);
@@ -64,7 +64,7 @@ contract OutstakeScript is BaseScript {
         RUY ruy = new RUY(owner, gasManager);
         address ruyAddress = address(ruy);
 
-        OutUSDBVault vault = new OutUSDBVault(owner, gasManager, rusdAddress);
+        OutUSDBVault vault = new OutUSDBVault(owner, gasManager, rusdAddress, blastPoints);
         address vaultAddress = address(vault);
 
         RUSDStakeManager stakeManager = new RUSDStakeManager(
@@ -76,11 +76,11 @@ contract OutstakeScript is BaseScript {
         );
         address stakeAddress = address(stakeManager);
 
-        // vault.initialize(stakeAddress, REVENUE_POOL, 100, 15, 5);
-        // stakeManager.initialize(vaultAddress, 30, 7, 365);
-        // rusd.initialize(vaultAddress);
-        // pusd.initialize(stakeAddress);
-        // ruy.initialize(stakeAddress);
+        // vault.initialize(operator, stakeAddress, revenuePool, 100, 15, 5);
+        stakeManager.initialize(vaultAddress, 30, 7, 365);
+        rusd.initialize(vaultAddress);
+        pusd.initialize(stakeAddress);
+        ruy.initialize(stakeAddress);
 
         console.log("RUSD deployed on %s", rusdAddress);
         console.log("PUSD deployed on %s", pusdAddress);
