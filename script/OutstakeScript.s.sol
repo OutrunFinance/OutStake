@@ -15,7 +15,7 @@ import "../src/vault/OutUSDBVault.sol";
 
 contract OutstakeScript is BaseScript {
     function run() public broadcaster {
-        // deployETH();
+        deployETH();
         deployUSDB();
     }
 
