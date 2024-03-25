@@ -22,6 +22,7 @@ import "./interfaces/IRUSDStakeManager.sol";
 contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
+    address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e18;
     uint256 public constant DAY = 24 * 3600;
@@ -246,7 +247,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
                 amountInRUSD -= fee;
             }
             IRUSD(RUSD).withdraw(fee);
-            IERC20(RUSD).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
+            IERC20(USDB).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
         }
         IERC20(RUSD).safeTransfer(msgSender, amountInRUSD);
 
