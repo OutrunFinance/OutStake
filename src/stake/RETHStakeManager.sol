@@ -177,11 +177,13 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
      * @param reyTo - Receiver of REY
      * @notice User must have approved this contract to spend RETH
      */
-    function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address pethTo, address reyTo)
-        external
-        override
-        returns (uint256, uint256)
-    {
+    function stake(
+        uint256 amountInRETH, 
+        uint16 lockupDays, 
+        address positionOwner, 
+        address pethTo, 
+        address reyTo
+    ) external override returns (uint256 amountInPETH, uint256 amountInREY) {
         if (amountInRETH < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
@@ -190,10 +192,9 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         }
 
         address msgSender = msg.sender;
-        uint256 amountInPETH = calcPETHAmount(amountInRETH);
+        amountInPETH = calcPETHAmount(amountInRETH);
         uint256 positionId = nextId();
         uint256 deadline;
-        uint256 amountInREY;
         unchecked {
             _totalStaked += amountInRETH;
             deadline = block.timestamp + lockupDays * DAY;
@@ -207,14 +208,13 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         IREY(REY).mint(reyTo, amountInREY);
 
         emit StakeRETH(positionId, positionOwner, amountInRETH, deadline);
-        return (amountInPETH, amountInREY);
     }
 
     /**
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked Principal Position Id
      */
-    function unstake(uint256 positionId) external override returns (uint256) {
+    function unstake(uint256 positionId) external override returns (uint256 amountInRETH) {
         address msgSender = msg.sender;
         Position storage position = _positions[positionId];
         if (position.closed) {
@@ -225,7 +225,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         }
 
         position.closed = true;
-        uint256 amountInRETH = position.RETHAmount;
+        amountInRETH = position.RETHAmount;
         unchecked {
             _totalStaked -= amountInRETH;
         }
@@ -252,7 +252,6 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         IERC20(RETH).safeTransfer(msgSender, amountInRETH);
 
         emit Unstake(positionId, msgSender, amountInRETH);
-        return amountInRETH;
     }
 
     /**
@@ -260,7 +259,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
      * @param positionId - Staked Principal Position Id
      * @param extendDays - Extend lockup days
      */
-    function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256) {
+    function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256 amountInREY) {
         address user = msg.sender;
         Position memory position = _positions[positionId];
         if (position.owner != user) {
@@ -278,37 +277,31 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         }
         position.deadline = uint56(newDeadLine);
 
-        uint256 amountInREY;
         unchecked {
             amountInREY = position.RETHAmount * extendDays;
         }
         IREY(REY).mint(user, amountInREY);
 
         emit ExtendLockTime(positionId, extendDays, amountInREY);
-        return amountInREY;
     }
 
     /**
      * @dev Allows user burn REY to withdraw yield
      * @param amountInREY - Amount of REY
      */
-    function withdrawYield(uint256 amountInREY) external override returns (uint256) {
+    function withdrawYield(uint256 amountInREY) external override returns (uint256 yieldAmount) {
         if (amountInREY == 0) {
             revert ZeroInput();
         }
 
-        IOutETHVault(_outETHVault).claimETHYield();
-        uint256 yieldAmount;
         unchecked {
             yieldAmount = _totalYieldPool * amountInREY / IREY(REY).totalSupply();
         }
-
         address user = msg.sender;
         IREY(REY).burn(user, amountInREY);
         IERC20(RETH).safeTransfer(user, yieldAmount);
 
         emit WithdrawYield(user, amountInREY, yieldAmount);
-        return yieldAmount;
     }
 
     /**

@@ -157,11 +157,12 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
      * @param maxLockupDays_ - Max lockup days
      * @param forceUnstakeFee_ - Force unstake fee
      */
-    function initialize(address outUSDBVault_, uint256 forceUnstakeFee_, uint16 minLockupDays_, uint16 maxLockupDays_)
-        external
-        override
-        initializer
-    {
+    function initialize(
+        address outUSDBVault_, 
+        uint256 forceUnstakeFee_, 
+        uint16 minLockupDays_, 
+        uint16 maxLockupDays_
+    ) external override initializer {
         setOutUSDBVault(outUSDBVault_);
         setForceUnstakeFee(forceUnstakeFee_);
         setMinLockupDays(minLockupDays_);
@@ -177,11 +178,13 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
      * @param ruyTo - Receiver of RUY
      * @notice User must have approved this contract to spend RUSD
      */
-    function stake(uint256 amountInRUSD, uint16 lockupDays, address positionOwner, address pusdTo, address ruyTo)
-        external
-        override
-        returns (uint256, uint256)
-    {
+    function stake(
+        uint256 amountInRUSD, 
+        uint16 lockupDays, 
+        address positionOwner, 
+        address pusdTo, 
+        address ruyTo
+    ) external override returns (uint256 amountInPUSD, uint256 amountInRUY) {
         if (amountInRUSD < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
@@ -190,9 +193,8 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         }
 
         address msgSender = msg.sender;
-        uint256 amountInPUSD = calcPUSDAmount(amountInRUSD);
+        amountInPUSD = calcPUSDAmount(amountInRUSD);
         uint256 positionId = nextId();
-        uint256 amountInRUY;
         uint256 deadline;
         unchecked {
             _totalStaked += amountInRUSD;
@@ -214,7 +216,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked Principal Position Id
      */
-    function unstake(uint256 positionId) external override returns (uint256) {
+    function unstake(uint256 positionId) external override returns (uint256 amountInRUSD) {
         address msgSender = msg.sender;
         Position storage position = _positions[positionId];
         if (position.closed) {
@@ -225,7 +227,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         }
 
         position.closed = true;
-        uint256 amountInRUSD = position.RUSDAmount;
+        amountInRUSD = position.RUSDAmount;
         unchecked {
             _totalStaked -= amountInRUSD;
         }
@@ -252,7 +254,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         IERC20(RUSD).safeTransfer(msgSender, amountInRUSD);
 
         emit Unstake(positionId, msgSender, amountInRUSD);
-        return amountInRUSD;
     }
 
     /**
@@ -260,7 +261,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
      * @param positionId - Staked Principal Position Id
      * @param extendDays - Extend lockup days
      */
-    function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256) {
+    function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256 amountInRUY) {
         address user = msg.sender;
         Position storage position = _positions[positionId];
         if (position.owner != user) {
@@ -278,27 +279,23 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         }
         position.deadline = uint56(newDeadLine);
 
-        uint256 amountInRUY;
         unchecked {
             amountInRUY = position.RUSDAmount * extendDays;
         }
         IRUY(RUY).mint(user, amountInRUY);
 
         emit ExtendLockTime(positionId, extendDays, amountInRUY);
-        return amountInRUY;
     }
 
     /**
      * @dev Allows user burn RUY to  withdraw yield
      * @param amountInRUY - Amount of RUY
      */
-    function withdrawYield(uint256 amountInRUY) external override returns (uint256) {
+    function withdrawYield(uint256 amountInRUY) external override returns (uint256 yieldAmount) {
         if (amountInRUY == 0) {
             revert ZeroInput();
         }
 
-        IOutUSDBVault(_outUSDBVault).claimUSDBYield();
-        uint256 yieldAmount;
         unchecked {
             yieldAmount = _totalYieldPool * amountInRUY / IRUY(RUY).totalSupply();
         }
@@ -308,7 +305,6 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         IERC20(RUSD).safeTransfer(user, yieldAmount);
 
         emit WithdrawYield(user, amountInRUY, yieldAmount);
-        return yieldAmount;
     }
 
     /**

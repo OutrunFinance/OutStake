@@ -74,13 +74,19 @@ interface IRETHStakeManager {
         uint16 maxLockupDays_
     ) external;
 
-    function stake(uint256 amountInRETH, uint16 lockupDays, address positionOwner, address pethTo, address reyTo) external returns (uint256, uint256);
+    function stake(
+        uint256 amountInRETH, 
+        uint16 lockupDays, 
+        address positionOwner, 
+        address pethTo, 
+        address reyTo
+    ) external returns (uint256 amountInPETH, uint256 amountInREY);
 
-    function unstake(uint256 positionId) external returns (uint256);
+    function unstake(uint256 positionId) external returns (uint256 amountInRETH);
 
-    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256);
+    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256 amountInREY);
 
-    function withdrawYield(uint256 amountInREY) external returns (uint256);
+    function withdrawYield(uint256 amountInREY) external returns (uint256 yieldAmount);
 
     function accumYieldPool(uint256 nativeYield) external;
 
