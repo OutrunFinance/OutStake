@@ -139,7 +139,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     /**
      * @dev Claim USDB yield to this contract
      */
-    function claimUSDBYield() public override returns (uint256 nativeYield, uint256 dayRate) {
+    function claimUSDBYield() public override onlyOwner returns (uint256 nativeYield, uint256 dayRate) {
         nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
         if (nativeYield > 0) {
             IERC20Rebasing(USDB).claim(address(this), nativeYield);

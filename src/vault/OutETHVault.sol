@@ -136,7 +136,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     /**
      * @dev Claim ETH yield to this contract
      */
-    function claimETHYield() public override returns (uint256 nativeYield, uint256 dayRate) {
+    function claimETHYield() public override onlyOwner returns (uint256 nativeYield, uint256 dayRate) {
         nativeYield = BLAST.claimAllYield(address(this), address(this));
         if (nativeYield > 0) {
             if (_protocolFee > 0) {
