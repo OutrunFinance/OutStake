@@ -25,6 +25,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant RATIO = 10000;
+    uint256 public constant DAY_RATE_RATIO = 1000000;
     address public immutable BLAST_POINTS_CONFIGER;
     address public immutable RUSD;
 
@@ -138,8 +139,8 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     /**
      * @dev Claim USDB yield to this contract
      */
-    function claimUSDBYield() public override returns (uint256) {
-        uint256 nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
+    function claimUSDBYield() public override returns (uint256 nativeYield, uint256 dayRate) {
+        nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
         if (nativeYield > 0) {
             IERC20Rebasing(USDB).claim(address(this), nativeYield);
             if (_protocolFee > 0) {
@@ -156,10 +157,12 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
             IRUSD(RUSD).mint(_RUSDStakeManager, nativeYield);
             IRUSDStakeManager(_RUSDStakeManager).accumYieldPool(nativeYield);
 
-            emit ClaimUSDBYield(nativeYield);
-        }
+            unchecked {
+                dayRate = nativeYield * DAY_RATE_RATIO / IERC20(RUSD).balanceOf(_RUSDStakeManager);
+            }
 
-        return nativeYield;
+            emit ClaimUSDBYield(nativeYield, dayRate);
+        }
     }
 
      /**

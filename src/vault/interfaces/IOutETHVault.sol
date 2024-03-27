@@ -50,7 +50,7 @@ interface IOutETHVault {
 
     function withdraw(address user, uint256 amount) external;
 
-    function claimETHYield() external returns (uint256);
+    function claimETHYield() external returns (uint256 nativeYield, uint256 dayRate);
 
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
 
@@ -58,7 +58,7 @@ interface IOutETHVault {
 
 
     /** event **/
-    event ClaimETHYield(uint256 amount);
+    event ClaimETHYield(uint256 amount, uint256 dayRate);
 
     event FlashLoan(address indexed receiver, uint256 amount);
 

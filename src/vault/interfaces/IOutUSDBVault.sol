@@ -50,7 +50,7 @@ interface IOutUSDBVault {
     
     function withdraw(address user, uint256 amount) external;
 
-    function claimUSDBYield() external returns (uint256);
+    function claimUSDBYield() external returns (uint256 nativeYield, uint256 dayRate);
 
     function flashLoan(address receiver, uint256 amount, bytes calldata data) external;
 
@@ -58,7 +58,7 @@ interface IOutUSDBVault {
 
 
     /** event **/
-    event ClaimUSDBYield(uint256 amount);
+    event ClaimUSDBYield(uint256 amount, uint256 dayRate);
     
     event FlashLoan(address indexed receiver, uint256 amount);
 

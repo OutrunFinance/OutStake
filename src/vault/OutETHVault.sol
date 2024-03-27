@@ -22,6 +22,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
+    uint256 public constant DAY_RATE_RATIO = 1000000;
     address public immutable BLAST_POINTS_CONFIGER;
     address public immutable RETH;
 
@@ -135,8 +136,8 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     /**
      * @dev Claim ETH yield to this contract
      */
-    function claimETHYield() public override returns (uint256) {
-        uint256 nativeYield = BLAST.claimAllYield(address(this), address(this));
+    function claimETHYield() public override returns (uint256 nativeYield, uint256 dayRate) {
+        nativeYield = BLAST.claimAllYield(address(this), address(this));
         if (nativeYield > 0) {
             if (_protocolFee > 0) {
                 unchecked {
@@ -148,10 +149,13 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
 
             IRETH(RETH).mint(_RETHStakeManager, nativeYield);
             IRETHStakeManager(_RETHStakeManager).accumYieldPool(nativeYield);
-        }
 
-        emit ClaimETHYield(nativeYield);
-        return nativeYield;
+            unchecked {
+                dayRate = nativeYield * DAY_RATE_RATIO / IERC20(RETH).balanceOf(_RETHStakeManager);
+            }
+
+            emit ClaimETHYield(nativeYield, dayRate);
+        }
     }
 
     /**
