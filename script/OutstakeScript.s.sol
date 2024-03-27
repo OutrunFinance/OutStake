@@ -32,7 +32,6 @@ contract OutstakeScript is BaseScript {
     }
 
     function deployETH() internal {
-
         RETH reth = new RETH(owner, gasManager);
         address rethAddress = address(reth);
 
