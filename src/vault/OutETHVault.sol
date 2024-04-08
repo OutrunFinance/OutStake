@@ -22,7 +22,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
-    uint256 public constant DAY_RATE_RATIO = 1000000;
+    uint256 public constant DAY_RATE_RATIO = 1e8;
     address public immutable BLAST_POINTS_CONFIGER;
     address public immutable RETH;
 
