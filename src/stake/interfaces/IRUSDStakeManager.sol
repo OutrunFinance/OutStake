@@ -6,9 +6,9 @@ pragma solidity ^0.8.24;
  */
 interface IRUSDStakeManager {
     struct Position {
-        uint96 RUSDAmount;
-        uint96 PUSDAmount;
-        uint56 deadline;
+        uint104 RUSDAmount;
+        uint104 PUSDAmount;
+        uint40 deadline;
         bool closed;
         address owner;
     }
@@ -92,23 +92,25 @@ interface IRUSDStakeManager {
 
     /** event **/
     event StakeRUSD(
-        uint256 indexed _positionId,
-        address indexed _account,
-        uint256 _amountInRUSD,
-        uint256 _deadline
+        uint256 indexed positionId,
+        address indexed account,
+        uint256 amountInRUSD,
+        uint256 amountInPUSD,
+        uint256 amountInRUY,
+        uint256 deadline
     );
 
-    event Unstake(uint256 indexed _positionId, address indexed _account, uint256 _amountInRUSD);
+    event Unstake(uint256 indexed positionId, uint256 amountInRUSD, uint256 burnedPUSD, uint256 burnedRUY);
 
-    event WithdrawYield(address indexed user, uint256 amountInRUY, uint256 yieldAmount);
+    event WithdrawYield(address indexed account, uint256 burnedRUY, uint256 yieldAmount);
 
-    event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 mintedRUY);
+    event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 newDeadLine, uint256 mintedRUY);
 
-    event SetMinLockupDays(uint16 _minLockupDays);
+    event SetMinLockupDays(uint16 minLockupDays);
 
-    event SetMaxLockupDays(uint16 _maxLockupDays);
+    event SetMaxLockupDays(uint16 maxLockupDays);
 
-    event SetForceUnstakeFee(uint256 _forceUnstakeFee);
+    event SetForceUnstakeFee(uint256 forceUnstakeFee);
     
-    event SetOutUSDBVault(address _outUSDBVault);
+    event SetOutUSDBVault(address outUSDBVault);
 }

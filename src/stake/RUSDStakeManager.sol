@@ -202,14 +202,13 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
             amountInRUY = amountInRUSD * lockupDays;
         }
         _positions[positionId] =
-            Position(uint96(amountInRUSD), uint96(amountInPUSD), uint56(deadline), false, positionOwner);
+            Position(uint104(amountInRUSD), uint104(amountInPUSD), uint40(deadline), false, positionOwner);
 
         IERC20(RUSD).safeTransferFrom(msgSender, address(this), amountInRUSD);
         IPUSD(PUSD).mint(pusdTo, amountInPUSD);
         IRUY(RUY).mint(ruyTo, amountInRUY);
 
-        emit StakeRUSD(positionId, positionOwner, amountInRUSD, deadline);
-        return (amountInPUSD, amountInRUY);
+        emit StakeRUSD(positionId, positionOwner, amountInRUSD, amountInPUSD, amountInRUY, deadline);
     }
 
     /**
@@ -228,20 +227,21 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
 
         position.closed = true;
         amountInRUSD = position.RUSDAmount;
+        uint256 burnedPUSD = position.PUSDAmount;
+        uint256 deadline = position.deadline;
+        IPUSD(PUSD).burn(msgSender, burnedPUSD);
         unchecked {
             _totalStaked -= amountInRUSD;
         }
-        IPUSD(PUSD).burn(msgSender, position.PUSDAmount);
 
-        uint256 deadline = position.deadline;
+        uint256 burnedRUY;
         uint256 currentTime = block.timestamp;
         if (deadline > currentTime) {
-            uint256 amountInRUY;
             unchecked {
-                amountInRUY = position.RUSDAmount * Math.ceilDiv(deadline - currentTime, DAY);
+                burnedRUY = amountInRUSD * Math.ceilDiv(deadline - currentTime, DAY);
             }
-            IRUY(RUY).burn(msgSender, amountInRUY);
-            position.deadline = uint56(currentTime);
+            IRUY(RUY).burn(msgSender, burnedRUY);
+            position.deadline = uint40(currentTime);
 
             uint256 fee;
             unchecked {
@@ -253,7 +253,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         }
         IERC20(RUSD).safeTransfer(msgSender, amountInRUSD);
 
-        emit Unstake(positionId, msgSender, amountInRUSD);
+        emit Unstake(positionId, amountInRUSD, burnedPUSD, burnedRUY);
     }
 
     /**
@@ -277,14 +277,14 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         if (intervalDaysFromNow < _minLockupDays || intervalDaysFromNow > _maxLockupDays) {
             revert InvalidExtendDays();
         }
-        position.deadline = uint56(newDeadLine);
+        position.deadline = uint40(newDeadLine);
 
         unchecked {
             amountInRUY = position.RUSDAmount * extendDays;
         }
         IRUY(RUY).mint(user, amountInRUY);
 
-        emit ExtendLockTime(positionId, extendDays, amountInRUY);
+        emit ExtendLockTime(positionId, extendDays, newDeadLine, amountInRUY);
     }
 
     /**
@@ -300,11 +300,11 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
             yieldAmount = _totalYieldPool * amountInRUY / IRUY(RUY).totalSupply();
         }
 
-        address user = msg.sender;
-        IRUY(RUY).burn(user, amountInRUY);
-        IERC20(RUSD).safeTransfer(user, yieldAmount);
+        address msgSender = msg.sender;
+        IRUY(RUY).burn(msgSender, amountInRUY);
+        IERC20(RUSD).safeTransfer(msgSender, yieldAmount);
 
-        emit WithdrawYield(user, amountInRUY, yieldAmount);
+        emit WithdrawYield(msgSender, amountInRUY, yieldAmount);
     }
 
     /**

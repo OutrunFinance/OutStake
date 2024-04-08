@@ -228,14 +228,13 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         amountInRETH = position.RETHAmount;
         uint256 burnedPETH = position.PETHAmount;
         uint256 deadline = position.deadline;
-
+        IPETH(PETH).burn(msgSender, burnedPETH);
         unchecked {
             _totalStaked -= amountInRETH;
         }
-        IPETH(PETH).burn(msgSender, burnedPETH);
-
-        uint256 currentTime = block.timestamp;
+        
         uint256 burnedREY;
+        uint256 currentTime = block.timestamp;
         if (deadline > currentTime) {
             unchecked {
                 burnedREY = amountInRETH * Math.ceilDiv(deadline - currentTime, DAY);
@@ -299,11 +298,11 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         unchecked {
             yieldAmount = _totalYieldPool * burnedREY / IREY(REY).totalSupply();
         }
-        address user = msg.sender;
-        IREY(REY).burn(user, burnedREY);
-        IERC20(RETH).safeTransfer(user, yieldAmount);
+        address msgSender = msg.sender;
+        IREY(REY).burn(msgSender, burnedREY);
+        IERC20(RETH).safeTransfer(msgSender, yieldAmount);
 
-        emit WithdrawYield(user, burnedREY, yieldAmount);
+        emit WithdrawYield(msgSender, burnedREY, yieldAmount);
     }
 
     /**

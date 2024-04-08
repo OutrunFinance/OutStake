@@ -92,14 +92,6 @@ interface IRETHStakeManager {
 
 
     /** event **/
-    event SetMinLockupDays(uint16 minLockupDays);
-
-    event SetMaxLockupDays(uint16 maxLockupDays);
-
-    event SetForceUnstakeFee(uint256 forceUnstakeFee);
-
-    event SetOutETHVault(address outETHVault);
-
     event StakeRETH(
         uint256 indexed positionId,
         address indexed account,
@@ -114,4 +106,12 @@ interface IRETHStakeManager {
     event WithdrawYield(address indexed account, uint256 burnedREY, uint256 yieldAmount);
 
     event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 newDeadLine, uint256 mintedREY);
+
+    event SetMinLockupDays(uint16 minLockupDays);
+
+    event SetMaxLockupDays(uint16 maxLockupDays);
+
+    event SetForceUnstakeFee(uint256 forceUnstakeFee);
+
+    event SetOutETHVault(address outETHVault);
 }
