@@ -2,12 +2,12 @@
 pragma solidity ^0.8.24;
 
 abstract contract AutoIncrementId {
-    uint256 public count = 0;
+    uint256 public idCounter = 0;
 
-    function nextId() public returns (uint256) {
+    function _nextId() internal returns (uint256) {
         unchecked {
-            ++count;
+            ++idCounter;
         }
-        return count;
+        return idCounter;
     }
 }

@@ -194,7 +194,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
 
         address msgSender = msg.sender;
         amountInPUSD = calcPUSDAmount(amountInRUSD);
-        uint256 positionId = nextId();
+        uint256 positionId = _nextId();
         uint256 deadline;
         unchecked {
             _totalStaked += amountInRUSD;

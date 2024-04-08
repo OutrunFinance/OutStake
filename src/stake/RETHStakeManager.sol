@@ -193,7 +193,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
 
         address msgSender = msg.sender;
         amountInPETH = calcPETHAmount(amountInRETH);
-        uint256 positionId = nextId();
+        uint256 positionId = _nextId();
         uint256 deadline;
         unchecked {
             _totalStaked += amountInRETH;
