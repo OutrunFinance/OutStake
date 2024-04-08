@@ -6,9 +6,9 @@ pragma solidity ^0.8.24;
  */
 interface IRETHStakeManager {
     struct Position {
-        uint96 RETHAmount;
-        uint96 PETHAmount;
-        uint56 deadline;
+        uint104 RETHAmount;
+        uint104 PETHAmount;
+        uint40 deadline;
         bool closed;
         address owner;
     }
@@ -92,24 +92,26 @@ interface IRETHStakeManager {
 
 
     /** event **/
-    event SetMinLockupDays(uint16 _minLockupDays);
+    event SetMinLockupDays(uint16 minLockupDays);
 
-    event SetMaxLockupDays(uint16 _maxLockupDays);
+    event SetMaxLockupDays(uint16 maxLockupDays);
 
-    event SetForceUnstakeFee(uint256 _forceUnstakeFee);
+    event SetForceUnstakeFee(uint256 forceUnstakeFee);
 
-    event SetOutETHVault(address _outETHVault);
+    event SetOutETHVault(address outETHVault);
 
     event StakeRETH(
-        uint256 indexed _positionId,
-        address indexed _account,
-        uint256 _amountInRETH,
-        uint256 _deadline
+        uint256 indexed positionId,
+        address indexed account,
+        uint256 amountInRETH,
+        uint256 amountInPETH,
+        uint256 amountInREY,
+        uint256 deadline
     );
 
-    event Unstake(uint256 indexed _positionId, address indexed _account, uint256 _amountInRETH);
+    event Unstake(uint256 indexed positionId, uint256 amountInRETH, uint256 burnedPETH, uint256 burnedREY);
 
-    event WithdrawYield(address indexed user, uint256 amountInREY, uint256 yieldAmount);
+    event WithdrawYield(address indexed account, uint256 burnedREY, uint256 yieldAmount);
 
-    event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 mintedREY);
+    event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 newDeadLine, uint256 mintedREY);
 }

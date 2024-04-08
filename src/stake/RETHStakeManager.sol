@@ -201,13 +201,13 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
             amountInREY = amountInRETH * lockupDays;
         }
         _positions[positionId] =
-            Position(uint96(amountInRETH), uint96(amountInPETH), uint56(deadline), false, positionOwner);
+            Position(uint104(amountInRETH), uint104(amountInPETH), uint40(deadline), false, positionOwner);
 
         IERC20(RETH).safeTransferFrom(msgSender, address(this), amountInRETH);
         IPETH(PETH).mint(pethTo, amountInPETH);
         IREY(REY).mint(reyTo, amountInREY);
 
-        emit StakeRETH(positionId, positionOwner, amountInRETH, deadline);
+        emit StakeRETH(positionId, positionOwner, amountInRETH, amountInPETH, amountInREY, deadline);
     }
 
     /**
@@ -226,20 +226,22 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
 
         position.closed = true;
         amountInRETH = position.RETHAmount;
+        uint256 burnedPETH = position.PETHAmount;
+        uint256 deadline = position.deadline;
+
         unchecked {
             _totalStaked -= amountInRETH;
         }
-        IPETH(PETH).burn(msgSender, position.PETHAmount);
+        IPETH(PETH).burn(msgSender, burnedPETH);
 
-        uint256 deadline = position.deadline;
         uint256 currentTime = block.timestamp;
+        uint256 burnedREY;
         if (deadline > currentTime) {
-            uint256 amountInREY;
             unchecked {
-                amountInREY = amountInRETH * Math.ceilDiv(deadline - currentTime, DAY);
+                burnedREY = amountInRETH * Math.ceilDiv(deadline - currentTime, DAY);
             }
-            IREY(REY).burn(msgSender, amountInREY);
-            position.deadline = uint56(currentTime);
+            IREY(REY).burn(msgSender, burnedREY);
+            position.deadline = uint40(currentTime);
 
             uint256 fee;
             unchecked {
@@ -251,7 +253,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         }        
         IERC20(RETH).safeTransfer(msgSender, amountInRETH);
 
-        emit Unstake(positionId, msgSender, amountInRETH);
+        emit Unstake(positionId, amountInRETH, burnedPETH, burnedREY);
     }
 
     /**
@@ -275,33 +277,33 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         if (intervalDaysFromNow < _minLockupDays || intervalDaysFromNow > _maxLockupDays) {
             revert InvalidExtendDays();
         }
-        position.deadline = uint56(newDeadLine);
+        position.deadline = uint40(newDeadLine);
 
         unchecked {
             amountInREY = position.RETHAmount * extendDays;
         }
         IREY(REY).mint(user, amountInREY);
 
-        emit ExtendLockTime(positionId, extendDays, amountInREY);
+        emit ExtendLockTime(positionId, extendDays, newDeadLine, amountInREY);
     }
 
     /**
      * @dev Allows user burn REY to withdraw yield
-     * @param amountInREY - Amount of REY
+     * @param burnedREY - Amount of burned REY
      */
-    function withdrawYield(uint256 amountInREY) external override returns (uint256 yieldAmount) {
-        if (amountInREY == 0) {
+    function withdrawYield(uint256 burnedREY) external override returns (uint256 yieldAmount) {
+        if (burnedREY == 0) {
             revert ZeroInput();
         }
 
         unchecked {
-            yieldAmount = _totalYieldPool * amountInREY / IREY(REY).totalSupply();
+            yieldAmount = _totalYieldPool * burnedREY / IREY(REY).totalSupply();
         }
         address user = msg.sender;
-        IREY(REY).burn(user, amountInREY);
+        IREY(REY).burn(user, burnedREY);
         IERC20(RETH).safeTransfer(user, yieldAmount);
 
-        emit WithdrawYield(user, amountInREY, yieldAmount);
+        emit WithdrawYield(user, burnedREY, yieldAmount);
     }
 
     /**
