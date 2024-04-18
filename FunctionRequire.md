@@ -98,7 +98,9 @@ YieldToken(REY/RUY)是收益代币，在YieldPool页面需要显示下列公共�
 
 ## Outswap
 Outswap前端页面功能参照Uniswap, Pancake之类的DEX即可，需要注意的是，在Outswap Router中新增了许多支持USDB的方法，具体看方法名称，涉及到USDB的需要调用对应的方法。  
-如图，前端用户导入池子后，会在Factory合约中检索Pair,然后查询用户的是否持有LP，有LP就显示池子LP详情信息，由于Outswap对uniswapV2进行修改，手续费是单独领取的，领取的是LP不是双币，所以在详情信息中可以查看可领取的手续费，并添加一个单独领取手续费的按钮。  
+如图，前端用户导入池子后，会在Factory合约中检索Pair,然后查询用户的是否持有LP，有LP就显示池子LP详情信息，由于Outswap对uniswapV2进行修改，手续费是单独领取的，领取的是双币，所以在详情信息中可以查看可领取的手续费，并添加一个单独领取手续费的按钮。  
+- Pair.viewUnClaimedFee() 查看当前用户的做市手续费
+- Pair.claimMakerFee() 领取当前用户的做市手续费
 <div align="center">
     <img src="https://github.com/OutrunDao/Outstake/assets/32949831/ac8b75a4-d8b5-4acb-b886-145a4dd159a3" width="600" height="400">  
 </div>
