@@ -28,13 +28,14 @@
 ### Stake
 
 如图，用户在这个页面可以质押RETH(RUSD)，用户需要输入的参数为待质押的RETH(RUSD)数量与质押天数。  
-用户连接钱包后会显示钱包RETH(RUSD)余额，用户可以在输入框输入RETH(RUSD)数量，也点击Max会直接输入RETH(RUSD)最大余额，RETH(RUSD)与PETH(PUSD)的转换比例通过计算获得，调用RETHStakeManager(RUSDStakeManager)合约的CalcPETH(PUSD)Amount方法，即可获得实时转换比例，修改输入框的值也会实时更新可转换的数量，输入框的值不能低于MINSTAKE最小质押数量。输入框下方需要显示一个实时Exchange rate, 通过调用CalcPETH(PUSD)Amount(1 ether)获得。  
+用户连接钱包后会显示钱包RETH(RUSD)余额，用户可以在输入框输入RETH(RUSD)数量，也可以点击Max会直接输入RETH(RUSD)最大余额，RETH(RUSD) -> PETH(PUSD)的转换数量通过计算获得，调用RETHStakeManager(RUSDStakeManager)合约的CalcPETH(PUSD)Amount方法，即可获得实时转换数量，修改输入框的值也会实时更新可转换的数量，输入框的值不能低于MINSTAKE最小质押数量。输入框下方需要显示一个实时Exchange rate, 通过调用CalcPETH(PUSD)Amount(1 ether)获得。  
 <div align="center">
     <img src="https://github.com/OutrunDao/Outstake/assets/32949831/58e5879b-7753-4320-9f7d-d3719130c631" width="400" height="500">  
 </div>
 
-除此之外，还需要一个滑动条控制质押天数，滑动条后面有一个输入框，滑动滑动条可以修改输入框里的值，输入框的值需在[minLockupDays, maxLockupDays]区间。  
-修改RETH(RUSD)的质押数量与质押天数时会实时计算铸造的REY(RUY)数量，计算方式是质押数量乘以质押天数，需要显示可铸造的REY(RUY)数量。  
+除此之外  
+- 需要滑动条控制质押天数，滑动条后面有一个输入框，滑动滑动条可以修改输入框里的值，输入框的值需在[minLockupDays, maxLockupDays]区间。  
+- 需要显示可铸造的REY(RUY)数量，修改RETH(RUSD)的质押数量与质押天数时会实时计算铸造的REY(RUY)数量，计算方式是质押数量乘以质押天数。  
 点击stake将会调用RETHStakeManager(RUSDStakeManager)的stake方法，然后弹出过场等待动画，待交易确认后，结束过场等待动画并提示成功stake多少个RETH(RUSD)，铸造多少个PETH(PUSD)与REY(RUY).  
 
 ### Position
@@ -64,35 +65,42 @@
 
 #### ExtendLocktime
 
-页面上每一个仓位都有一个延长质押天数的选项，提供一个滑动条给用户使用，延长后的时间距离当前时间的天数需在[minLockupDays, maxLockupDays]区间。  
+每一个仓位ExtendLocktime下拉按钮，点击后会下滑延长这个仓位的视图从而弹出一个滑动条给用户使用，滑动条的[min, max]需要计算得出。  
+具体计算方法如下  
+```solidity
+    // 下面是伪代码，需要改用JavaScript实现
+    constant uint256 DAY = 24 * 3600;
+
+    // min
+    uint256 minLockSecond = minLockupDays * DAY; // 最小锁定秒数，minLockupDays从合约获得
+    uint256 newDeadLine = minLockSecond + currentTimestampSecond; // 最小新DeadLine，currentTimestampSecond是系统当前时间戳，单位为秒
+    uint256 min = (newDeadLine - position.deadLine) / DAY; // JavaScript实现时需要注意取整，而不是浮点数
+
+    // max
+    uint256 maxLockSecond = maxLockupDays * DAY; // 最大锁定秒数，maxLockupDays从合约获得
+    uint256 newDeadLine = maxLockSecond + currentTimestampSecond; // 最大新DeadLine，currentTimestampSecond是系统当前时间戳，单位为秒
+    uint256 max = (newDeadLine - position.deadLine) / DAY; // JavaScript实现时需要注意取整，而不是浮点数
+```
 点击Extend后会调用StakeManager合约的extendLockTime方法。  
 在用户ExtendLocktime成功后弹窗提示用户获得了多少REY(Position.RETHAmount * lockupDays)
-具体逻辑如下
 
-```solidity
-    uint256 newDeadLine = position.deadline + extendDays * DAY;
-    uint256 intervalDaysFromNow = (newDeadLine - block.timestamp) / DAY;
-    if (intervalDaysFromNow < minLockupDays || intervalDaysFromNow > maxLockupDays) {
-        revert InvalidExtendDays();
-    }
-```
+### YieldPool
 
-### YieldToken
+YieldToken(REY/RUY)是收益代币，在YieldPool页面需要显示下列公共信息  
+- RETH(RUSD)平均质押天数，调用StakeManager合约的avgStakeDays()方法可以获得。
+- YieldPool当前积累的未领取的总原生收益，调用StakeManager合约的totalYieldPool()方法获得。
+- 每个YieldToken当前可赎回的原生收益，totalYieldPool除以REY(RUY)的totalSupply可以获得每YieldToken当前可赎回的原生收益。
 
-YieldToken是收益代币，在此页面调用StakeManager的withdrawYield方法可以随时销毁YieldToken以withdraw已产生的原生收益。  
-在页面中需要显示YieldPool中已产生的总原生收益，和每YieldToken当前可赎回的原生收益，通过调用StakeManager合约的totalYieldPool()方法获得，使用totalYieldPool除以REY(RUY)的totalSupply可以获得每YieldToken当前可赎回的原生收益。
-页面上需要显示RETH(RUSD)平均质押天数，调用StakeManager合约的avgStakeDays()方法可以获得
+页面需要输入框，用户可以输入REY/RUY的数量，或者点击MAX输入自己的余额，在点击Withdraw Yield按钮前会检查用户的REY/RUY余额是否足够，余额足够则调用StakeManager合约的withdrawYield方法销毁YieldToken以withdraw已产生的原生收益。 
 
 ## Outswap
 Outswap前端页面功能参照Uniswap, Pancake之类的DEX即可，需要注意的是，在Outswap Router中新增了许多支持USDB的方法，具体看方法名称，涉及到USDB的需要调用对应的方法。  
-如图，前端用户导入池子后，会在Factory合约中检索Pair,然后查询用户的是否持有Lp，有LP就显示池子LP详情信息，由于Outswap对uniswapV2进行修改，手续费是单独领取的，领取的是LP不是双币，所以在详情信息中可以查看可领取的手续费，并添加一个单独领取手续费的按钮。  
+如图，前端用户导入池子后，会在Factory合约中检索Pair,然后查询用户的是否持有LP，有LP就显示池子LP详情信息，由于Outswap对uniswapV2进行修改，手续费是单独领取的，领取的是LP不是双币，所以在详情信息中可以查看可领取的手续费，并添加一个单独领取手续费的按钮。  
 <div align="center">
     <img src="https://github.com/OutrunDao/Outstake/assets/32949831/ac8b75a4-d8b5-4acb-b886-145a4dd159a3" width="600" height="400">  
 </div>
 
 ## Fair&Free LaunchPad!
-
-
 # 可参考协议
 
 Pancake, Uniswap, TraderJoe, Frax Finance, ThalaFi
