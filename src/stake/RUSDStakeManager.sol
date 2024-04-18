@@ -298,6 +298,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
 
         unchecked {
             yieldAmount = _totalYieldPool * amountInRUY / IRUY(RUY).totalSupply();
+            _totalYieldPool -= yieldAmount;
         }
 
         address msgSender = msg.sender;

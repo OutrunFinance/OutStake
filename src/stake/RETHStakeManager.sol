@@ -297,6 +297,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
 
         unchecked {
             yieldAmount = _totalYieldPool * burnedREY / IREY(REY).totalSupply();
+            _totalYieldPool -= yieldAmount;
         }
         address msgSender = msg.sender;
         IREY(REY).burn(msgSender, burnedREY);
