@@ -7,18 +7,20 @@
 #### mint
 
 如图，用户在这个页面可以铸造RETH(RUSD)，用户连接钱包后会显示钱包ETH(USDB)余额，用户可以在输入框输入ETH(USDB)数量，也点击Max会直接输入(ETH余额会先扣除交易gas)的ETH(USDB)最大余额，ETH(USDB)与RETH(RUSD)的转换比例恒定为1:1，修改输入框的值也会实时更新可转换的数量。点击mint将会调用RETH(RUSD)的deposit方法，然后弹出过场等待动画，待交易确认后，结束过场等待动画并提示成功mint多少个RETH(RUSD).  
+- 用户在输入ETH的数量时，如果用户余额不足，Mint按钮上的文本应改为Insufficient Balance，并且点击按钮没有任何调用（或者直接无法输入大于用户余额的数量）
+- 用户输入ETH的数量后在RETH处应显示能mint到的RETH数量（1：1）
 <div align="center">
     <img src="https://github.com/OutrunDao/Outstake/assets/32949831/fdd3a366-d525-482d-80f7-f92090ab4576" width="400" height="500">  
 </div>
 
 #### withdraw
 
-如图，用户在这个页面可以赎回ETH(USDB)，用户连接钱包后会显示钱包RETH(RUSD)余额，用户可以在输入框输入RETH(RUSD)数量，也点击Max会直接输入RETH(RUSD)最大余额，ETH(USDB)与RETH(RUSD)的转换比例恒定为1:1，修改输入框的值也会实时更新可转换的数量。点击withdraw将会调用RETH(RUSD)的withdraw方法，然后弹出过场等待动画，待交易确认后，结束过场等待动画并提示成功withdraw多少个ETH(USDB).  
+点击双向箭头会切换到withdraw页面，用户在这个页面可以赎回ETH(USDB)，用户连接钱包后会显示钱包RETH(RUSD)余额，用户可以在输入框输入RETH(RUSD)数量，也点击Max会直接输入RETH(RUSD)最大余额，ETH(USDB)与RETH(RUSD)的转换比例恒定为1:1，修改输入框的值也会实时更新可转换的数量。点击withdraw将会调用RETH(RUSD)的withdraw方法，然后弹出过场等待动画，待交易确认后，结束过场等待动画并提示成功withdraw多少个ETH(USDB).  
 <div align="center">
     <img src="https://github.com/OutrunDao/Outstake/assets/32949831/63393b02-91f7-4601-9331-03b8b91b9b78" width="400" height="500">  
 </div>
 
-#### Info
+#### Info 这个最后做
 
 在mint与withdraw页面需要显示RETH(RUSD)的totalSupply以及其对应的美元TVL，这块需要从Oracle获取ETH的价格
 <div align="center">
@@ -28,7 +30,9 @@
 ### Stake
 
 如图，用户在这个页面可以质押RETH(RUSD)，用户需要输入的参数为待质押的RETH(RUSD)数量与质押天数。  
-用户连接钱包后会显示钱包RETH(RUSD)余额，用户可以在输入框输入RETH(RUSD)数量，也可以点击Max会直接输入RETH(RUSD)最大余额，RETH(RUSD) -> PETH(PUSD)的转换数量通过计算获得，调用RETHStakeManager(RUSDStakeManager)合约的CalcPETH(PUSD)Amount方法，即可获得实时转换数量，修改输入框的值也会实时更新可转换的数量，输入框的值不能低于MINSTAKE最小质押数量。输入框下方需要显示一个实时Exchange rate, 通过调用CalcPETH(PUSD)Amount(1 ether)获得。  
+用户连接钱包后会显示钱包RETH(RUSD)余额，用户可以在输入框输入RETH(RUSD)数量，也可以点击Max会直接输入RETH(RUSD)最大余额
+- 用户在输入RETH(RUSD)数量数量后会计算并显示PETH(PUSD)的转换数量，调用RETHStakeManager(RUSDStakeManager)合约的CalcPETH(PUSD)Amount方法，即可获得实时转换数量，修改输入框的值也会实时更新可转换的数量，输入框的值不能低于MINSTAKE最小质押数量。
+- 输入框下方需要显示一个实时Exchange rate, 通过调用CalcPETH(PUSD)Amount(1 ether)获得。  
 <div align="center">
     <img src="https://github.com/OutrunDao/Outstake/assets/32949831/58e5879b-7753-4320-9f7d-d3719130c631" width="400" height="500">  
 </div>
