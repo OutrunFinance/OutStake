@@ -25,7 +25,7 @@
     <img src="https://github.com/OutrunDao/Outstake/assets/32949831/dae43ad4-ac39-4673-b919-ae76f939980d" width="800" height="125">  
 </div>
 
-### Liquid Staking
+### Stake
 
 如图，用户在这个页面可以质押RETH(RUSD)，用户需要输入的参数为待质押的RETH(RUSD)数量与质押天数。  
 用户连接钱包后会显示钱包RETH(RUSD)余额，用户可以在输入框输入RETH(RUSD)数量，也点击Max会直接输入RETH(RUSD)最大余额，RETH(RUSD)与PETH(PUSD)的转换比例通过计算获得，调用RETHStakeManager(RUSDStakeManager)合约的CalcPETH(PUSD)Amount方法，即可获得实时转换比例，修改输入框的值也会实时更新可转换的数量，输入框的值不能低于MINSTAKE最小质押数量。输入框下方需要显示一个实时Exchange rate, 通过调用CalcPETH(PUSD)Amount(1 ether)获得。  
@@ -34,19 +34,18 @@
 </div>
 
 除此之外，还需要一个滑动条控制质押天数，滑动条后面有一个输入框，滑动滑动条可以修改输入框里的值，输入框的值需在[minLockupDays, maxLockupDays]区间。  
-修改RETH(RUSD)的质押数量与质押天数时会实时计算铸造的REY(RUY)数量，计算方式是质押数量乘以质押天数。  
+修改RETH(RUSD)的质押数量与质押天数时会实时计算铸造的REY(RUY)数量，计算方式是质押数量乘以质押天数，需要显示可铸造的REY(RUY)数量。  
 点击stake将会调用RETHStakeManager(RUSDStakeManager)的stake方法，然后弹出过场等待动画，待交易确认后，结束过场等待动画并提示成功stake多少个RETH(RUSD)，铸造多少个PETH(PUSD)与REY(RUY).  
 
 ### Position
 
 如图类似，在这个页面一排一排地显示当前连接钱包的所有未关闭的Position以及详情信息.  
-用户每次质押RETH(RUSD)都会开启一个仓位并发送Event，后端会监听Event并更新数据库，前端可以调用后端API查询当前连接钱包的所有未关闭的仓位。  
+用户每次质押RETH(RUSD)都会开启一个仓位并发送Event，前端需要调用TheGraph查询当前连接钱包的所有未关闭的仓位。在每个仓位中显示下列信息  
 
 ``` solidity
     struct Position {
         uint256 RETHAmount; // 本仓位质押的RETH数量
         uint256 PETHAmount; // 本仓位铸造的PETH数量
-        address owner;      // 仓位拥有者
         uint256 deadline;   // 锁定截止时间戳
         bool closed;        // 仓位状态
     }
@@ -57,16 +56,17 @@
 
 #### Unstake
 
-仓位deadline超过当前时间的仓位可以关闭，调用销毁StakeManager合约的unStake方法销毁Position.PETHAmount数量的PETH可以赎回质押的RETH.
+在Position点击Unstake按钮时，先做两次前置检查：
+- 查询用户的PETH余额，如果小于Position.PETHAmount，则弹窗提示用户PETH余额不足。
+- 比较当前时间戳与Position.deadline，如果当前时间戳 >= deadline，直接调用StakeManager合约的unStake方法，如果当前时间戳 < deadline，弹窗提示用户是否强制关闭仓位，在用户确认后再去调用StakeManager合约的unStake方法，如果用户取消，则关闭弹窗。
 
-#### ForceUnstake
-
-当前时间未达到仓位deadline可以强制关闭，强制关闭需要扣除ForceFee并且燃烧多余的REY(RUY)，燃烧的REY(RUY)数量未，强制关闭时间与deadline的时间间隔天数乘以仓位质押的RETH数量，调用销毁StakeManager合约的unStake方法销毁Position.PETHAmount数量的PETH可以赎回质押的RETH.
+在用户Unstake成功后，弹窗提示用户withdraw了多少个RETH.
 
 #### ExtendLocktime
 
 页面上每一个仓位都有一个延长质押天数的选项，提供一个滑动条给用户使用，延长后的时间距离当前时间的天数需在[minLockupDays, maxLockupDays]区间。  
 点击Extend后会调用StakeManager合约的extendLockTime方法。  
+在用户ExtendLocktime成功后弹窗提示用户获得了多少REY(Position.RETHAmount * lockupDays)
 具体逻辑如下
 
 ```solidity
@@ -92,29 +92,6 @@ Outswap前端页面功能参照Uniswap, Pancake之类的DEX即可，需要注意
 
 ## Fair&Free LaunchPad!
 
-# 后端功能需求
-
-## Outstake
-
-```solidity
-    event StakeRETH(
-        uint256 indexed _positionId,
-        address indexed _account,
-        uint256 _amountInRETH,
-        uint256 _deadline
-    );
-
-    event StakeRUSD(
-        uint256 indexed _positionId,
-        address indexed _account,
-        uint256 _amountInRUSD,
-        uint256 _deadline
-    );
-```
-
-1. 后端需要以上两个事件，每当用户stake时记录产生的Position信息，并提供一个接口让前端可以通过用户address获取用户拥有的所有PositionId.  
-2. 后端需要一个定时任务，每天定时调用OutETHVault(OutUSDBVault)合约的claimETHYield(claimUSDBYield)方法。
-3. Airdrop积分计划
 
 # 可参考协议
 
