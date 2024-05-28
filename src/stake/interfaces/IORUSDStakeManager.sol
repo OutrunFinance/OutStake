@@ -78,7 +78,7 @@ interface IORUSDStakeManager {
         uint256 amountInORUSD, 
         uint16 lockupDays, 
         address positionOwner, 
-        address pusdTo, 
+        address osUSDTo, 
         address ruyTo
     ) external returns (uint256 amountInOSUSD, uint256 amountInRUY);
 
