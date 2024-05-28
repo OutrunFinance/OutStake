@@ -1,6 +1,6 @@
 [Gitbook](https://outrundao.gitbook.io/outrun/ "OutrunDao Official Doc")  
 
-**Read this in chinese: [中文](README.cn.md)**  
+**Read this in Chinese: [中文](README.cn.md)**  
 
 # Outstake -- Built entirely around native yield from Blast
 
