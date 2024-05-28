@@ -39,12 +39,14 @@ orETH 同时会作为在 Outswap 中的 Wrapped ETH.
 
 ### osETH
 
-osETH 是向 orETHStakeManager 质押 orETH 而铸造的质押本金代币，旨在积累 Blast 产生的原生收益并释放质押代币的流动性。
+osETH 是向 ORETHStakeManager 质押 orETH 而铸造的质押本金代币，旨在积累 Blast 产生的原生收益并释放质押代币的流动性。
 
 用户质押 orETH 时需要指定一个锁定时间从而铸造 osETH 与 YieldToken，osETH 数量并不是按质押的 orETH 来 1 : 1 铸造的，而是使用下面利息凭证比例算法来计算的。  
+
 <div align="center">
-    <img src="https://github.com/OutrunDao/Outrun/assets/32949831/1da8d6fa-3d16-4f9e-9c39-e34736fa9dd5" width="800" height="50">  
+    <img src="https://github.com/OutrunDao/Outstake/assets/32949831/f1553bab-9eac-47f9-a9f7-293fa787f513" width="750" height="30">  
 </div>
+
 随着时间的推移，OutETHVault 可以不断产生原生质押收益，相应数量的 orETH 被铸造并添加到 YieldPool 中，新质押的 orETH 所铸造的 osETH 会略微减少，但无论所铸造的 osETH 数量是多少，锁定时间到期后，用户都能销毁当时铸造的 osETH 将自己的质押的 orETH 完全赎回，这种设计是为了保证 osETH 的价格更好得和 ETH 的价格锚定并且增强用户的 ETH 质押收益。
 注意：osETH 为质押本金代币，orETH 产生的质押收益由 YieldToken 所有。
 
@@ -100,7 +102,7 @@ REY 不仅仅是帮助 ETH 长期质押这获得更多收益的工具，它是�
 
 ### UML时序图
 
-![931b83d0b3a56216f901edd218a6251](https://github.com/OutrunDao/Outrun-Stake/assets/32949831/225590f2-16a3-4994-97ee-6f57a9b36ecc)
+![outstake Sequence Diagram](https://github.com/OutrunDao/Outstake/assets/32949831/d96d83c7-cfc3-4505-8025-f42bebe3acf9)
 
 ## Stake USDB
 
