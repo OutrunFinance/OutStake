@@ -51,12 +51,12 @@ orETH will also be available as a Wrapped Token on Outswap.
 
 ### osETH
 
-osETH is the principal token minted by staking orETH to the orETHStakeManager, aiming to accumulate native yields and release liquidity for the staked tokens.
+osETH is the principal token minted by staking orETH to the ORETHStakeManager, aiming to accumulate native yields and release liquidity for the staked tokens.
 
 When users stake orETH, they need to specify a lock-up period to mint osETH and YieldToken. The quantity of osETH is not minted at a 1:1 ratio with the staked orETH. Instead, it is calculated using the following interest voucher ratio algorithm.
 
 <div align="center">
-    <img src="https://github.com/OutrunDao/Outrun/assets/32949831/1da8d6fa-3d16-4f9e-9c39-e34736fa9dd5" width="810" height="50">  
+    <img src="https://github.com/OutrunDao/Outstake/assets/32949831/f1553bab-9eac-47f9-a9f7-293fa787f513" width="750" height="30">  
 </div>
 
 Over time, the OutETHVault can continuously generate native staking yields, and a corresponding amount of orETH is minted and added to the YieldPool. The newly staked orETH will result in a slight reduction in the minted osETH. However, regardless of the quantity of osETH minted, users can destroy the osETH minted at that time to fully redeem their staked orETH when the lock-up period expires. This design ensures that the price of osETH is better anchored to the price of ETH.
@@ -118,7 +118,7 @@ REY is not just a tool to help ETH long-term stakers earn more income, it is a t
 
 ### UML Sequence Diagram
 
-![931b83d0b3a56216f901edd218a6251](https://github.com/OutrunDao/Outrun-Stake/assets/32949831/8347240f-1399-49e0-a1a4-36b7c4f8517e)
+![outstake Sequence Diagram](https://github.com/OutrunDao/Outstake/assets/32949831/d96d83c7-cfc3-4505-8025-f42bebe3acf9)
 
 ## Stake USDB
 
