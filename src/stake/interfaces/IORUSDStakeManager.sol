@@ -2,12 +2,12 @@
 pragma solidity ^0.8.24;
 
 /**
- * @title IRETHStakeManager interface
+ * @title IORUSDStakeManager interface
  */
-interface IRETHStakeManager {
+interface IORUSDStakeManager {
     struct Position {
-        uint104 RETHAmount;
-        uint104 PETHAmount;
+        uint104 orUSDAmount;
+        uint104 osUSDAmount;
         uint40 deadline;
         bool closed;
         address owner;
@@ -35,7 +35,7 @@ interface IRETHStakeManager {
     
 
     /** view **/
-    function outETHVault() external view returns (address);
+    function outUSDBVault() external view returns (address);
 
     function forceUnstakeFee() external view returns (uint256);
 
@@ -49,11 +49,11 @@ interface IRETHStakeManager {
 
     function positionsOf(uint256 positionId) external view returns (Position memory);
 
-    function getStakedRETH() external view returns (uint256);
+    function getStakedORUSD() external view returns (uint256);
 
     function avgStakeDays() external view returns (uint256);
 
-    function calcPETHAmount(uint256 amountInRETH) external view returns (uint256);
+    function calcOSUSDAmount(uint256 amountInORUSD) external view returns (uint256);
 
 
     /** setter **/
@@ -63,55 +63,54 @@ interface IRETHStakeManager {
 
     function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
 
-    function setOutETHVault(address _outETHVault) external;
+    function setOutUSDBVault(address _OutUSDBVault) external;
 
 
     /** function **/
     function initialize(
-        address outETHVault_,
+        address outUSDBVault_, 
         uint256 forceUnstakeFee_, 
         uint16 minLockupDays_, 
         uint16 maxLockupDays_
     ) external;
 
     function stake(
-        uint256 amountInRETH, 
+        uint256 amountInORUSD, 
         uint16 lockupDays, 
         address positionOwner, 
-        address pethTo, 
-        address reyTo
-    ) external returns (uint256 amountInPETH, uint256 amountInREY);
+        address pusdTo, 
+        address ruyTo
+    ) external returns (uint256 amountInOSUSD, uint256 amountInRUY);
 
-    function unstake(uint256 positionId) external returns (uint256 amountInRETH);
+    function unstake(uint256 positionId) external returns (uint256 amountInORUSD) ;
 
-    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256 amountInREY);
+    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256 amountInRUY) ;
 
-    function withdrawYield(uint256 amountInREY) external returns (uint256 yieldAmount);
+    function withdrawYield(uint256 amountInRUY) external returns (uint256 yieldAmount) ;
 
     function accumYieldPool(uint256 nativeYield) external;
 
-
     /** event **/
-    event StakeRETH(
+    event StakeORUSD(
         uint256 indexed positionId,
         address indexed account,
-        uint256 amountInRETH,
-        uint256 amountInPETH,
-        uint256 amountInREY,
+        uint256 amountInORUSD,
+        uint256 amountInOSUSD,
+        uint256 amountInRUY,
         uint256 deadline
     );
 
-    event Unstake(uint256 indexed positionId, uint256 amountInRETH, uint256 burnedPETH, uint256 burnedREY);
+    event Unstake(uint256 indexed positionId, uint256 amountInORUSD, uint256 burnedOSUSD, uint256 burnedRUY);
 
-    event WithdrawYield(address indexed account, uint256 burnedREY, uint256 yieldAmount);
+    event WithdrawYield(address indexed account, uint256 burnedRUY, uint256 yieldAmount);
 
-    event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 newDeadLine, uint256 mintedREY);
+    event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 newDeadLine, uint256 mintedRUY);
 
     event SetMinLockupDays(uint16 minLockupDays);
 
     event SetMaxLockupDays(uint16 maxLockupDays);
 
     event SetForceUnstakeFee(uint256 forceUnstakeFee);
-
-    event SetOutETHVault(address outETHVault);
+    
+    event SetOutUSDBVault(address outUSDBVault);
 }

@@ -19,7 +19,7 @@ interface IOutETHVault {
 
 
     /** view **/
-    function RETHStakeManager() external view returns (address);
+    function ORETHStakeManager() external view returns (address);
 
     function revenuePool() external view returns (address);
 
@@ -35,7 +35,7 @@ interface IOutETHVault {
 
     function setRevenuePool(address _pool) external;
 
-    function setRETHStakeManager(address _RETHStakeManager) external;
+    function setORETHStakeManager(address _orETHStakeManager) external;
 
 
     /** function **/
@@ -70,5 +70,5 @@ interface IOutETHVault {
 
     event SetRevenuePool(address _pool);
 
-    event SetRETHStakeManager(address _RETHStakeManager);
+    event SetORETHStakeManager(address _orETHStakeManager);
 }

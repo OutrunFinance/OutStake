@@ -11,9 +11,9 @@ import {BlastModeEnum} from "../blast/BlastModeEnum.sol";
 import "../blast/IBlastPoints.sol";
 import "../blast/GasManagerable.sol";
 import "../blast/IERC20Rebasing.sol";
-import "../stake/interfaces/IRUSDStakeManager.sol";
+import "../stake/interfaces/IORUSDStakeManager.sol";
 import "../utils/Initializable.sol";
-import "../token/USDB//interfaces/IRUSD.sol";
+import "../token/USDB//interfaces/IORUSD.sol";
 import "./interfaces/IOutUSDBVault.sol";
 import "./interfaces/IOutFlashCallee.sol";
 
@@ -27,15 +27,15 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     uint256 public constant RATIO = 10000;
     uint256 public constant DAY_RATE_RATIO = 1e8;
     address public immutable BLAST_POINTS_CONFIGER;
-    address public immutable RUSD;
+    address public immutable ORUSD;
 
-    address private _RUSDStakeManager;
+    address private _orUSDStakeManager;
     address private _revenuePool;
     uint256 private _protocolFee;
     FlashLoanFee private _flashLoanFee;
 
-    modifier onlyRUSDContract() {
-        if (msg.sender != RUSD) {
+    modifier onlyORUSDContract() {
+        if (msg.sender != ORUSD) {
             revert PermissionDenied();
         }
         _;
@@ -44,18 +44,18 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     /**
      * @param owner - Address of owner
      * @param gasManager - Address of gas manager
-     * @param rusd - Address of RUSD Token
+     * @param orUSD - Address of orUSD Token
      * @param pointsConfiger - Address of blast points configer
      */
-    constructor(address owner, address gasManager, address rusd, address pointsConfiger) Ownable(owner) GasManagerable(gasManager) {
-        RUSD = rusd;
+    constructor(address owner, address gasManager, address orUSD, address pointsConfiger) Ownable(owner) GasManagerable(gasManager) {
+        ORUSD = orUSD;
         BLAST_POINTS_CONFIGER = pointsConfiger;
     }
 
 
     /** view **/
-    function RUSDStakeManager() external view returns (address) {
-        return _RUSDStakeManager;
+    function ORUSDStakeManager() external view returns (address) {
+        return _orUSDStakeManager;
     }
 
     function revenuePool() external view returns (address) {
@@ -95,9 +95,9 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
         emit SetRevenuePool(_pool);
     }
 
-    function setRUSDStakeManager(address _stakeManager) public override onlyOwner {
-        _RUSDStakeManager = _stakeManager;
-        emit SetRUSDStakeManager(_stakeManager);
+    function setORUSDStakeManager(address _stakeManager) public override onlyOwner {
+        _orUSDStakeManager = _stakeManager;
+        emit SetORUSDStakeManager(_stakeManager);
     }
 
 
@@ -105,7 +105,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     /**
      * @dev Initializer
      * @param operator_ - Address of blast points operator
-     * @param stakeManager_ - Address of RUSDStakeManager
+     * @param stakeManager_ - Address of orUSDStakeManager
      * @param revenuePool_ - Address of revenue pool
      * @param protocolFee_ - Protocol fee rate
      * @param providerFeeRate_ - Flashloan provider fee rate
@@ -121,18 +121,18 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     ) external override initializer {
         IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
         configurePointsOperator(operator_);
-        setRUSDStakeManager(stakeManager_);
+        setORUSDStakeManager(stakeManager_);
         setRevenuePool(revenuePool_);
         setProtocolFee(protocolFee_);
         setFlashLoanFee(providerFeeRate_, protocolFeeRate_);
     }
 
     /**
-     * @dev When user withdraw by RUSD contract
+     * @dev When user withdraw by orUSD contract
      * @param user - Address of User
      * @param amount - Amount of USDB for withdraw
      */
-    function withdraw(address user, uint256 amount) external override onlyRUSDContract {
+    function withdraw(address user, uint256 amount) external override onlyORUSDContract {
         IERC20(USDB).safeTransfer(user, amount);
     }
 
@@ -154,11 +154,11 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
                 }
             }
 
-            IRUSD(RUSD).mint(_RUSDStakeManager, nativeYield);
-            IRUSDStakeManager(_RUSDStakeManager).accumYieldPool(nativeYield);
+            IORUSD(ORUSD).mint(_orUSDStakeManager, nativeYield);
+            IORUSDStakeManager(_orUSDStakeManager).accumYieldPool(nativeYield);
 
             unchecked {
-                dayRate = nativeYield * DAY_RATE_RATIO / IERC20(RUSD).balanceOf(_RUSDStakeManager);
+                dayRate = nativeYield * DAY_RATE_RATIO / IERC20(ORUSD).balanceOf(_orUSDStakeManager);
             }
 
             emit ClaimUSDBYield(nativeYield, dayRate);
@@ -190,7 +190,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
             }
         }
         
-        IRUSD(RUSD).mint(_RUSDStakeManager, providerFeeAmount);
+        IORUSD(ORUSD).mint(_orUSDStakeManager, providerFeeAmount);
         IERC20(USDB).safeTransfer(_revenuePool, protocolFeeAmount);
 
         emit FlashLoan(receiver, amount);

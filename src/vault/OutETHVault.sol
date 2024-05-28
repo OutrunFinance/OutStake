@@ -10,8 +10,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../blast/IBlastPoints.sol";
 import "../blast/GasManagerable.sol";
 import "../utils/Initializable.sol";
-import "../stake/interfaces/IRETHStakeManager.sol";
-import "../token/ETH//interfaces/IRETH.sol";
+import "../stake/interfaces/IORETHStakeManager.sol";
+import "../token/ETH//interfaces/IORETH.sol";
 import "./interfaces/IOutETHVault.sol";
 import "./interfaces/IOutFlashCallee.sol";
 
@@ -24,15 +24,15 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     uint256 public constant RATIO = 10000;
     uint256 public constant DAY_RATE_RATIO = 1e8;
     address public immutable BLAST_POINTS_CONFIGER;
-    address public immutable RETH;
+    address public immutable ORETH;
 
-    address private _RETHStakeManager;
+    address private _orETHStakeManager;
     address private _revenuePool;
     uint256 private _protocolFee;
     FlashLoanFee private _flashLoanFee;
 
-    modifier onlyRETHContract() {
-        if (msg.sender != RETH) {
+    modifier onlyORETHContract() {
+        if (msg.sender != ORETH) {
             revert PermissionDenied();
         }
         _;
@@ -41,18 +41,18 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     /**
      * @param owner - Address of owner
      * @param gasManager - Address of gas manager
-     * @param reth - Address of RETH Token
+     * @param orETH - Address of orETH Token
      * @param pointsConfiger - Address of blast points configer
      */
-    constructor(address owner, address gasManager, address reth, address pointsConfiger) Ownable(owner) GasManagerable(gasManager) {
-        RETH = reth;
+    constructor(address owner, address gasManager, address orETH, address pointsConfiger) Ownable(owner) GasManagerable(gasManager) {
+        ORETH = orETH;
         BLAST_POINTS_CONFIGER = pointsConfiger;
     }
 
 
     /** view **/
-    function RETHStakeManager() external view returns (address) {
-        return _RETHStakeManager;
+    function ORETHStakeManager() external view returns (address) {
+        return _orETHStakeManager;
     }
 
     function revenuePool() external view returns (address) {
@@ -92,9 +92,9 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
         emit SetRevenuePool(_pool);
     }
 
-    function setRETHStakeManager(address _stakeManager) public override onlyOwner {
-        _RETHStakeManager = _stakeManager;
-        emit SetRETHStakeManager(_stakeManager);
+    function setORETHStakeManager(address _stakeManager) public override onlyOwner {
+        _orETHStakeManager = _stakeManager;
+        emit SetORETHStakeManager(_stakeManager);
     }
 
 
@@ -102,7 +102,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     /**
      * @dev Initializer
      * @param operator_ - Address of blast points operator
-     * @param stakeManager_ - Address of RETHStakeManager
+     * @param stakeManager_ - Address of orETHStakeManager
      * @param revenuePool_ - Address of revenue pool
      * @param protocolFee_ - Protocol fee rate
      * @param providerFeeRate_ - Flashloan provider fee rate
@@ -118,18 +118,18 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
     ) external override initializer {
         BLAST.configureClaimableYield();
         configurePointsOperator(operator_);
-        setRETHStakeManager(stakeManager_);
+        setORETHStakeManager(stakeManager_);
         setRevenuePool(revenuePool_);
         setProtocolFee(protocolFee_);
         setFlashLoanFee(providerFeeRate_, protocolFeeRate_);
     }
 
     /**
-     * @dev When user withdraw by RETH contract
+     * @dev When user withdraw by orETH contract
      * @param user - Address of User
      * @param amount - Amount of ETH for withdraw
      */
-    function withdraw(address user, uint256 amount) external override onlyRETHContract {
+    function withdraw(address user, uint256 amount) external override onlyORETHContract {
         Address.sendValue(payable(user), amount);
     }
 
@@ -147,11 +147,11 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
                 }
             }
 
-            IRETH(RETH).mint(_RETHStakeManager, nativeYield);
-            IRETHStakeManager(_RETHStakeManager).accumYieldPool(nativeYield);
+            IORETH(ORETH).mint(_orETHStakeManager, nativeYield);
+            IORETHStakeManager(_orETHStakeManager).accumYieldPool(nativeYield);
 
             unchecked {
-                dayRate = nativeYield * DAY_RATE_RATIO / IERC20(RETH).balanceOf(_RETHStakeManager);
+                dayRate = nativeYield * DAY_RATE_RATIO / IERC20(ORETH).balanceOf(_orETHStakeManager);
             }
 
             emit ClaimETHYield(nativeYield, dayRate);
@@ -184,7 +184,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
                 }
             }
             
-            IRETH(RETH).mint(_RETHStakeManager, providerFeeAmount);
+            IORETH(ORETH).mint(_orETHStakeManager, providerFeeAmount);
             Address.sendValue(payable(_revenuePool), protocolFeeAmount);
 
             emit FlashLoan(receiver, amount);

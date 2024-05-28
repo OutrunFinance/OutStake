@@ -11,7 +11,7 @@ interface IREY is IERC20 {
 
     error PermissionDenied();
 
-    function RETHStakeManager() external view returns (address);
+    function ORETHStakeManager() external view returns (address);
 
     function initialize(address stakeManager_) external;
 
@@ -19,9 +19,9 @@ interface IREY is IERC20 {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setRETHStakeManager(address _stakeManager) external;
+    function setORETHStakeManager(address _stakeManager) external;
 
     event Mint(address indexed _account, uint256 _amount);
 
-    event SetRETHStakeManager(address  _stakeManager);
+    event SetORETHStakeManager(address  _stakeManager);
 }

@@ -19,7 +19,7 @@ interface IOutUSDBVault {
 
 
     /** view **/
-    function RUSDStakeManager() external view returns (address);
+    function ORUSDStakeManager() external view returns (address);
 
     function revenuePool() external view returns (address);
 
@@ -35,7 +35,7 @@ interface IOutUSDBVault {
 
     function setRevenuePool(address _pool) external;
 
-    function setRUSDStakeManager(address _RUSDStakeManager) external;
+    function setORUSDStakeManager(address _orUSDStakeManager) external;
 
 
     /** function **/
@@ -70,5 +70,5 @@ interface IOutUSDBVault {
 
     event SetRevenuePool(address _pool);
 
-    event SetRUSDStakeManager(address _RUSDStakeManager);
+    event SetORUSDStakeManager(address _orUSDStakeManager);
 }

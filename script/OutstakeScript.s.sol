@@ -2,16 +2,17 @@
 pragma solidity ^0.8.24;
 
 import "./BaseScript.s.sol";
-import "../src/token/ETH/RETH.sol";
-import "../src/token/ETH/PETH.sol";
+import "../src/token/ETH/ORETH.sol";
+import "../src/token/ETH/OSETH.sol";
 import "../src/token/ETH/REY.sol";
-import "../src/token/USDB/RUSD.sol";
-import "../src/token/USDB/PUSD.sol";
+import "../src/token/USDB/ORUSD.sol";
+import "../src/token/USDB/OSUSD.sol";
 import "../src/token/USDB/RUY.sol";
-import "../src/stake/RETHStakeManager.sol";
-import "../src/stake/RUSDStakeManager.sol";
+import "../src/stake/ORETHStakeManager.sol";
+import "../src/stake/ORUSDStakeManager.sol";
 import "../src/vault/OutETHVault.sol";
 import "../src/vault/OutUSDBVault.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract OutstakeScript is BaseScript {
     address internal owner;
@@ -26,76 +27,77 @@ contract OutstakeScript is BaseScript {
         gasManager = vm.envAddress("GAS_MANAGER");
         blastPoints = vm.envAddress("BLAST_POINTS");
         operator = vm.envAddress("OPERATOR");
+        IERC20(0x4200000000000000000000000000000000000022).approve(0xeA3037170670df423B52CdDdDAe06569b4d1EcD3, 100 ether);
         
-        deployETH();
-        deployUSDB();
+        // deployETH();
+        // deployUSDB();
     }
 
     function deployETH() internal {
-        RETH reth = new RETH(owner, gasManager);
-        address rethAddress = address(reth);
+        ORETH orETH = new ORETH(owner, gasManager);
+        address orETHAddress = address(orETH);
 
-        PETH peth = new PETH(owner, gasManager);
-        address pethAddress = address(peth);
+        OSETH osETH = new OSETH(owner, gasManager);
+        address osETHAddress = address(osETH);
 
         REY rey = new REY(owner, gasManager);
         address reyAddress = address(rey);
 
-        OutETHVault vault = new OutETHVault(owner, gasManager, rethAddress, blastPoints);
+        OutETHVault vault = new OutETHVault(owner, gasManager, orETHAddress, blastPoints);
         address vaultAddress = address(vault);
 
-        RETHStakeManager stakeManager = new RETHStakeManager(
+        ORETHStakeManager stakeManager = new ORETHStakeManager(
             owner,
             gasManager,
-            rethAddress,
-            pethAddress,
+            orETHAddress,
+            osETHAddress,
             reyAddress
         );
         address stakeAddress = address(stakeManager);
         
         // vault.initialize(operator, stakeAddress, revenuePool, 100, 15, 5);
         stakeManager.initialize(vaultAddress, 30, 7, 365);
-        reth.initialize(vaultAddress);
-        peth.initialize(stakeAddress);
+        orETH.initialize(vaultAddress);
+        osETH.initialize(stakeAddress);
         rey.initialize(stakeAddress);
 
-        console.log("RETH deployed on %s", rethAddress);
-        console.log("PETH deployed on %s", pethAddress);
+        console.log("ORETH deployed on %s", orETHAddress);
+        console.log("OSETH deployed on %s", osETHAddress);
         console.log("REY deployed on %s", reyAddress);
         console.log("OutETHVault deployed on %s", vaultAddress);
-        console.log("RETHStakeManager deployed on %s", stakeAddress);
+        console.log("ORETHStakeManager deployed on %s", stakeAddress);
     }
 
     function deployUSDB() internal {
-        RUSD rusd = new RUSD(owner, gasManager);
-        address rusdAddress = address(rusd);
+        ORUSD orUSD = new ORUSD(owner, gasManager);
+        address orUSDAddress = address(orUSD);
 
-        PUSD pusd = new PUSD(owner, gasManager);
-        address pusdAddress = address(pusd);
+        OSUSD osUSD = new OSUSD(owner, gasManager);
+        address osUSDAddress = address(osUSD);
 
         RUY ruy = new RUY(owner, gasManager);
         address ruyAddress = address(ruy);
 
-        OutUSDBVault vault = new OutUSDBVault(owner, gasManager, rusdAddress, blastPoints);
+        OutUSDBVault vault = new OutUSDBVault(owner, gasManager, osUSDAddress, blastPoints);
         address vaultAddress = address(vault);
 
-        RUSDStakeManager stakeManager = new RUSDStakeManager(
+        ORUSDStakeManager stakeManager = new ORUSDStakeManager(
             owner, 
             gasManager,
-            rusdAddress,
-            pusdAddress,
+            orUSDAddress,
+            osUSDAddress,
             ruyAddress
         );
         address stakeAddress = address(stakeManager);
 
         vault.initialize(operator, stakeAddress, revenuePool, 100, 15, 5);
         stakeManager.initialize(vaultAddress, 30, 7, 365);
-        rusd.initialize(vaultAddress);
-        pusd.initialize(stakeAddress);
+        orUSD.initialize(vaultAddress);
+        osUSD.initialize(stakeAddress);
         ruy.initialize(stakeAddress);
 
-        console.log("RUSD deployed on %s", rusdAddress);
-        console.log("PUSD deployed on %s", pusdAddress);
+        console.log("RUSD deployed on %s", orUSDAddress);
+        console.log("PUSD deployed on %s", osUSDAddress);
         console.log("RUY deployed on %s", ruyAddress);
         console.log("OutUSDBVault deployed on %s", vaultAddress);
         console.log("RUSDStakeManager deployed on %s", stakeAddress);

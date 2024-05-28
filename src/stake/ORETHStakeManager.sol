@@ -9,25 +9,25 @@ import "../utils/Math.sol";
 import "../utils/Initializable.sol";
 import "../utils/AutoIncrementId.sol";
 import "../token/ETH/interfaces/IREY.sol";
-import "../token/ETH/interfaces/IRETH.sol";
-import "../token/ETH/interfaces/IPETH.sol";
+import "../token/ETH/interfaces/IORETH.sol";
+import "../token/ETH/interfaces/IOSETH.sol";
 import "../vault/interfaces/IOutETHVault.sol";
 import "../blast/GasManagerable.sol";
-import "./interfaces/IRETHStakeManager.sol";
+import "./interfaces/IORETHStakeManager.sol";
 
 /**
- * @title RETH Stake Manager Contract
- * @dev Handles Staking of RETH
+ * @title ORETH Stake Manager Contract
+ * @dev Handles Staking of orETH
  */
-contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
+contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e15;
     uint256 public constant DAY = 24 * 3600;
 
-    address public immutable RETH;
-    address public immutable PETH;
+    address public immutable ORETH;
+    address public immutable OSETH;
     address public immutable REY;
 
     address private _outETHVault;
@@ -49,13 +49,13 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
     /**
      * @param owner - Address of owner
      * @param gasManager - Address of gas manager
-     * @param reth - Address of RETH Token
-     * @param peth - Address of PETH Token
+     * @param orETH - Address of orETH Token
+     * @param osETH - Address of osETH Token
      * @param rey - Address of REY Token
      */
-    constructor(address owner, address gasManager, address reth, address peth, address rey) Ownable(owner) GasManagerable(gasManager) {
-        RETH = reth;
-        PETH = peth;
+    constructor(address owner, address gasManager, address orETH, address osETH, address rey) Ownable(owner) GasManagerable(gasManager) {
+        ORETH = orETH;
+        OSETH = osETH;
         REY = rey;
     }
 
@@ -89,23 +89,23 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         return _positions[positionId];
     }
 
-    function getStakedRETH() public view override returns (uint256) {
-        return IRETH(RETH).balanceOf(address(this));
+    function getStakedORETH() public view override returns (uint256) {
+        return IORETH(ORETH).balanceOf(address(this));
     }
 
     function avgStakeDays() public view override returns (uint256) {
         return IERC20(REY).totalSupply() / _totalStaked;
     }
 
-    function calcPETHAmount(uint256 amountInRETH) public view override returns (uint256) {
-        uint256 totalShares = IRETH(PETH).totalSupply();
+    function calcOSETHAmount(uint256 amountInORETH) public view override returns (uint256) {
+        uint256 totalShares = IOSETH(OSETH).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
-        uint256 yieldVault = getStakedRETH();
+        uint256 yieldVault = getStakedORETH();
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
         unchecked {
-            return amountInRETH * totalShares / yieldVault;
+            return amountInORETH * totalShares / yieldVault;
         }
     }
 
@@ -169,22 +169,22 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
     }
 
     /**
-     * @dev Allows user to deposit RETH, then mints PETH and REY for the user.
-     * @param amountInRETH - RETH staked amount, amount % 1e15 == 0
+     * @dev Allows user to deposit orETH, then mints osETH and REY for the user.
+     * @param amountInORETH - orETH staked amount, amount % 1e15 == 0
      * @param lockupDays - User can withdraw after lockupDays
      * @param positionOwner - Owner of position
-     * @param pethTo - Receiver of PETH
+     * @param osETHTo - Receiver of osETH
      * @param reyTo - Receiver of REY
-     * @notice User must have approved this contract to spend RETH
+     * @notice User must have approved this contract to spend orETH
      */
     function stake(
-        uint256 amountInRETH, 
+        uint256 amountInORETH, 
         uint16 lockupDays, 
         address positionOwner, 
-        address pethTo, 
+        address osETHTo, 
         address reyTo
-    ) external override returns (uint256 amountInPETH, uint256 amountInREY) {
-        if (amountInRETH < MINSTAKE) {
+    ) external override returns (uint256 amountInOSETH, uint256 amountInREY) {
+        if (amountInORETH < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
         if (lockupDays < _minLockupDays || lockupDays > _maxLockupDays) {
@@ -192,29 +192,29 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         }
 
         address msgSender = msg.sender;
-        amountInPETH = calcPETHAmount(amountInRETH);
+        amountInOSETH = calcOSETHAmount(amountInORETH);
         uint256 positionId = _nextId();
         uint256 deadline;
         unchecked {
-            _totalStaked += amountInRETH;
+            _totalStaked += amountInORETH;
             deadline = block.timestamp + lockupDays * DAY;
-            amountInREY = amountInRETH * lockupDays;
+            amountInREY = amountInORETH * lockupDays;
         }
         _positions[positionId] =
-            Position(uint104(amountInRETH), uint104(amountInPETH), uint40(deadline), false, positionOwner);
+            Position(uint104(amountInORETH), uint104(amountInOSETH), uint40(deadline), false, positionOwner);
 
-        IERC20(RETH).safeTransferFrom(msgSender, address(this), amountInRETH);
-        IPETH(PETH).mint(pethTo, amountInPETH);
+        IERC20(ORETH).safeTransferFrom(msgSender, address(this), amountInORETH);
+        IOSETH(OSETH).mint(osETHTo, amountInOSETH);
         IREY(REY).mint(reyTo, amountInREY);
 
-        emit StakeRETH(positionId, positionOwner, amountInRETH, amountInPETH, amountInREY, deadline);
+        emit StakeORETH(positionId, positionOwner, amountInORETH, amountInOSETH, amountInREY, deadline);
     }
 
     /**
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked Principal Position Id
      */
-    function unstake(uint256 positionId) external override returns (uint256 amountInRETH) {
+    function unstake(uint256 positionId) external override returns (uint256 amountInORETH) {
         address msgSender = msg.sender;
         Position storage position = _positions[positionId];
         if (position.closed) {
@@ -225,34 +225,34 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         }
 
         position.closed = true;
-        amountInRETH = position.RETHAmount;
-        uint256 burnedPETH = position.PETHAmount;
+        amountInORETH = position.orETHAmount;
+        uint256 burnedOSETH = position.osETHAmount;
         uint256 deadline = position.deadline;
-        IPETH(PETH).burn(msgSender, burnedPETH);
+        IOSETH(OSETH).burn(msgSender, burnedOSETH);
         unchecked {
-            _totalStaked -= amountInRETH;
+            _totalStaked -= amountInORETH;
         }
         
         uint256 burnedREY;
         uint256 currentTime = block.timestamp;
         if (deadline > currentTime) {
             unchecked {
-                burnedREY = amountInRETH * Math.ceilDiv(deadline - currentTime, DAY);
+                burnedREY = amountInORETH * Math.ceilDiv(deadline - currentTime, DAY);
             }
             IREY(REY).burn(msgSender, burnedREY);
             position.deadline = uint40(currentTime);
 
             uint256 fee;
             unchecked {
-                fee = amountInRETH * _forceUnstakeFee / RATIO;
-                amountInRETH -= fee;
+                fee = amountInORETH * _forceUnstakeFee / RATIO;
+                amountInORETH -= fee;
             }
-            IRETH(RETH).withdraw(fee);
+            IORETH(ORETH).withdraw(fee);
             Address.sendValue(payable(IOutETHVault(_outETHVault).revenuePool()), fee);
         }        
-        IERC20(RETH).safeTransfer(msgSender, amountInRETH);
+        IERC20(ORETH).safeTransfer(msgSender, amountInORETH);
 
-        emit Unstake(positionId, amountInRETH, burnedPETH, burnedREY);
+        emit Unstake(positionId, amountInORETH, burnedOSETH, burnedREY);
     }
 
     /**
@@ -279,7 +279,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         position.deadline = uint40(newDeadLine);
 
         unchecked {
-            amountInREY = position.RETHAmount * extendDays;
+            amountInREY = position.orETHAmount * extendDays;
         }
         IREY(REY).mint(user, amountInREY);
 
@@ -301,7 +301,7 @@ contract RETHStakeManager is IRETHStakeManager, Initializable, Ownable, GasManag
         }
         address msgSender = msg.sender;
         IREY(REY).burn(msgSender, burnedREY);
-        IERC20(RETH).safeTransfer(msgSender, yieldAmount);
+        IERC20(ORETH).safeTransfer(msgSender, yieldAmount);
 
         emit WithdrawYield(msgSender, burnedREY, yieldAmount);
     }

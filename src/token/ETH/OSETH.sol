@@ -4,15 +4,15 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "./interfaces/IREY.sol";
+import "./interfaces/IOSETH.sol";
 import "../../blast/GasManagerable.sol";
 import "../../utils/Initializable.sol";
 
 /**
- * @title Outrun ETH yield token
+ * @title Outrun staked ETH
  */
-contract REY is IREY, ERC20, Initializable, Ownable, GasManagerable {
-    address public _orETHStakeManager;
+contract OSETH is IOSETH, ERC20, Initializable, Ownable, GasManagerable {
+    address private _orETHStakeManager;
 
     modifier onlyORETHStakeManager() {
         if (msg.sender != _orETHStakeManager) {
@@ -21,7 +21,7 @@ contract REY is IREY, ERC20, Initializable, Ownable, GasManagerable {
         _;
     }
 
-    constructor(address owner, address gasManager) ERC20("Outrun ETH yield token", "REY") Ownable(owner) GasManagerable(gasManager) {}
+    constructor(address owner, address gasManager) ERC20("Outrun staked ETH", "osETH") Ownable(owner) GasManagerable(gasManager) {}
 
     function ORETHStakeManager() external view override returns (address) {
         return _orETHStakeManager;
@@ -38,16 +38,16 @@ contract REY is IREY, ERC20, Initializable, Ownable, GasManagerable {
     /**
      * @dev Only orETHStakeManager can mint when the user stake orETH
      * @param _account Address who stake orETH 
-     * @param _amount The amount of minted REY
+     * @param _amount The amount of deposited orETH
      */
-    function mint(address _account, uint256 _amount) external override onlyORETHStakeManager {
+    function mint(address _account, uint256 _amount) external override onlyORETHStakeManager{
         _mint(_account, _amount);
     }
 
     /**
-     * @dev Only orETHStakeManager can burn when the user redempt the native yield
-     * @param _account Address who redempt the native yield
-     * @param _amount The amount of burned REY
+     * @dev Only orETHStakeManager can burn when the user redempt the orETH 
+     * @param _account Address who redempt the orETH
+     * @param _amount The amount of redempt orETH
      */
     function burn(address _account, uint256 _amount) external override onlyORETHStakeManager {
         _burn(_account, _amount);

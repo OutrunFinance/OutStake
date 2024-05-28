@@ -11,7 +11,7 @@ interface IRUY is IERC20 {
 
     error PermissionDenied();
 
-    function RUSDStakeManager() external view returns (address);
+    function ORUSDStakeManager() external view returns (address);
 
     function initialize(address stakeManager_) external;
     
@@ -19,9 +19,9 @@ interface IRUY is IERC20 {
 
     function burn(address _account, uint256 _amount) external;
 
-    function setRUSDStakeManager(address _stakeManager) external;
+    function setORUSDStakeManager(address _stakeManager) external;
 
     event Mint(address indexed _account, uint256 _amount);
 
-    event SetRUSDStakeManager(address  _stakeManager);
+    event SetORUSDStakeManager(address  _stakeManager);
 }

@@ -8,18 +8,18 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../utils/Math.sol";
 import "../utils/Initializable.sol";
 import "../utils/AutoIncrementId.sol";
-import "../token/USDB/interfaces/IRUSD.sol";
-import "../token/USDB/interfaces/IPUSD.sol";
+import "../token/USDB/interfaces/IORUSD.sol";
+import "../token/USDB/interfaces/IOSUSD.sol";
 import "../token/USDB/interfaces/IRUY.sol";
 import "../vault/interfaces/IOutUSDBVault.sol";
 import "../blast/GasManagerable.sol";
-import "./interfaces/IRUSDStakeManager.sol";
+import "./interfaces/IORUSDStakeManager.sol";
 
 /**
- * @title RUSD Stake Manager Contract
- * @dev Handles Staking of RUSD
+ * @title ORUSD Stake Manager Contract
+ * @dev Handles Staking of orUSD
  */
-contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
+contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
@@ -27,8 +27,8 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
     uint256 public constant MINSTAKE = 1e18;
     uint256 public constant DAY = 24 * 3600;
 
-    address public immutable RUSD;
-    address public immutable PUSD;
+    address public immutable ORUSD;
+    address public immutable OSUSD;
     address public immutable RUY;
 
     address private _outUSDBVault;
@@ -50,13 +50,13 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
     /**
      * @param owner - Address of owner
      * @param gasManager - Address of gasManager
-     * @param rusd - Address of RUSD Token
-     * @param pusd - Address of PUSD Token
+     * @param orUSD - Address of orUSD Token
+     * @param osUSD - Address of osUSD Token
      * @param ruy - Address of RUY Token
      */
-    constructor(address owner, address gasManager, address rusd, address pusd, address ruy) Ownable(owner) GasManagerable(gasManager) {
-        RUSD = rusd;
-        PUSD = pusd;
+    constructor(address owner, address gasManager, address orUSD, address osUSD, address ruy) Ownable(owner) GasManagerable(gasManager) {
+        ORUSD = orUSD;
+        OSUSD = osUSD;
         RUY = ruy;
     }
 
@@ -90,23 +90,23 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         return _positions[positionId];
     }
 
-    function getStakedRUSD() public view override returns (uint256) {
-        return IRUSD(RUSD).balanceOf(address(this));
+    function getStakedORUSD() public view override returns (uint256) {
+        return IORUSD(ORUSD).balanceOf(address(this));
     }
 
     function avgStakeDays() public view override returns (uint256) {
         return IERC20(RUY).totalSupply() / _totalStaked;
     }
 
-    function calcPUSDAmount(uint256 amountInRUSD) public view override returns (uint256) {
-        uint256 totalShares = IRUSD(PUSD).totalSupply();
+    function calcOSUSDAmount(uint256 amountInORUSD) public view override returns (uint256) {
+        uint256 totalShares = IOSUSD(OSUSD).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
-        uint256 yieldVault = getStakedRUSD();
+        uint256 yieldVault = getStakedORUSD();
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
         unchecked {
-            return amountInRUSD * totalShares / yieldVault;
+            return amountInORUSD * totalShares / yieldVault;
         }
     }
 
@@ -170,22 +170,22 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
     }
 
     /**
-     * @dev Allows user to deposit RUSD, then mints PUSD and RUY for the user.
-     * @param amountInRUSD - RUSD staked amount, amount % 1e18 == 0
+     * @dev Allows user to deposit orUSD, then mints osUSD and RUY for the user.
+     * @param amountInORUSD - orUSD staked amount, amount % 1e18 == 0
      * @param lockupDays - User can withdraw after lockupDays
      * @param positionOwner - Owner of position
-     * @param pusdTo - Receiver of PUSD
+     * @param osUSDTo - Receiver of osUSD
      * @param ruyTo - Receiver of RUY
-     * @notice User must have approved this contract to spend RUSD
+     * @notice User must have approved this contract to spend orUSD
      */
     function stake(
-        uint256 amountInRUSD, 
+        uint256 amountInORUSD, 
         uint16 lockupDays, 
         address positionOwner, 
-        address pusdTo, 
+        address osUSDTo, 
         address ruyTo
-    ) external override returns (uint256 amountInPUSD, uint256 amountInRUY) {
-        if (amountInRUSD < MINSTAKE) {
+    ) external override returns (uint256 amountInOSUSD, uint256 amountInRUY) {
+        if (amountInORUSD < MINSTAKE) {
             revert MinStakeInsufficient(MINSTAKE);
         }
         if (lockupDays < _minLockupDays || lockupDays > _maxLockupDays) {
@@ -193,29 +193,29 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         }
 
         address msgSender = msg.sender;
-        amountInPUSD = calcPUSDAmount(amountInRUSD);
+        amountInOSUSD = calcOSUSDAmount(amountInORUSD);
         uint256 positionId = _nextId();
         uint256 deadline;
         unchecked {
-            _totalStaked += amountInRUSD;
+            _totalStaked += amountInORUSD;
             deadline = block.timestamp + lockupDays * DAY;
-            amountInRUY = amountInRUSD * lockupDays;
+            amountInRUY = amountInORUSD * lockupDays;
         }
         _positions[positionId] =
-            Position(uint104(amountInRUSD), uint104(amountInPUSD), uint40(deadline), false, positionOwner);
+            Position(uint104(amountInORUSD), uint104(amountInOSUSD), uint40(deadline), false, positionOwner);
 
-        IERC20(RUSD).safeTransferFrom(msgSender, address(this), amountInRUSD);
-        IPUSD(PUSD).mint(pusdTo, amountInPUSD);
+        IERC20(ORUSD).safeTransferFrom(msgSender, address(this), amountInORUSD);
+        IOSUSD(OSUSD).mint(osUSDTo, amountInOSUSD);
         IRUY(RUY).mint(ruyTo, amountInRUY);
 
-        emit StakeRUSD(positionId, positionOwner, amountInRUSD, amountInPUSD, amountInRUY, deadline);
+        emit StakeORUSD(positionId, positionOwner, amountInORUSD, amountInOSUSD, amountInRUY, deadline);
     }
 
     /**
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked Principal Position Id
      */
-    function unstake(uint256 positionId) external override returns (uint256 amountInRUSD) {
+    function unstake(uint256 positionId) external override returns (uint256 amountInORUSD) {
         address msgSender = msg.sender;
         Position storage position = _positions[positionId];
         if (position.closed) {
@@ -226,34 +226,34 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         }
 
         position.closed = true;
-        amountInRUSD = position.RUSDAmount;
-        uint256 burnedPUSD = position.PUSDAmount;
+        amountInORUSD = position.orUSDAmount;
+        uint256 burnedOSUSD = position.osUSDAmount;
         uint256 deadline = position.deadline;
-        IPUSD(PUSD).burn(msgSender, burnedPUSD);
+        IOSUSD(OSUSD).burn(msgSender, burnedOSUSD);
         unchecked {
-            _totalStaked -= amountInRUSD;
+            _totalStaked -= amountInORUSD;
         }
 
         uint256 burnedRUY;
         uint256 currentTime = block.timestamp;
         if (deadline > currentTime) {
             unchecked {
-                burnedRUY = amountInRUSD * Math.ceilDiv(deadline - currentTime, DAY);
+                burnedRUY = amountInORUSD * Math.ceilDiv(deadline - currentTime, DAY);
             }
             IRUY(RUY).burn(msgSender, burnedRUY);
             position.deadline = uint40(currentTime);
 
             uint256 fee;
             unchecked {
-                fee = amountInRUSD * _forceUnstakeFee / RATIO;
-                amountInRUSD -= fee;
+                fee = amountInORUSD * _forceUnstakeFee / RATIO;
+                amountInORUSD -= fee;
             }
-            IRUSD(RUSD).withdraw(fee);
+            IORUSD(ORUSD).withdraw(fee);
             IERC20(USDB).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
         }
-        IERC20(RUSD).safeTransfer(msgSender, amountInRUSD);
+        IERC20(ORUSD).safeTransfer(msgSender, amountInORUSD);
 
-        emit Unstake(positionId, amountInRUSD, burnedPUSD, burnedRUY);
+        emit Unstake(positionId, amountInORUSD, burnedOSUSD, burnedRUY);
     }
 
     /**
@@ -280,7 +280,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
         position.deadline = uint40(newDeadLine);
 
         unchecked {
-            amountInRUY = position.RUSDAmount * extendDays;
+            amountInRUY = position.orUSDAmount * extendDays;
         }
         IRUY(RUY).mint(user, amountInRUY);
 
@@ -303,7 +303,7 @@ contract RUSDStakeManager is IRUSDStakeManager, Initializable, Ownable, GasManag
 
         address msgSender = msg.sender;
         IRUY(RUY).burn(msgSender, amountInRUY);
-        IERC20(RUSD).safeTransfer(msgSender, yieldAmount);
+        IERC20(ORUSD).safeTransfer(msgSender, yieldAmount);
 
         emit WithdrawYield(msgSender, amountInRUY, yieldAmount);
     }

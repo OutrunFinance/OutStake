@@ -5,15 +5,15 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "./interfaces/IRETH.sol";
+import "./interfaces/IORETH.sol";
 import "../../utils/Initializable.sol";
 import "../../blast/GasManagerable.sol";
 import "../../vault/interfaces/IOutETHVault.sol";
 
 /**
- * @title Outrun ETH Wrapped Token
+ * @title Outrun ETH
  */
-contract RETH is IRETH, ERC20, Initializable, Ownable, GasManagerable {
+contract ORETH is IORETH, ERC20, Initializable, Ownable, GasManagerable {
     address private _outETHVault;
 
     modifier onlyOutETHVault() {
@@ -23,7 +23,7 @@ contract RETH is IRETH, ERC20, Initializable, Ownable, GasManagerable {
         _;
     }
 
-    constructor(address owner, address gasManager) ERC20("Outrun Wrapped ETH", "RETH") Ownable(owner) GasManagerable(gasManager) {}
+    constructor(address owner, address gasManager) ERC20("Outrun ETH", "orETH") Ownable(owner) GasManagerable(gasManager) {}
 
     function outETHVault() external view override returns (address) {
         return _outETHVault;
@@ -38,7 +38,7 @@ contract RETH is IRETH, ERC20, Initializable, Ownable, GasManagerable {
     }
 
     /**
-     * @dev Allows user to deposit ETH and mint RETH
+     * @dev Allows user to deposit ETH and mint orETH
      */
     function deposit() public payable override {
         uint256 amount = msg.value;
@@ -54,8 +54,8 @@ contract RETH is IRETH, ERC20, Initializable, Ownable, GasManagerable {
     }
 
     /**
-     * @dev Allows user to withdraw ETH by RETH
-     * @param amount - Amount of RETH for burn
+     * @dev Allows user to withdraw ETH by orETH
+     * @param amount - Amount of orETH for burn
      */
     function withdraw(uint256 amount) external override {
         if (amount == 0) {

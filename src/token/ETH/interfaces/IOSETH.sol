@@ -4,22 +4,22 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
  /**
-  * @title PUSD interface
+  * @title OSETH interface
   */
-interface IPUSD is IERC20 {
+interface IOSETH is IERC20 {
     error ZeroInput();
 
     error PermissionDenied();
 
-    function RUSDStakeManager() external view returns (address);
+    function ORETHStakeManager() external view returns (address);
 
     function initialize(address stakeManager_) external;
-    
+
     function mint(address _account, uint256 _amount) external;
 
     function burn(address _account, uint256 _amount) external;
 
-    function setRUSDStakeManager(address _stakeManager) external;
+    function setORETHStakeManager(address _stakeManager) external;
 
-    event SetRUSDStakeManager(address _stakeManager);
+    event SetORETHStakeManager(address _stakeManager);
 }
