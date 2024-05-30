@@ -49,8 +49,6 @@ interface IORUSDStakeManager {
 
     function positionsOf(uint256 positionId) external view returns (Position memory);
 
-    function getStakedORUSD() external view returns (uint256);
-
     function avgStakeDays() external view returns (uint256);
 
     function calcOSUSDAmount(uint256 amountInORUSD) external view returns (uint256);

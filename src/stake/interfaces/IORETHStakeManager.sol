@@ -49,8 +49,6 @@ interface IORETHStakeManager {
 
     function positionsOf(uint256 positionId) external view returns (Position memory);
 
-    function getStakedORETH() external view returns (uint256);
-
     function avgStakeDays() external view returns (uint256);
 
     function calcOSETHAmount(uint256 amountInORETH) external view returns (uint256);
