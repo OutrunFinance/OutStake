@@ -167,7 +167,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
 
     /**
      * @dev Allows user to deposit orUSD, then mints osUSD and RUY for the user.
-     * @param amountInORUSD - orUSD staked amount, amount % 1e18 == 0
+     * @param amountInORUSD - orUSD staked amount
      * @param lockupDays - User can withdraw after lockupDays
      * @param positionOwner - Owner of position
      * @param osUSDTo - Receiver of osUSD
@@ -209,7 +209,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
 
     /**
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
-     * @param positionId - Staked Principal Position Id
+     * @param positionId - Staked usdb position id
      */
     function unstake(uint256 positionId) external override returns (uint256 amountInORUSD) {
         address msgSender = msg.sender;
@@ -254,7 +254,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
 
     /**
      * @dev Allows user to extend lock time
-     * @param positionId - Staked Principal Position Id
+     * @param positionId - Staked usdb position id
      * @param extendDays - Extend lockup days
      */
     function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256 amountInRUY) {
@@ -284,7 +284,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     }
 
     /**
-     * @dev Allows user burn RUY to  withdraw yield
+     * @dev Allows user burn RUY to withdraw yield
      * @param amountInRUY - Amount of RUY
      */
     function withdrawYield(uint256 amountInRUY) external override returns (uint256 yieldAmount) {

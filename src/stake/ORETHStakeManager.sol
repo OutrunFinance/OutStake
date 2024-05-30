@@ -206,7 +206,7 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
 
     /**
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
-     * @param positionId - Staked Principal Position Id
+     * @param positionId - Staked ETH Position Id
      */
     function unstake(uint256 positionId) external override returns (uint256 amountInORETH) {
         address msgSender = msg.sender;
@@ -251,7 +251,7 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
 
     /**
      * @dev Allows user to extend lock time
-     * @param positionId - Staked Principal Position Id
+     * @param positionId - Staked ETH Position Id
      * @param extendDays - Extend lockup days
      */
     function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256 amountInREY) {
