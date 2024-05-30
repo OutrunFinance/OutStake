@@ -54,7 +54,7 @@ contract OutstakeScript is BaseScript {
         );
         address stakeAddress = address(stakeManager);
         
-        // vault.initialize(operator, stakeAddress, revenuePool, 100, 15, 5);
+        // vault.initialize(operator, stakeAddress, revenuePool, 1000, 15, 5);
         stakeManager.initialize(vaultAddress, 30, 7, 365);
         orETH.initialize(vaultAddress);
         osETH.initialize(stakeAddress);
@@ -89,7 +89,7 @@ contract OutstakeScript is BaseScript {
         );
         address stakeAddress = address(stakeManager);
 
-        vault.initialize(operator, stakeAddress, revenuePool, 100, 15, 5);
+        vault.initialize(operator, stakeAddress, revenuePool, 1000, 15, 5);
         stakeManager.initialize(vaultAddress, 30, 7, 365);
         orUSD.initialize(vaultAddress);
         osUSD.initialize(stakeAddress);
