@@ -22,6 +22,7 @@ import "./interfaces/IORETHStakeManager.sol";
 contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
+    uint256 public constant OFFSET = 1000000 ether;
     uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e15;
     uint256 public constant DAY = 24 * 3600;
@@ -103,10 +104,8 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
 
         uint256 yieldVault = getStakedORETH();
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
-
-        unchecked {
-            return amountInORETH * totalShares / yieldVault;
-        }
+        
+        return amountInORETH * (totalShares + OFFSET) / (yieldVault + OFFSET);
     }
 
 

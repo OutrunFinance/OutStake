@@ -23,6 +23,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
+    uint256 public constant OFFSET = 100000000 ether;
     uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e18;
     uint256 public constant DAY = 24 * 3600;
@@ -106,7 +107,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         yieldVault = yieldVault == 0 ? 1 : yieldVault;
 
         unchecked {
-            return amountInORUSD * totalShares / yieldVault;
+            return amountInORUSD * (totalShares + OFFSET) / (yieldVault + OFFSET);
         }
     }
 
