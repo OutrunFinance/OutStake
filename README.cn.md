@@ -54,11 +54,15 @@ osETH 是向 ORETHStakeManager 质押 orETH 而铸造的质押本金代币，旨
 
 orETH YieldToken (REY) 代表对质押的 orETH 的收益权，通过质押 orETH 并指定一个锁定时间获得。REY 将 orETH 的质押收益单独剥离出来，REY 可以在二级市场上交易以及用于构建其他 DEFI 乐高。  
 
+#### 真正的通用同质化 YieldToken
+
 与目前市场上其他协议的 YieldToken 不同，其他协议的 YieldToken 都是 NFT 或者特殊的 FT，他们都是非同质化的，这种特性导致了 YieldToken 流动性缺失，并且降低了协议的可组合性。  
 
 Outrun 的 orETH YieldToken 是真正的同质化 Token (FT)，流动性非常好，可组合性极强。每将 1 orETH 锁定质押 1 天会铸造 1 个REY，将 _x_ orETH 锁定质押 _y_ 天就会铸造 _xy_ 个 REY，所以理论上 1 REY 锚定 1 orETH 质押 1 天所产生的原生收益。  
 
 REY 可以自由交易，并且可以无限制地即时销毁并赎回 YieldPool 中积累的原生收益，销毁时按销毁的 REY 数量占 REY 总量的比例赎回已产生原生收益。  
+
+#### 更高的原生收益
 
 REY 的存在能帮助长期质押者获得更多的收入。由于销毁时按销毁的 REY 数量占 REY 总供应量的比例赎回已产生原生收益，这可能会产生无常损失 Impermanent Loss (IL)，然而这个 IL 所对应的无常收益 Impermanent Profit (IP) 会分配至长期质押者，从而提高长期质押者的收入。
 
@@ -98,7 +102,7 @@ IPnLb = IPnLRb * Expected Profit_B
 
 ### Broader prospects
 
-REY 不仅仅是帮助 ETH 长期质押这获得更多收益的工具，它是一个真正的同质化 Yield Token，同时也是 Web3 第一个锚定 ETH 质押收益率的去中心化算法稳定币，在市场的博弈下 REY 始终与 ETH 质押收益率挂钩，当 REY 被低估时，用户可以从市场上购买 REY 然后销毁并从 YieldPool 赎回对应的收益。在未来 Outrun 会依托 REY 的特性和社区一起构建更多有意思的产品。
+REY 不仅仅是帮助 ETH 长期质押这获得更多收益的工具，它是一个真正的通用同质化 Yield Token，同时也是 Web3 第一个锚定 ETH 质押收益率的去中心化算法稳定币，在市场的博弈下 REY 始终与 ETH 质押收益率挂钩，当 REY 被低估时，用户可以从市场上购买 REY 然后销毁并从 YieldPool 赎回对应的收益。在未来 Outrun 会依托 REY 的特性和社区一起构建更多有意思的产品。
 
 ### UML时序图
 
