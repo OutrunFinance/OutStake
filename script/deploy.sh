@@ -1,3 +1,3 @@
 source ../.env
-forge clean && forge build
-forge script OutstakeScript.s.sol:OutstakeScript --rpc-url blast_sepolia --broadcast --verify --ffi -vvvv
+#forge clean && forge build
+forge script OutstakeScript.s.sol:OutstakeScript --rpc-url blast_sepolia --priority-gas-price 300 --with-gas-price 1200000 --broadcast --verify --ffi -vvvv

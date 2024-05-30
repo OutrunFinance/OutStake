@@ -27,10 +27,9 @@ contract OutstakeScript is BaseScript {
         gasManager = vm.envAddress("GAS_MANAGER");
         blastPoints = vm.envAddress("BLAST_POINTS");
         operator = vm.envAddress("OPERATOR");
-        IERC20(0x4200000000000000000000000000000000000022).approve(0xeA3037170670df423B52CdDdDAe06569b4d1EcD3, 100 ether);
         
-        // deployETH();
-        // deployUSDB();
+        //deployETH();
+        deployUSDB();
     }
 
     function deployETH() internal {
@@ -96,10 +95,10 @@ contract OutstakeScript is BaseScript {
         osUSD.initialize(stakeAddress);
         ruy.initialize(stakeAddress);
 
-        console.log("RUSD deployed on %s", orUSDAddress);
-        console.log("PUSD deployed on %s", osUSDAddress);
+        console.log("ORUSD deployed on %s", orUSDAddress);
+        console.log("OSUSD deployed on %s", osUSDAddress);
         console.log("RUY deployed on %s", ruyAddress);
         console.log("OutUSDBVault deployed on %s", vaultAddress);
-        console.log("RUSDStakeManager deployed on %s", stakeAddress);
+        console.log("ORUSDStakeManager deployed on %s", stakeAddress);
     }
 }
