@@ -23,7 +23,6 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
-    uint256 public constant OFFSET = 100000000 ether;
     uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e18;
     uint256 public constant DAY = 24 * 3600;
@@ -91,10 +90,6 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         return _positions[positionId];
     }
 
-    function getStakedORUSD() public view override returns (uint256) {
-        return IORUSD(ORUSD).balanceOf(address(this));
-    }
-
     function avgStakeDays() public view override returns (uint256) {
         return IERC20(RUY).totalSupply() / _totalStaked;
     }
@@ -103,11 +98,11 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         uint256 totalShares = IOSUSD(OSUSD).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
-        uint256 yieldVault = getStakedORUSD();
-        yieldVault = yieldVault == 0 ? 1 : yieldVault;
+        uint256 totalStaked_ = _totalStaked;
+        totalStaked_ = totalStaked_ == 0 ? 1 : totalStaked_;
 
         unchecked {
-            return amountInORUSD * (totalShares + OFFSET) / (yieldVault + OFFSET);
+            return amountInORUSD * totalShares / totalStaked_;
         }
     }
 

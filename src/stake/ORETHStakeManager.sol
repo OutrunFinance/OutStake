@@ -22,7 +22,6 @@ import "./interfaces/IORETHStakeManager.sol";
 contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
-    uint256 public constant OFFSET = 1000000 ether;
     uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e15;
     uint256 public constant DAY = 24 * 3600;
@@ -90,10 +89,6 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
         return _positions[positionId];
     }
 
-    function getStakedORETH() public view override returns (uint256) {
-        return IORETH(ORETH).balanceOf(address(this));
-    }
-
     function avgStakeDays() public view override returns (uint256) {
         return IERC20(REY).totalSupply() / _totalStaked;
     }
@@ -102,10 +97,10 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
         uint256 totalShares = IOSETH(OSETH).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
-        uint256 yieldVault = getStakedORETH();
-        yieldVault = yieldVault == 0 ? 1 : yieldVault;
+        uint256 totalStaked_ = _totalStaked;
+        totalStaked_ = totalStaked_ == 0 ? 1 : totalStaked_;
         
-        return amountInORETH * (totalShares + OFFSET) / (yieldVault + OFFSET);
+        return amountInORETH * totalShares / totalStaked_;
     }
 
 
