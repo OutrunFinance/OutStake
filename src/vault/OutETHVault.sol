@@ -151,7 +151,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
             IORETHStakeManager(_orETHStakeManager).accumYieldPool(nativeYield);
 
             unchecked {
-                dayRate = nativeYield * DAY_RATE_RATIO / IERC20(ORETH).balanceOf(_orETHStakeManager);
+                dayRate = nativeYield * DAY_RATE_RATIO / IORETHStakeManager(_orETHStakeManager).totalYieldPool();
             }
 
             emit ClaimETHYield(nativeYield, dayRate);
@@ -185,6 +185,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
             }
             
             IORETH(ORETH).mint(_orETHStakeManager, providerFeeAmount);
+            IORETHStakeManager(_orETHStakeManager).accumYieldPool(providerFeeAmount);
             Address.sendValue(payable(_revenuePool), protocolFeeAmount);
 
             emit FlashLoan(receiver, amount);

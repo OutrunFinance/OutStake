@@ -158,7 +158,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
             IORUSDStakeManager(_orUSDStakeManager).accumYieldPool(nativeYield);
 
             unchecked {
-                dayRate = nativeYield * DAY_RATE_RATIO / IERC20(ORUSD).balanceOf(_orUSDStakeManager);
+                dayRate = nativeYield * DAY_RATE_RATIO / IORUSDStakeManager(_orUSDStakeManager).totalYieldPool();
             }
 
             emit ClaimUSDBYield(nativeYield, dayRate);
@@ -191,6 +191,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
         }
         
         IORUSD(ORUSD).mint(_orUSDStakeManager, providerFeeAmount);
+        IORUSDStakeManager(_orUSDStakeManager).accumYieldPool(providerFeeAmount);
         IERC20(USDB).safeTransfer(_revenuePool, protocolFeeAmount);
 
         emit FlashLoan(receiver, amount);
