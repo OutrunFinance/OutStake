@@ -100,7 +100,7 @@ IPnLb = IPnLRb * Expected Profit_B
 
 通过上面的模型，Outrun 可以帮助长期质押者获得更多收益。我们认为 ETH 质押本身致力于使以太坊更去中心化与更安全，所以长期保护以太坊的用户更应该获得更多的奖励。
 
-### Broader prospects
+### 更广阔的前景
 
 REY 不仅仅是帮助 ETH 长期质押这获得更多收益的工具，它是一个真正的通用同质化 Yield Token，同时也是 Web3 第一个锚定 ETH 质押收益率的去中心化算法稳定币，在市场的博弈下 REY 始终与 ETH 质押收益率挂钩，当 REY 被低估时，用户可以从市场上购买 REY 然后销毁并从 YieldPool 赎回对应的收益。在未来 Outrun 会依托 REY 的特性和社区一起构建更多有意思的产品。
 
