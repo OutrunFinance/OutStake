@@ -77,7 +77,7 @@ contract OutstakeScript is BaseScript {
         RUY ruy = new RUY(owner, gasManager);
         address ruyAddress = address(ruy);
 
-        OutUSDBVault vault = new OutUSDBVault(owner, gasManager, osUSDAddress, blastPoints);
+        OutUSDBVault vault = new OutUSDBVault(owner, gasManager, orUSDAddress, blastPoints);
         address vaultAddress = address(vault);
 
         ORUSDStakeManager stakeManager = new ORUSDStakeManager(
