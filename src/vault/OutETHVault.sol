@@ -151,7 +151,7 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
             IORETHStakeManager(_orETHStakeManager).accumYieldPool(nativeYield);
 
             unchecked {
-                dayRate = nativeYield * DAY_RATE_RATIO / IORETHStakeManager(_orETHStakeManager).totalYieldPool();
+                dayRate = nativeYield * DAY_RATE_RATIO / IORETHStakeManager(_orETHStakeManager).totalStaked();
             }
 
             emit ClaimETHYield(nativeYield, dayRate);

@@ -158,7 +158,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
             IORUSDStakeManager(_orUSDStakeManager).accumYieldPool(nativeYield);
 
             unchecked {
-                dayRate = nativeYield * DAY_RATE_RATIO / IORUSDStakeManager(_orUSDStakeManager).totalYieldPool();
+                dayRate = nativeYield * DAY_RATE_RATIO / IORUSDStakeManager(_orUSDStakeManager).totalStaked();
             }
 
             emit ClaimUSDBYield(nativeYield, dayRate);
