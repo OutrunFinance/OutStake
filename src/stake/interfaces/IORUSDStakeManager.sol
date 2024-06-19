@@ -80,11 +80,13 @@ interface IORUSDStakeManager {
         address ruyTo
     ) external returns (uint256 amountInOSUSD, uint256 amountInRUY);
 
-    function unstake(uint256 positionId) external returns (uint256 amountInORUSD) ;
+    function unstake(uint256 positionId) external returns (uint256 amountInORUSD);
 
-    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256 amountInRUY) ;
+    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256 amountInRUY);
 
-    function withdrawYield(uint256 amountInRUY) external returns (uint256 yieldAmount) ;
+    function withdrawYield(uint256 amountInRUY) external returns (uint256 yieldAmount);
+
+    function handleUSDBYield(uint256 nativeYield) external returns (uint256 realYield);
 
     function accumYieldPool(uint256 nativeYield) external;
 

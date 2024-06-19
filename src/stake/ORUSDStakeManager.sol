@@ -305,6 +305,26 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     }
 
     /**
+     * @dev Handle the usdb native yield
+     */
+    function handleUSDBYield(uint256 nativeYield) external override onlyOutUSDBVault returns (uint256 realYield){
+        IOutUSDBVault vault = IOutUSDBVault(_outUSDBVault);
+        uint256 protocolFee = vault.protocolFee();
+        realYield = nativeYield;
+        if (protocolFee > 0) {
+            uint256 feeAmount;
+            unchecked {
+                feeAmount = realYield * protocolFee / RATIO;
+            }
+            IERC20(USDB).safeTransfer(vault.revenuePool(), feeAmount);
+            unchecked {
+                realYield -= feeAmount;
+                _totalYieldPool += realYield;
+            }
+        }
+    }
+
+    /**
      * @dev Accumulate the native yielde
      * @param nativeYield - Additional native yield amount
      */

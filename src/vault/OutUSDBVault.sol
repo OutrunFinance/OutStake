@@ -139,29 +139,18 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
     /**
      * @dev Claim USDB yield to this contract
      */
-    function claimUSDBYield() public override onlyOwner returns (uint256 nativeYield, uint256 dayRate) {
-        nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
+    function claimUSDBYield() public override onlyOwner returns (uint256 realYield, uint256 dayRate) {
+        uint256 nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
         if (nativeYield > 0) {
-            IERC20Rebasing(USDB).claim(address(this), nativeYield);
-            if (_protocolFee > 0) {
-                uint256 feeAmount;
-                unchecked {
-                    feeAmount = nativeYield * _protocolFee / RATIO;
-                }
-                IERC20(USDB).safeTransfer(_revenuePool, feeAmount);
-                unchecked {
-                    nativeYield -= feeAmount;
-                }
-            }
-
-            IORUSD(ORUSD).mint(_orUSDStakeManager, nativeYield);
-            IORUSDStakeManager(_orUSDStakeManager).accumYieldPool(nativeYield);
+            IERC20Rebasing(USDB).claim(_orUSDStakeManager, nativeYield);
+            realYield = IORUSDStakeManager(_orUSDStakeManager).handleUSDBYield(nativeYield);
+            IORUSD(ORUSD).mint(_orUSDStakeManager, realYield);
 
             unchecked {
-                dayRate = nativeYield * DAY_RATE_RATIO / IORUSDStakeManager(_orUSDStakeManager).totalStaked();
+                dayRate = realYield * DAY_RATE_RATIO / IORUSDStakeManager(_orUSDStakeManager).totalStaked();
             }
 
-            emit ClaimUSDBYield(nativeYield, dayRate);
+            emit ClaimUSDBYield(realYield, dayRate);
         }
     }
 
