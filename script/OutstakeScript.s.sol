@@ -50,7 +50,7 @@ contract OutstakeScript is BaseScript {
         address stakeAddress = address(stakeManager);
         
         stakeManager.initialize(30, 7, 365);
-        orETH.initialize(stakeAddress);
+        //orETH.initialize(stakeAddress);
         osETH.initialize(stakeAddress);
         rey.initialize(stakeAddress);
 
