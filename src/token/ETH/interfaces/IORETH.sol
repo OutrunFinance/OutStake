@@ -7,25 +7,67 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
   * @title ORETH interface
   */
 interface IORETH is IERC20 {
-    error ZeroInput();
+	struct FlashLoanFee {
+        uint256 providerFeeRate;
+        uint256 protocolFeeRate;
+    }
 
-    error PermissionDenied();
 
-    function outETHVault() external view returns (address);
+	error ZeroInput();
 
-    function initialize(address _vault) external;
-    
-    function deposit() payable external;
+	error PermissionDenied();
 
-    function withdraw(uint256 amount) external;
+    error FeeRateOverflow();
 
-    function mint(address _account, uint256 _amount) external;
+    error FlashLoanRepayFailed();
 
-    function setOutETHVault(address _vault) external;
-    
-    event Deposit(address indexed _account, uint256 _amount);
 
-    event Withdraw(address indexed _account, uint256 _amount);
+    function ORETHStakeManager() external view returns (address);
 
-    event SetOutETHVault(address _outETHVault);
+    function revenuePool() external view returns (address);
+
+    function protocolFee() external view returns (uint256);
+
+    function flashLoanFee() external view returns (FlashLoanFee memory);
+
+
+    function setAutoBot(address _bot) external;
+
+    function setProtocolFee(uint256 protocolFee_) external;
+
+    function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) external;
+
+    function setRevenuePool(address _pool) external;
+
+    function setORETHStakeManager(address _orETHStakeManager) external;
+
+
+    function initialize(address stakeManager_) external;
+
+	function deposit() payable external;
+
+	function withdraw(uint256 amount) external;
+
+    function accumETHYield() external returns (uint256 nativeYield, uint256 dayRate);
+
+    function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external;
+
+
+	event SetAutoBot(address _bot);
+
+    event SetORETHStakeManager(address _orETHStakeManager);
+
+	event SetRevenuePool(address _pool);
+
+	event SetProtocolFee(uint256 protocolFee_);
+
+	event SetFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate);
+
+	event Deposit(address indexed _account, uint256 _amount);
+
+	event Withdraw(address indexed _account, uint256 _amount);
+
+	event AccumETHYield(uint256 amount, uint256 dayRate);
+
+    event FlashLoan(address indexed receiver, uint256 amount);
 }

@@ -35,8 +35,6 @@ interface IORETHStakeManager {
     
 
     /** view **/
-    function outETHVault() external view returns (address);
-
     function forceUnstakeFee() external view returns (uint256);
 
     function totalStaked() external view returns (uint256);
@@ -61,12 +59,9 @@ interface IORETHStakeManager {
 
     function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
 
-    function setOutETHVault(address _outETHVault) external;
-
 
     /** function **/
     function initialize(
-        address outETHVault_,
         uint256 forceUnstakeFee_, 
         uint16 minLockupDays_, 
         uint16 maxLockupDays_
@@ -110,6 +105,4 @@ interface IORETHStakeManager {
     event SetMaxLockupDays(uint16 maxLockupDays);
 
     event SetForceUnstakeFee(uint256 forceUnstakeFee);
-
-    event SetOutETHVault(address outETHVault);
 }
