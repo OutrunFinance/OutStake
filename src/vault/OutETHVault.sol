@@ -140,11 +140,13 @@ contract OutETHVault is IOutETHVault, ReentrancyGuard, Initializable, Ownable, G
         nativeYield = BLAST.claimAllYield(address(this), address(this));
         if (nativeYield > 0) {
             if (_protocolFee > 0) {
+                uint256 feeAmount;
                 unchecked {
-                    uint256 feeAmount = nativeYield * _protocolFee / RATIO;
-                    Address.sendValue(payable(_revenuePool), feeAmount);
+                    feeAmount = nativeYield * _protocolFee / RATIO;
                     nativeYield -= feeAmount;
                 }
+
+                Address.sendValue(payable(_revenuePool), feeAmount);
             }
 
             IORETH(ORETH).mint(_orETHStakeManager, nativeYield);

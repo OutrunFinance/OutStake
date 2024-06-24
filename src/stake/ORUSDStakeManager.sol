@@ -149,9 +149,9 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     /**
      * @dev Initializer
      * @param outUSDBVault_ - Address of OutUSDBVault
+     * @param forceUnstakeFee_ - Force unstake fee
      * @param minLockupDays_ - Min lockup days
      * @param maxLockupDays_ - Max lockup days
-     * @param forceUnstakeFee_ - Force unstake fee
      */
     function initialize(
         address outUSDBVault_, 
@@ -307,21 +307,26 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     /**
      * @dev Handle the usdb native yield
      */
-    function handleUSDBYield(uint256 nativeYield) external override onlyOutUSDBVault returns (uint256 realYield){
-        IOutUSDBVault vault = IOutUSDBVault(_outUSDBVault);
-        uint256 protocolFee = vault.protocolFee();
-        realYield = nativeYield;
+    function handleUSDBYield(
+        uint256 protocolFee, 
+        address revenuePool
+    ) external override onlyOutUSDBVault returns (uint256) {
+        uint256 nativeYield = IERC20(USDB).balanceOf(address(this));
         if (protocolFee > 0) {
             uint256 feeAmount;
             unchecked {
-                feeAmount = realYield * protocolFee / RATIO;
+                feeAmount = nativeYield * protocolFee / RATIO;
+                nativeYield -= feeAmount;
             }
-            IERC20(USDB).safeTransfer(vault.revenuePool(), feeAmount);
-            unchecked {
-                realYield -= feeAmount;
-                _totalYieldPool += realYield;
-            }
+            IERC20(USDB).safeTransfer(revenuePool, feeAmount);
         }
+
+        IERC20(USDB).safeTransfer(_outUSDBVault, nativeYield);
+        unchecked {
+            _totalYieldPool += nativeYield;
+        }
+
+        return nativeYield;
     }
 
     /**

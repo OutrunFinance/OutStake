@@ -86,7 +86,10 @@ interface IORUSDStakeManager {
 
     function withdrawYield(uint256 amountInRUY) external returns (uint256 yieldAmount);
 
-    function handleUSDBYield(uint256 nativeYield) external returns (uint256 realYield);
+    function handleUSDBYield(
+        uint256 protocolFee, 
+        address revenuePool
+    ) external returns (uint256);
 
     function accumYieldPool(uint256 nativeYield) external;
 

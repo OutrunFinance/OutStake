@@ -143,7 +143,7 @@ contract OutUSDBVault is IOutUSDBVault, ReentrancyGuard, Initializable, Ownable,
         uint256 nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
         if (nativeYield > 0) {
             IERC20Rebasing(USDB).claim(_orUSDStakeManager, nativeYield);
-            realYield = IORUSDStakeManager(_orUSDStakeManager).handleUSDBYield(nativeYield);
+            realYield = IORUSDStakeManager(_orUSDStakeManager).handleUSDBYield(_protocolFee, _revenuePool);
             IORUSD(ORUSD).mint(_orUSDStakeManager, realYield);
 
             unchecked {
