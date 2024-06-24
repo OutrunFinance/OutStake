@@ -48,7 +48,6 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
         uint256 providerFeeRate_, 
         uint256 protocolFeeRate_
     ) ERC20("Outrun USDB", "orUSD") Ownable(owner) GasManagerable(gasManager) {
-        IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
         setAutoBot(autoBot_);
         setRevenuePool(revenuePool_);
         setProtocolFee(protocolFee_);
@@ -114,6 +113,7 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @param stakeManager_ - Address of orUSDStakeManager
      */
     function initialize(address stakeManager_) external override initializer {
+        IERC20Rebasing(USDB).configure(YieldMode.CLAIMABLE);
         setORUSDStakeManager(stakeManager_);
     }
 

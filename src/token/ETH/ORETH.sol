@@ -43,7 +43,6 @@ contract ORETH is IORETH, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
         uint256 providerFeeRate_, 
         uint256 protocolFeeRate_
     ) ERC20("Outrun ETH", "orETH") Ownable(owner) GasManagerable(gasManager) {
-        BLAST.configureClaimableYield();
         setAutoBot(autoBot_);
         setRevenuePool(revenuePool_);
         setProtocolFee(protocolFee_);
@@ -109,6 +108,7 @@ contract ORETH is IORETH, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @param stakeManager_ - Address of orETHStakeManager
      */
     function initialize(address stakeManager_) external override initializer {
+        BLAST.configureClaimableYield();
         setORETHStakeManager(stakeManager_);
     }
 
