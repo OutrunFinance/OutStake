@@ -11,7 +11,6 @@ import "../utils/AutoIncrementId.sol";
 import "../token/USDB/interfaces/IORUSD.sol";
 import "../token/USDB/interfaces/IOSUSD.sol";
 import "../token/USDB/interfaces/IRUY.sol";
-import "../vault/interfaces/IOutUSDBVault.sol";
 import "../blast/GasManagerable.sol";
 import "./interfaces/IORUSDStakeManager.sol";
 
@@ -31,7 +30,6 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     address public immutable OSUSD;
     address public immutable RUY;
 
-    address private _outUSDBVault;
     uint256 private _forceUnstakeFee;
     uint16 private _minLockupDays;
     uint16 private _maxLockupDays;
@@ -40,8 +38,8 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
 
     mapping(uint256 positionId => Position) private _positions;
 
-    modifier onlyOutUSDBVault() {
-        if (msg.sender != _outUSDBVault) {
+    modifier onlyORUSDContract() {
+        if (msg.sender != ORUSD) {
             revert PermissionDenied();
         }
         _;
@@ -62,11 +60,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
 
 
     /** view **/
-    function outUSDBVault() external view override returns (address) {
-        return _outUSDBVault;
-    }
-
-    function forceUnstakeFee() external view override returns (uint256) {
+     function forceUnstakeFee() external view override returns (uint256) {
         return _forceUnstakeFee;
     }
 
@@ -136,30 +130,19 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         emit SetForceUnstakeFee(forceUnstakeFee_);
     }
 
-    /**
-     * @param outUSDBVault_ - Address of outUSDBVault
-     */
-    function setOutUSDBVault(address outUSDBVault_) public override onlyOwner {
-        _outUSDBVault = outUSDBVault_;
-        emit SetOutUSDBVault(outUSDBVault_);
-    }
-
 
     /** function **/
     /**
      * @dev Initializer
-     * @param outUSDBVault_ - Address of OutUSDBVault
      * @param forceUnstakeFee_ - Force unstake fee
      * @param minLockupDays_ - Min lockup days
      * @param maxLockupDays_ - Max lockup days
      */
     function initialize(
-        address outUSDBVault_, 
         uint256 forceUnstakeFee_, 
         uint16 minLockupDays_, 
         uint16 maxLockupDays_
     ) external override initializer {
-        setOutUSDBVault(outUSDBVault_);
         setForceUnstakeFee(forceUnstakeFee_);
         setMinLockupDays(minLockupDays_);
         setMaxLockupDays(maxLockupDays_);
@@ -245,7 +228,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
                 amountInORUSD -= fee;
             }
             IORUSD(ORUSD).withdraw(fee);
-            IERC20(USDB).safeTransfer(IOutUSDBVault(_outUSDBVault).revenuePool(), fee);
+            IERC20(USDB).safeTransfer(IORUSD(ORUSD).revenuePool(), fee);
         }
         IERC20(ORUSD).safeTransfer(msgSender, amountInORUSD);
 
@@ -310,7 +293,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     function handleUSDBYield(
         uint256 protocolFee, 
         address revenuePool
-    ) external override onlyOutUSDBVault returns (uint256) {
+    ) external override onlyORUSDContract returns (uint256) {
         uint256 nativeYield = IERC20(USDB).balanceOf(address(this));
         if (protocolFee > 0) {
             uint256 feeAmount;
@@ -321,7 +304,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
             IERC20(USDB).safeTransfer(revenuePool, feeAmount);
         }
 
-        IERC20(USDB).safeTransfer(_outUSDBVault, nativeYield);
+        IERC20(USDB).safeTransfer(ORUSD, nativeYield);
         unchecked {
             _totalYieldPool += nativeYield;
         }
@@ -333,7 +316,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
      * @dev Accumulate the native yielde
      * @param nativeYield - Additional native yield amount
      */
-    function accumYieldPool(uint256 nativeYield) external override onlyOutUSDBVault {
+    function accumYieldPool(uint256 nativeYield) external override onlyORUSDContract {
         unchecked {
             _totalYieldPool += nativeYield;
         }

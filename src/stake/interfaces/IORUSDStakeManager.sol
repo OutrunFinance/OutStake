@@ -35,8 +35,6 @@ interface IORUSDStakeManager {
     
 
     /** view **/
-    function outUSDBVault() external view returns (address);
-
     function forceUnstakeFee() external view returns (uint256);
 
     function totalStaked() external view returns (uint256);
@@ -61,12 +59,9 @@ interface IORUSDStakeManager {
 
     function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
 
-    function setOutUSDBVault(address _OutUSDBVault) external;
-
 
     /** function **/
     function initialize(
-        address outUSDBVault_, 
         uint256 forceUnstakeFee_, 
         uint16 minLockupDays_, 
         uint16 maxLockupDays_
@@ -114,6 +109,4 @@ interface IORUSDStakeManager {
     event SetMaxLockupDays(uint16 maxLockupDays);
 
     event SetForceUnstakeFee(uint256 forceUnstakeFee);
-    
-    event SetOutUSDBVault(address outUSDBVault);
 }

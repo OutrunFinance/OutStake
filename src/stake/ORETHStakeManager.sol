@@ -11,7 +11,6 @@ import "../utils/AutoIncrementId.sol";
 import "../token/ETH/interfaces/IREY.sol";
 import "../token/ETH/interfaces/IORETH.sol";
 import "../token/ETH/interfaces/IOSETH.sol";
-import "../vault/interfaces/IOutETHVault.sol";
 import "../blast/GasManagerable.sol";
 import "./interfaces/IORETHStakeManager.sol";
 
@@ -30,7 +29,6 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
     address public immutable OSETH;
     address public immutable REY;
 
-    address private _outETHVault;
     uint256 private _forceUnstakeFee;
     uint16 private _minLockupDays;
     uint16 private _maxLockupDays;
@@ -38,13 +36,6 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
     uint256 private _totalYieldPool;
 
     mapping(uint256 positionId => Position) private _positions;
-
-    modifier onlyOutETHVault() {
-        if (msg.sender != _outETHVault) {
-            revert PermissionDenied();
-        }
-        _;
-    }
 
     /**
      * @param owner - Address of owner
@@ -61,10 +52,6 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
 
 
     /** view **/
-    function outETHVault() external view override returns (address) {
-        return _outETHVault;
-    }
-
     function forceUnstakeFee() external view override returns (uint256) {
         return _forceUnstakeFee;
     }
@@ -133,30 +120,19 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
         emit SetForceUnstakeFee(forceUnstakeFee_);
     }
 
-    /**
-     * @param outETHVault_ - Address of outETHVault
-     */
-    function setOutETHVault(address outETHVault_) public override onlyOwner {
-        _outETHVault = outETHVault_;
-        emit SetOutETHVault(outETHVault_);
-    }
-
     
     /** function **/
     /**
      * @dev Initializer
-     * @param outETHVault_ - Address of OutETHVault
      * @param forceUnstakeFee_ - Force unstake fee
      * @param minLockupDays_ - Min lockup days
      * @param maxLockupDays_ - Max lockup days
      */
     function initialize(
-        address outETHVault_,
         uint256 forceUnstakeFee_, 
         uint16 minLockupDays_, 
         uint16 maxLockupDays_
     ) external override initializer {
-        setOutETHVault(outETHVault_);
         setForceUnstakeFee(forceUnstakeFee_);
         setMinLockupDays(minLockupDays_);
         setMaxLockupDays(maxLockupDays_);
@@ -242,7 +218,7 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
                 amountInORETH -= fee;
             }
             IORETH(ORETH).withdraw(fee);
-            Address.sendValue(payable(IOutETHVault(_outETHVault).revenuePool()), fee);
+            Address.sendValue(payable(IORETH(ORETH).revenuePool()), fee);
         }        
         IERC20(ORETH).safeTransfer(msgSender, amountInORETH);
 
@@ -304,7 +280,11 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
      * @dev Accumulate the native yield
      * @param nativeYield - Additional native yield amount
      */
-    function accumYieldPool(uint256 nativeYield) external override onlyOutETHVault {
+    function accumYieldPool(uint256 nativeYield) external override {
+        if (msg.sender != ORETH) {
+            revert PermissionDenied();
+        }
+
         unchecked {
             _totalYieldPool += nativeYield;
         }
