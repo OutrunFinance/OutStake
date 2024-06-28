@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IORUSD.sol";
 import "../../utils/Initializable.sol";
 import "../../utils/IOutFlashCallee.sol";
+import "../../blast/IBlastPoints.sol";
 import "../../blast/GasManagerable.sol";
 import "../../blast/IERC20Rebasing.sol";
 import "../../stake/interfaces/IORUSDStakeManager.sol";
@@ -23,6 +24,7 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
     address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant RATIO = 10000;
     uint256 public constant DAY_RATE_RATIO = 1e8;
+    address private constant BLAST_POINTS = 0x2fc95838c71e76ec69ff817983BFf17c710F34E0;
 
     address private _autoBot;
     address private _orUSDStakeManager;
@@ -44,6 +46,7 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
         address gasManager,
         address autoBot_,
         address revenuePool_, 
+        address pointsOperator, 
         uint256 protocolFee_, 
         uint256 providerFeeRate_, 
         uint256 protocolFeeRate_
@@ -52,6 +55,7 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
         setRevenuePool(revenuePool_);
         setProtocolFee(protocolFee_);
         setFlashLoanFee(providerFeeRate_, protocolFeeRate_);
+        IBlastPoints(BLAST_POINTS).configurePointsOperator(pointsOperator);
     }
 
     function AutoBot() external view returns (address) {
