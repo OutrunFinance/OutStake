@@ -30,11 +30,12 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     address public immutable OSUSD;
     address public immutable RUY;
 
+    uint256 private _burnedYTFee;
     uint256 private _forceUnstakeFee;
-    uint16 private _minLockupDays;
-    uint16 private _maxLockupDays;
     uint256 private _totalStaked;
     uint256 private _totalYieldPool;
+    uint128 private _minLockupDays;
+    uint128 private _maxLockupDays;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -64,6 +65,10 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         return _forceUnstakeFee;
     }
 
+    function burnedYTFee() external view override returns (uint256) {
+        return _burnedYTFee;
+    }
+
     function totalStaked() external view override returns (uint256) {
         return _totalStaked;
     }
@@ -72,11 +77,11 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         return _totalYieldPool;
     }
 
-    function minLockupDays() external view override returns (uint16) {
+    function minLockupDays() external view override returns (uint128) {
         return _minLockupDays;
     }
 
-    function maxLockupDays() external view override returns (uint16) {
+    function maxLockupDays() external view override returns (uint128) {
         return _maxLockupDays;
     }
 
@@ -88,7 +93,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         return IERC20(RUY).totalSupply() / _totalStaked;
     }
 
-    function calcOSUSDAmount(uint256 amountInORUSD) public view override returns (uint256) {
+    function calcOSUSDAmount(uint128 amountInORUSD) public view override returns (uint256) {
         uint256 totalShares = IOSUSD(OSUSD).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
@@ -105,7 +110,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     /**
      * @param minLockupDays_ - Min lockup days
      */
-    function setMinLockupDays(uint16 minLockupDays_) public override onlyOwner {
+    function setMinLockupDays(uint128 minLockupDays_) public override onlyOwner {
         _minLockupDays = minLockupDays_;
         emit SetMinLockupDays(minLockupDays_);
     }
@@ -113,7 +118,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     /**
      * @param maxLockupDays_ - Max lockup days
      */
-    function setMaxLockupDays(uint16 maxLockupDays_) public override onlyOwner {
+    function setMaxLockupDays(uint128 maxLockupDays_) public override onlyOwner {
         _maxLockupDays = maxLockupDays_;
         emit SetMaxLockupDays(maxLockupDays_);
     }
@@ -123,11 +128,23 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
      */
     function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
         if (forceUnstakeFee_ > RATIO) {
-            revert ForceUnstakeFeeOverflow();
+            revert FeeOverflow();
         }
 
         _forceUnstakeFee = forceUnstakeFee_;
         emit SetForceUnstakeFee(forceUnstakeFee_);
+    }
+
+    /**
+     * @param burnedYTFee_ - Burn more YT when force unstake
+     */
+    function setBurnedYTFee(uint256 burnedYTFee_) public override onlyOwner {
+        if (burnedYTFee_ > RATIO) {
+            revert FeeOverflow();
+        }
+
+        _burnedYTFee = burnedYTFee_;
+        emit SetBurnedYTFee(burnedYTFee_);
     }
 
 
@@ -140,10 +157,12 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
      */
     function initialize(
         uint256 forceUnstakeFee_, 
-        uint16 minLockupDays_, 
-        uint16 maxLockupDays_
+        uint256 burnedYTFee_, 
+        uint128 minLockupDays_, 
+        uint128 maxLockupDays_
     ) external override initializer {
         setForceUnstakeFee(forceUnstakeFee_);
+        setBurnedYTFee(burnedYTFee_);
         setMinLockupDays(minLockupDays_);
         setMaxLockupDays(maxLockupDays_);
     }
@@ -158,8 +177,8 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
      * @notice User must have approved this contract to spend orUSD
      */
     function stake(
-        uint256 amountInORUSD, 
-        uint16 lockupDays, 
+        uint128 amountInORUSD, 
+        uint256 lockupDays, 
         address positionOwner, 
         address osUSDTo, 
         address ruyTo
@@ -180,8 +199,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
             deadline = block.timestamp + lockupDays * DAY;
             amountInRUY = amountInORUSD * lockupDays;
         }
-        _positions[positionId] =
-            Position(uint104(amountInORUSD), uint104(amountInOSUSD), uint40(deadline), false, positionOwner);
+        _positions[positionId] = Position(positionOwner, amountInORUSD, uint128(amountInOSUSD), deadline, false);
 
         IERC20(ORUSD).safeTransferFrom(msgSender, address(this), amountInORUSD);
         IOSUSD(OSUSD).mint(osUSDTo, amountInOSUSD);
@@ -217,10 +235,10 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         uint256 currentTime = block.timestamp;
         if (deadline > currentTime) {
             unchecked {
-                burnedRUY = amountInORUSD * Math.ceilDiv(deadline - currentTime, DAY);
+                burnedRUY = amountInORUSD * Math.ceilDiv(deadline - currentTime, DAY) * (RATIO + _burnedYTFee) / RATIO;
             }
             IRUY(RUY).burn(msgSender, burnedRUY);
-            position.deadline = uint40(currentTime);
+            position.deadline = currentTime;
 
             uint256 fee;
             unchecked {

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "./BaseScript.s.sol";
 import "../src/token/ETH/ORETH.sol";
 import "../src/token/ETH/OSETH.sol";
@@ -10,7 +12,6 @@ import "../src/token/USDB/OSUSD.sol";
 import "../src/token/USDB/RUY.sol";
 import "../src/stake/ORETHStakeManager.sol";
 import "../src/stake/ORUSDStakeManager.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract OutstakeScript is BaseScript {
     address internal owner;
@@ -18,20 +19,22 @@ contract OutstakeScript is BaseScript {
     address internal gasManager;
     address internal revenuePool;
     address internal blastPoints;
-    address internal operator;
+    address internal pointsOperator;
 
     function run() public broadcaster {
         owner = vm.envAddress("OWNER");
         autoBot = vm.envAddress("AUTO_BOT");
         revenuePool = vm.envAddress("REVENUE_POOL");
         gasManager = vm.envAddress("GAS_MANAGER");
+        pointsOperator = vm.envAddress("POINTS_OPERATOR");
+        
         
         //deployETH();
         deployUSDB();
     }
 
     function deployETH() internal {
-        ORETH orETH = new ORETH(owner, gasManager, autoBot, revenuePool, 1000, 15, 5);
+        ORETH orETH = new ORETH(owner, gasManager, autoBot, revenuePool, pointsOperator, 1000, 15, 5);
         address orETHAddress = address(orETH);
 
         OSETH osETH = new OSETH(owner, gasManager);
@@ -49,7 +52,7 @@ contract OutstakeScript is BaseScript {
         );
         address stakeAddress = address(stakeManager);
         
-        stakeManager.initialize(30, 7, 365);
+        stakeManager.initialize(50, 2000, 7, 365);
         //orETH.initialize(stakeAddress);
         osETH.initialize(stakeAddress);
         rey.initialize(stakeAddress);
@@ -61,7 +64,7 @@ contract OutstakeScript is BaseScript {
     }
 
     function deployUSDB() internal {
-        ORUSD orUSD = new ORUSD(owner, gasManager, autoBot, revenuePool, 1000, 15, 5);
+        ORUSD orUSD = new ORUSD(owner, gasManager, autoBot, revenuePool, pointsOperator, 1000, 15, 5);
         address orUSDAddress = address(orUSD);
 
         OSUSD osUSD = new OSUSD(owner, gasManager);
@@ -79,7 +82,7 @@ contract OutstakeScript is BaseScript {
         );
         address stakeAddress = address(stakeManager);
 
-        stakeManager.initialize(30, 7, 365);
+        stakeManager.initialize(50, 2000, 7, 365);
         orUSD.initialize(stakeAddress);
         osUSD.initialize(stakeAddress);
         ruy.initialize(stakeAddress);

@@ -6,11 +6,11 @@ pragma solidity ^0.8.24;
  */
 interface IORETHStakeManager {
     struct Position {
-        uint104 orETHAmount;
-        uint104 osETHAmount;
-        uint40 deadline;
-        bool closed;
         address owner;
+        uint128 orETHAmount;
+        uint128 osETHAmount;
+        uint256 deadline;
+        bool closed;
     }
 
 
@@ -31,45 +31,50 @@ interface IORETHStakeManager {
 
     error InvalidReduceDays();
     
-    error ForceUnstakeFeeOverflow();
+    error FeeOverflow();
     
 
     /** view **/
     function forceUnstakeFee() external view returns (uint256);
 
+    function burnedYTFee() external view returns (uint256);
+
     function totalStaked() external view returns (uint256);
 
     function totalYieldPool() external view returns (uint256);
 
-    function minLockupDays() external view returns (uint16);
+    function minLockupDays() external view returns (uint128);
 
-    function maxLockupDays() external view returns (uint16);
+    function maxLockupDays() external view returns (uint128);
 
     function positionsOf(uint256 positionId) external view returns (Position memory);
 
     function avgStakeDays() external view returns (uint256);
 
-    function calcOSETHAmount(uint256 amountInORETH) external view returns (uint256);
+    function calcOSETHAmount(uint128 amountInORETH) external view returns (uint256);
 
 
     /** setter **/
-    function setMinLockupDays(uint16 _minLockupDays) external;
+    function setMinLockupDays(uint128 _minLockupDays) external;
 
-    function setMaxLockupDays(uint16 _maxLockupDays) external;
+    function setMaxLockupDays(uint128 _maxLockupDays) external;
 
     function setForceUnstakeFee(uint256 _forceUnstakeFee) external;
+
+    function setBurnedYTFee(uint256 _burnedYTFee) external;
 
 
     /** function **/
     function initialize(
         uint256 forceUnstakeFee_, 
-        uint16 minLockupDays_, 
-        uint16 maxLockupDays_
+        uint256 burnedYTFee_, 
+        uint128 minLockupDays_, 
+        uint128 maxLockupDays_
     ) external;
 
     function stake(
-        uint256 amountInORETH, 
-        uint16 lockupDays, 
+        uint128 amountInORETH, 
+        uint256 lockupDays, 
         address positionOwner, 
         address osETHTo, 
         address reyTo
@@ -100,9 +105,11 @@ interface IORETHStakeManager {
 
     event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 newDeadLine, uint256 mintedREY);
 
-    event SetMinLockupDays(uint16 minLockupDays);
+    event SetMinLockupDays(uint128 minLockupDays);
 
-    event SetMaxLockupDays(uint16 maxLockupDays);
+    event SetMaxLockupDays(uint128 maxLockupDays);
 
     event SetForceUnstakeFee(uint256 forceUnstakeFee);
+
+    event SetBurnedYTFee(uint256 burnedYTFee);
 }

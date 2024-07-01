@@ -29,11 +29,12 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
     address public immutable OSETH;
     address public immutable REY;
 
+    uint256 private _burnedYTFee;
     uint256 private _forceUnstakeFee;
-    uint16 private _minLockupDays;
-    uint16 private _maxLockupDays;
     uint256 private _totalStaked;
     uint256 private _totalYieldPool;
+    uint128 private _minLockupDays;
+    uint128 private _maxLockupDays;
 
     mapping(uint256 positionId => Position) private _positions;
 
@@ -56,6 +57,10 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
         return _forceUnstakeFee;
     }
 
+    function burnedYTFee() external view override returns (uint256) {
+        return _burnedYTFee;
+    }
+
     function totalStaked() external view override returns (uint256) {
         return _totalStaked;
     }
@@ -64,11 +69,11 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
         return _totalYieldPool;
     }
 
-    function minLockupDays() external view override returns (uint16) {
+    function minLockupDays() external view override returns (uint128) {
         return _minLockupDays;
     }
 
-    function maxLockupDays() external view override returns (uint16) {
+    function maxLockupDays() external view override returns (uint128) {
         return _maxLockupDays;
     }
 
@@ -80,7 +85,7 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
         return IERC20(REY).totalSupply() / _totalStaked;
     }
 
-    function calcOSETHAmount(uint256 amountInORETH) public view override returns (uint256) {
+    function calcOSETHAmount(uint128 amountInORETH) public view override returns (uint256) {
         uint256 totalShares = IOSETH(OSETH).totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
 
@@ -95,7 +100,7 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
     /**
      * @param minLockupDays_ - Min lockup days
      */
-    function setMinLockupDays(uint16 minLockupDays_) public override onlyOwner {
+    function setMinLockupDays(uint128 minLockupDays_) public override onlyOwner {
         _minLockupDays = minLockupDays_;
         emit SetMinLockupDays(minLockupDays_);
     }
@@ -103,7 +108,7 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
     /**
      * @param maxLockupDays_ - Max lockup days
      */
-    function setMaxLockupDays(uint16 maxLockupDays_) public override onlyOwner {
+    function setMaxLockupDays(uint128 maxLockupDays_) public override onlyOwner {
         _maxLockupDays = maxLockupDays_;
         emit SetMaxLockupDays(maxLockupDays_);
     }
@@ -113,11 +118,23 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
      */
     function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
         if (forceUnstakeFee_ > RATIO) {
-            revert ForceUnstakeFeeOverflow();
+            revert FeeOverflow();
         }
 
         _forceUnstakeFee = forceUnstakeFee_;
         emit SetForceUnstakeFee(forceUnstakeFee_);
+    }
+
+    /**
+     * @param burnedYTFee_ - Burn more YT when force unstake
+     */
+    function setBurnedYTFee(uint256 burnedYTFee_) public override onlyOwner {
+        if (burnedYTFee_ > RATIO) {
+            revert FeeOverflow();
+        }
+
+        _burnedYTFee = burnedYTFee_;
+        emit SetBurnedYTFee(burnedYTFee_);
     }
 
     
@@ -125,22 +142,25 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
     /**
      * @dev Initializer
      * @param forceUnstakeFee_ - Force unstake fee
+     * @param burnedYTFee_ - Burn more YT when force unstake
      * @param minLockupDays_ - Min lockup days
      * @param maxLockupDays_ - Max lockup days
      */
     function initialize(
         uint256 forceUnstakeFee_, 
-        uint16 minLockupDays_, 
-        uint16 maxLockupDays_
+        uint256 burnedYTFee_,
+        uint128 minLockupDays_, 
+        uint128 maxLockupDays_
     ) external override initializer {
         setForceUnstakeFee(forceUnstakeFee_);
+        setBurnedYTFee(burnedYTFee_);
         setMinLockupDays(minLockupDays_);
         setMaxLockupDays(maxLockupDays_);
     }
 
     /**
      * @dev Allows user to deposit orETH, then mints osETH and REY for the user.
-     * @param amountInORETH - orETH staked amount, amount % 1e15 == 0
+     * @param amountInORETH - orETH staked amount
      * @param lockupDays - User can withdraw after lockupDays
      * @param positionOwner - Owner of position
      * @param osETHTo - Receiver of osETH
@@ -148,8 +168,8 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
      * @notice User must have approved this contract to spend orETH
      */
     function stake(
-        uint256 amountInORETH, 
-        uint16 lockupDays, 
+        uint128 amountInORETH, 
+        uint256 lockupDays, 
         address positionOwner, 
         address osETHTo, 
         address reyTo
@@ -170,8 +190,7 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
             deadline = block.timestamp + lockupDays * DAY;
             amountInREY = amountInORETH * lockupDays;
         }
-        _positions[positionId] =
-            Position(uint104(amountInORETH), uint104(amountInOSETH), uint40(deadline), false, positionOwner);
+        _positions[positionId] = Position(positionOwner, amountInORETH, uint128(amountInOSETH), deadline, false);
 
         IERC20(ORETH).safeTransferFrom(msgSender, address(this), amountInORETH);
         IOSETH(OSETH).mint(osETHTo, amountInOSETH);
@@ -207,10 +226,10 @@ contract ORETHStakeManager is IORETHStakeManager, Initializable, Ownable, GasMan
         uint256 currentTime = block.timestamp;
         if (deadline > currentTime) {
             unchecked {
-                burnedREY = amountInORETH * Math.ceilDiv(deadline - currentTime, DAY);
+                burnedREY = amountInORETH * Math.ceilDiv(deadline - currentTime, DAY) * (RATIO + _burnedYTFee) / RATIO;
             }
             IREY(REY).burn(msgSender, burnedREY);
-            position.deadline = uint40(currentTime);
+            position.deadline = currentTime;
 
             uint256 fee;
             unchecked {
