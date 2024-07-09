@@ -24,7 +24,7 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
     address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant RATIO = 10000;
     uint256 public constant DAY_RATE_RATIO = 1e8;
-    address private constant BLAST_POINTS = 0x2fc95838c71e76ec69ff817983BFf17c710F34E0;
+    address private constant BLAST_POINTS = 0x2fc95838c71e76ec69ff817983BFf17c710F34E0; // TODO update mainnet blast points address
 
     address private _autoBot;
     address private _orUSDStakeManager;
