@@ -5,15 +5,6 @@ pragma solidity ^0.8.24;
  * @title IORUSDStakeManager interface
  */
 interface IORUSDStakeManager {
-    struct Position {
-        address owner;
-        uint128 orUSDAmount;
-        uint128 osUSDAmount;
-        uint256 deadline;
-        bool closed;
-    }
-
-
     /** error **/
     error ZeroInput();
 
@@ -47,11 +38,9 @@ interface IORUSDStakeManager {
 
     function maxLockupDays() external view returns (uint128);
 
-    function positionsOf(uint256 positionId) external view returns (Position memory);
-
     function avgStakeDays() external view returns (uint256);
 
-    function calcOSUSDAmount(uint128 amountInORUSD) external view returns (uint256);
+    function calcOSUSDAmount(uint256 amountInORUSD, uint256 amountInRUY) external view returns (uint256);
 
 
     /** setter **/
@@ -80,9 +69,7 @@ interface IORUSDStakeManager {
         address ruyTo
     ) external returns (uint256 amountInOSUSD, uint256 amountInRUY);
 
-    function unstake(uint256 positionId) external returns (uint256 amountInORUSD);
-
-    function extendLockTime(uint256 positionId, uint256 extendDays) external returns (uint256 amountInRUY);
+    function unstake(uint256 positionId, uint256 share) external;
 
     function withdrawYield(uint256 amountInRUY) external returns (uint256 yieldAmount);
 
@@ -96,7 +83,6 @@ interface IORUSDStakeManager {
     /** event **/
     event StakeORUSD(
         uint256 indexed positionId,
-        address indexed account,
         uint256 amountInORUSD,
         uint256 amountInOSUSD,
         uint256 amountInRUY,
@@ -106,8 +92,6 @@ interface IORUSDStakeManager {
     event Unstake(uint256 indexed positionId, uint256 amountInORUSD, uint256 burnedOSUSD, uint256 burnedRUY);
 
     event WithdrawYield(address indexed account, uint256 burnedRUY, uint256 yieldAmount);
-
-    event ExtendLockTime(uint256 indexed positionId, uint256 extendDays, uint256 newDeadLine, uint256 mintedRUY);
 
     event SetMinLockupDays(uint128 minLockupDays);
 

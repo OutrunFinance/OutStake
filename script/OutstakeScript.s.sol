@@ -48,7 +48,8 @@ contract OutstakeScript is BaseScript {
             gasManager,
             orETHAddress,
             osETHAddress,
-            reyAddress
+            reyAddress,
+            ""
         );
         address stakeAddress = address(stakeManager);
         
@@ -78,7 +79,8 @@ contract OutstakeScript is BaseScript {
             gasManager,
             orUSDAddress,
             osUSDAddress,
-            ruyAddress
+            ruyAddress,
+            ""
         );
         address stakeAddress = address(stakeManager);
 

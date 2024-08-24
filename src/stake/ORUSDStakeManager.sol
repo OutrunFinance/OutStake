@@ -2,10 +2,12 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 
-import "../utils/Math.sol";
+import "./PositionOptionsToken.sol";
 import "../utils/Initializable.sol";
 import "../utils/AutoIncrementId.sol";
 import "../token/USDB/interfaces/IORUSD.sol";
@@ -18,7 +20,7 @@ import "./interfaces/IORUSDStakeManager.sol";
  * @title ORUSD Stake Manager Contract
  * @dev Handles Staking of orUSD
  */
-contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasManagerable, AutoIncrementId {
+contract ORUSDStakeManager is IORUSDStakeManager, PositionOptionsToken, Initializable, Ownable, GasManagerable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
@@ -37,8 +39,6 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     uint128 private _minLockupDays;
     uint128 private _maxLockupDays;
 
-    mapping(uint256 positionId => Position) private _positions;
-
     modifier onlyORUSDContract() {
         if (msg.sender != ORUSD) {
             revert PermissionDenied();
@@ -53,7 +53,14 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
      * @param osUSD - Address of osUSD Token
      * @param ruy - Address of RUY Token
      */
-    constructor(address owner, address gasManager, address orUSD, address osUSD, address ruy) Ownable(owner) GasManagerable(gasManager) {
+    constructor(
+        address owner, 
+        address gasManager, 
+        address orUSD, 
+        address osUSD, 
+        address ruy,
+        string memory uri
+    ) ERC1155(uri) Ownable(owner) GasManagerable(gasManager) {
         ORUSD = orUSD;
         OSUSD = osUSD;
         RUY = ruy;
@@ -85,24 +92,12 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         return _maxLockupDays;
     }
 
-    function positionsOf(uint256 positionId) external view override returns (Position memory) {
-        return _positions[positionId];
-    }
-
     function avgStakeDays() public view override returns (uint256) {
         return IERC20(RUY).totalSupply() / _totalStaked;
     }
 
-    function calcOSUSDAmount(uint128 amountInORUSD) public view override returns (uint256) {
-        uint256 totalShares = IOSUSD(OSUSD).totalSupply();
-        totalShares = totalShares == 0 ? 1 : totalShares;
-
-        uint256 totalStaked_ = _totalStaked;
-        totalStaked_ = totalStaked_ == 0 ? 1 : totalStaked_;
-
-        unchecked {
-            return amountInORUSD * totalShares / totalStaked_;
-        }
+    function calcOSUSDAmount(uint256 amountInORUSD, uint256 amountInRUY) public view override returns (uint256) {
+        return amountInORUSD - (amountInRUY * _totalYieldPool / IERC20(RUY).totalSupply());
     }
 
 
@@ -152,6 +147,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
     /**
      * @dev Initializer
      * @param forceUnstakeFee_ - Force unstake fee
+     * @param burnedYTFee_ - Burn more YT when force unstake
      * @param minLockupDays_ - Min lockup days
      * @param maxLockupDays_ - Max lockup days
      */
@@ -191,97 +187,64 @@ contract ORUSDStakeManager is IORUSDStakeManager, Initializable, Ownable, GasMan
         }
 
         address msgSender = msg.sender;
-        amountInOSUSD = calcOSUSDAmount(amountInORUSD);
-        uint256 positionId = _nextId();
         uint256 deadline;
         unchecked {
             _totalStaked += amountInORUSD;
             deadline = block.timestamp + lockupDays * DAY;
             amountInRUY = amountInORUSD * lockupDays;
         }
-        _positions[positionId] = Position(positionOwner, amountInORUSD, uint128(amountInOSUSD), deadline, false);
 
+        IRUY(RUY).mint(ruyTo, amountInRUY);
+        amountInOSUSD = calcOSUSDAmount(amountInORUSD, amountInRUY);
+        uint256 positionId = _nextId();
+        positions[positionId] = Position(ORUSD, amountInORUSD, uint128(amountInOSUSD), deadline);
+
+        _mint(positionOwner, positionId, amountInORUSD, "");
         IERC20(ORUSD).safeTransferFrom(msgSender, address(this), amountInORUSD);
         IOSUSD(OSUSD).mint(osUSDTo, amountInOSUSD);
-        IRUY(RUY).mint(ruyTo, amountInRUY);
 
-        emit StakeORUSD(positionId, positionOwner, amountInORUSD, amountInOSUSD, amountInRUY, deadline);
+        emit StakeORUSD(positionId, amountInORUSD, amountInOSUSD, amountInRUY, deadline);
     }
 
     /**
      * @dev Allows user to unstake funds. If force unstake, need to pay force unstake fee.
      * @param positionId - Staked usdb position id
+     * @param share - Share of the position
      */
-    function unstake(uint256 positionId) external override returns (uint256 amountInORUSD) {
+    function unstake(uint256 positionId, uint256 share) external override {
         address msgSender = msg.sender;
-        Position storage position = _positions[positionId];
-        if (position.closed) {
-            revert PositionClosed();
-        }
-        if (position.owner != msgSender) {
-            revert PermissionDenied();
-        }
+        burn(msgSender, positionId, share);
 
-        position.closed = true;
-        amountInORUSD = position.orUSDAmount;
-        uint256 burnedOSUSD = position.osUSDAmount;
+        Position storage position = positions[positionId];
+        uint256 stakedAmount = position.stakedAmount;
+        uint256 PTAmount = position.PTAmount;
         uint256 deadline = position.deadline;
+        uint256 burnedOSUSD = Math.mulDiv(PTAmount, share, stakedAmount, Math.Rounding.Ceil);
         IOSUSD(OSUSD).burn(msgSender, burnedOSUSD);
         unchecked {
-            _totalStaked -= amountInORUSD;
+            _totalStaked -= share;
         }
 
         uint256 burnedRUY;
         uint256 currentTime = block.timestamp;
         if (deadline > currentTime) {
             unchecked {
-                burnedRUY = amountInORUSD * Math.ceilDiv(deadline - currentTime, DAY) * (RATIO + _burnedYTFee) / RATIO;
+                burnedRUY = share * Math.ceilDiv(deadline - currentTime, DAY) * (RATIO + _burnedYTFee) / RATIO;
             }
             IRUY(RUY).burn(msgSender, burnedRUY);
             position.deadline = currentTime;
 
             uint256 fee;
             unchecked {
-                fee = amountInORUSD * _forceUnstakeFee / RATIO;
-                amountInORUSD -= fee;
+                fee = share * _forceUnstakeFee / RATIO;
+                share -= fee;
             }
             IORUSD(ORUSD).withdraw(fee);
             IERC20(USDB).safeTransfer(IORUSD(ORUSD).revenuePool(), fee);
         }
-        IERC20(ORUSD).safeTransfer(msgSender, amountInORUSD);
+        IERC20(ORUSD).safeTransfer(msgSender, share);
 
-        emit Unstake(positionId, amountInORUSD, burnedOSUSD, burnedRUY);
-    }
-
-    /**
-     * @dev Allows user to extend lock time
-     * @param positionId - Staked usdb position id
-     * @param extendDays - Extend lockup days
-     */
-    function extendLockTime(uint256 positionId, uint256 extendDays) external override returns (uint256 amountInRUY) {
-        address user = msg.sender;
-        Position storage position = _positions[positionId];
-        if (position.owner != user) {
-            revert PermissionDenied();
-        }
-        uint256 currentTime = block.timestamp;
-        uint256 deadline = position.deadline;
-        if (deadline <= currentTime) {
-            revert ReachedDeadline(deadline);
-        }
-        uint256 newDeadLine = deadline + extendDays * DAY;
-        uint256 intervalDaysFromNow = (newDeadLine - currentTime) / DAY;
-        if (intervalDaysFromNow < _minLockupDays || intervalDaysFromNow > _maxLockupDays) {
-            revert InvalidExtendDays();
-        }
-        position.deadline = uint40(newDeadLine);
-
-        unchecked {
-            amountInRUY = position.orUSDAmount * extendDays;
-        }
-        IRUY(RUY).mint(user, amountInRUY);
-
-        emit ExtendLockTime(positionId, extendDays, newDeadLine, amountInRUY);
+        emit Unstake(positionId, share, burnedOSUSD, burnedRUY);
     }
 
     /**
