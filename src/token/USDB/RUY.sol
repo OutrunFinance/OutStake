@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -15,9 +15,7 @@ contract RUY is IRUY, ERC20, Initializable, Ownable, GasManagerable {
     address private _orUSDStakeManager;
 
     modifier onlyORUSDStakeManager() {
-        if (msg.sender != _orUSDStakeManager) {
-            revert PermissionDenied();
-        }
+        require(msg.sender == _orUSDStakeManager, PermissionDenied());
         _;
     }
 

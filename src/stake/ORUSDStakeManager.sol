@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -40,9 +40,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, PositionOptionsToken, Initiali
     uint128 private _maxLockupDays;
 
     modifier onlyORUSDContract() {
-        if (msg.sender != ORUSD) {
-            revert PermissionDenied();
-        }
+        require(msg.sender == ORUSD, PermissionDenied());
         _;
     }
 
@@ -122,9 +120,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, PositionOptionsToken, Initiali
      * @param forceUnstakeFee_ - Force unstake fee
      */
     function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
-        if (forceUnstakeFee_ > RATIO) {
-            revert FeeOverflow();
-        }
+        require(forceUnstakeFee_ <= RATIO, FeeOverflow());
 
         _forceUnstakeFee = forceUnstakeFee_;
         emit SetForceUnstakeFee(forceUnstakeFee_);
@@ -134,9 +130,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, PositionOptionsToken, Initiali
      * @param burnedYTFee_ - Burn more YT when force unstake
      */
     function setBurnedYTFee(uint256 burnedYTFee_) public override onlyOwner {
-        if (burnedYTFee_ > RATIO) {
-            revert FeeOverflow();
-        }
+        require(burnedYTFee_ <= RATIO, FeeOverflow());
 
         _burnedYTFee = burnedYTFee_;
         emit SetBurnedYTFee(burnedYTFee_);
@@ -179,12 +173,11 @@ contract ORUSDStakeManager is IORUSDStakeManager, PositionOptionsToken, Initiali
         address osUSDTo, 
         address ruyTo
     ) external override returns (uint256 amountInOSUSD, uint256 amountInRUY) {
-        if (amountInORUSD < MINSTAKE) {
-            revert MinStakeInsufficient(MINSTAKE);
-        }
-        if (lockupDays < _minLockupDays || lockupDays > _maxLockupDays) {
-            revert InvalidLockupDays(_minLockupDays, _maxLockupDays);
-        }
+        require(amountInORUSD >= MINSTAKE, MinStakeInsufficient(MINSTAKE));
+        require(
+            lockupDays >= _minLockupDays && lockupDays <= _maxLockupDays, 
+            InvalidLockupDays(_minLockupDays, _maxLockupDays)
+        );
 
         address msgSender = msg.sender;
         uint256 deadline;
@@ -252,9 +245,7 @@ contract ORUSDStakeManager is IORUSDStakeManager, PositionOptionsToken, Initiali
      * @param amountInRUY - Amount of RUY
      */
     function withdrawYield(uint256 amountInRUY) external override returns (uint256 yieldAmount) {
-        if (amountInRUY == 0) {
-            revert ZeroInput();
-        }
+        require(amountInRUY != 0, ZeroInput());
 
         unchecked {
             yieldAmount = _totalYieldPool * amountInRUY / IRUY(RUY).totalSupply();

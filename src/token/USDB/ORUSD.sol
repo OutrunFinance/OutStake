@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -95,18 +95,14 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
     }
 
     function setProtocolFee(uint256 protocolFee_) public override onlyOwner {
-        if (protocolFee_ > RATIO) {
-            revert FeeRateOverflow();
-        }
+        require(protocolFee_ <= RATIO, FeeRateOverflow());
 
         _protocolFee = protocolFee_;
         emit SetProtocolFee(protocolFee_);
     }
 
     function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) public override onlyOwner {
-        if (_providerFeeRate + _protocolFeeRate > RATIO) {
-            revert FeeRateOverflow();
-        }
+        require(_providerFeeRate + _protocolFeeRate <= RATIO, FeeRateOverflow());
 
         _flashLoanFee = FlashLoanFee(_providerFeeRate, _protocolFeeRate);
         emit SetFlashLoanFee(_providerFeeRate, _protocolFeeRate);
@@ -126,9 +122,7 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @notice User must have approved this contract to spend USDB
      */
     function deposit(uint256 amount) external override {
-        if (amount == 0) {
-            revert ZeroInput();
-        }
+        require(amount != 0, ZeroInput());
 
         address msgSender = msg.sender;
         IERC20(USDB).safeTransferFrom(msgSender, address(this), amount);
@@ -142,9 +136,8 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @param amount - Amount of orUSD for burn
      */
     function withdraw(uint256 amount) external override {
-        if (amount == 0) {
-            revert ZeroInput();
-        }
+        require(amount != 0, ZeroInput());
+
         address msgSender = msg.sender;
         _burn(msgSender, amount);
         IERC20(USDB).safeTransfer(msgSender, amount);
@@ -156,9 +149,7 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @dev Accumulate USDB yield
      */
     function accumUSDBYield() public override returns (uint256 realYield, uint256 dayRate) {
-        if (msg.sender != _autoBot) {
-            revert PermissionDenied();
-        }
+        require(msg.sender == _autoBot, PermissionDenied());
 
         uint256 nativeYield = IERC20Rebasing(USDB).getClaimableAmount(address(this));
         if (nativeYield > 0) {
@@ -181,9 +172,7 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @param data - Additional data
      */
     function flashLoan(address receiver, uint256 amount, bytes calldata data) external override nonReentrant {
-        if (amount == 0 || receiver == address(0)) {
-            revert ZeroInput();
-        }
+        require(amount != 0 && receiver != address(0), ZeroInput());
 
         uint256 balanceBefore = IERC20(USDB).balanceOf(address(this));
         IERC20(USDB).safeTransfer(receiver, amount);
@@ -194,9 +183,10 @@ contract ORUSD is IORUSD, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
         unchecked {
             providerFeeAmount = amount * _flashLoanFee.providerFeeRate / RATIO;
             protocolFeeAmount = amount * _flashLoanFee.protocolFeeRate / RATIO;
-            if (IERC20(USDB).balanceOf(address(this)) < balanceBefore + providerFeeAmount + protocolFeeAmount) {
-                revert FlashLoanRepayFailed();
-            }
+            require(
+                IERC20(USDB).balanceOf(address(this)) >= balanceBefore + providerFeeAmount + protocolFeeAmount, 
+                FlashLoanRepayFailed() 
+            );
         }
         
         _mint(_orUSDStakeManager, providerFeeAmount);

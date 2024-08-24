@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -37,8 +37,6 @@ contract ORETHStakeManager is IORETHStakeManager, PositionOptionsToken, Initiali
     uint256 private _totalYieldPool;
     uint128 private _minLockupDays;
     uint128 private _maxLockupDays;
-
-    
 
     /**
      * @param owner - Address of owner
@@ -116,9 +114,7 @@ contract ORETHStakeManager is IORETHStakeManager, PositionOptionsToken, Initiali
      * @param forceUnstakeFee_ - Force unstake fee
      */
     function setForceUnstakeFee(uint256 forceUnstakeFee_) public override onlyOwner {
-        if (forceUnstakeFee_ > RATIO) {
-            revert FeeOverflow();
-        }
+        require(forceUnstakeFee_ <= RATIO, FeeOverflow());
 
         _forceUnstakeFee = forceUnstakeFee_;
         emit SetForceUnstakeFee(forceUnstakeFee_);
@@ -128,9 +124,7 @@ contract ORETHStakeManager is IORETHStakeManager, PositionOptionsToken, Initiali
      * @param burnedYTFee_ - Burn more YT when force unstake
      */
     function setBurnedYTFee(uint256 burnedYTFee_) public override onlyOwner {
-        if (burnedYTFee_ > RATIO) {
-            revert FeeOverflow();
-        }
+        require(burnedYTFee_ <= RATIO, FeeOverflow());
 
         _burnedYTFee = burnedYTFee_;
         emit SetBurnedYTFee(burnedYTFee_);
@@ -173,12 +167,11 @@ contract ORETHStakeManager is IORETHStakeManager, PositionOptionsToken, Initiali
         address osETHTo, 
         address reyTo
     ) external override returns (uint256 amountInOSETH, uint256 amountInREY) {
-        if (amountInORETH < MINSTAKE) {
-            revert MinStakeInsufficient(MINSTAKE);
-        }
-        if (lockupDays < _minLockupDays || lockupDays > _maxLockupDays) {
-            revert InvalidLockupDays(_minLockupDays, _maxLockupDays);
-        }
+        require(amountInORETH >= MINSTAKE, MinStakeInsufficient(MINSTAKE));
+        require(
+            lockupDays >= _minLockupDays && lockupDays <= _maxLockupDays, 
+            InvalidLockupDays(_minLockupDays, _maxLockupDays)
+        );
 
         address msgSender = msg.sender;
         uint256 deadline;
@@ -246,9 +239,7 @@ contract ORETHStakeManager is IORETHStakeManager, PositionOptionsToken, Initiali
      * @param burnedREY - Amount of burned REY
      */
     function withdrawYield(uint256 burnedREY) external override returns (uint256 yieldAmount) {
-        if (burnedREY == 0) {
-            revert ZeroInput();
-        }
+        require(burnedREY != 0, ZeroInput());
 
         unchecked {
             yieldAmount = _totalYieldPool * burnedREY / IREY(REY).totalSupply();
@@ -267,9 +258,7 @@ contract ORETHStakeManager is IORETHStakeManager, PositionOptionsToken, Initiali
      * @param nativeYield - Additional native yield amount
      */
     function accumYieldPool(uint256 nativeYield) external override {
-        if (msg.sender != ORETH) {
-            revert PermissionDenied();
-        }
+        require(msg.sender == ORETH, PermissionDenied());
 
         unchecked {
             _totalYieldPool += nativeYield;

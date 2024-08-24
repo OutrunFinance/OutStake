@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -90,18 +90,14 @@ contract ORETH is IORETH, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
     }
 
     function setProtocolFee(uint256 protocolFee_) public override onlyOwner {
-        if (protocolFee_ > RATIO) {
-            revert FeeRateOverflow();
-        }
+        require(protocolFee_ <= RATIO, FeeRateOverflow());
 
         _protocolFee = protocolFee_;
         emit SetProtocolFee(protocolFee_);
     }
 
     function setFlashLoanFee(uint256 _providerFeeRate, uint256 _protocolFeeRate) public override onlyOwner {
-        if (_providerFeeRate + _protocolFeeRate > RATIO) {
-            revert FeeRateOverflow();
-        }
+        require(_providerFeeRate + _protocolFeeRate <= RATIO, FeeRateOverflow());
 
         _flashLoanFee = FlashLoanFee(_providerFeeRate, _protocolFeeRate);
         emit SetFlashLoanFee(_providerFeeRate, _protocolFeeRate);
@@ -121,9 +117,7 @@ contract ORETH is IORETH, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      */
     function deposit() public payable override {
         uint256 amount = msg.value;
-        if (amount == 0) {
-            revert ZeroInput();
-        }
+        require(amount != 0, ZeroInput());
 
         address msgSender = msg.sender;
         _mint(msgSender, amount);
@@ -136,9 +130,8 @@ contract ORETH is IORETH, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @param amount - Amount of orETH for burn
      */
     function withdraw(uint256 amount) external override {
-        if (amount == 0) {
-            revert ZeroInput();
-        }
+        require(amount != 0, ZeroInput());
+
         address msgSender = msg.sender;
         _burn(msgSender, amount);
         Address.sendValue(payable(msgSender), amount);
@@ -150,9 +143,7 @@ contract ORETH is IORETH, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @dev Accumulate ETH yield
      */
     function accumETHYield() public override returns (uint256 nativeYield, uint256 dayRate) {
-        if (msg.sender != _autoBot) {
-            revert PermissionDenied();
-        }
+        require(msg.sender == _autoBot, PermissionDenied());
 
         nativeYield = BLAST.claimAllYield(address(this), address(this));
         if (nativeYield > 0) {
@@ -184,9 +175,7 @@ contract ORETH is IORETH, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
      * @param data - Additional data
      */
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external override nonReentrant {
-        if (amount == 0 || receiver == address(0)) {
-            revert ZeroInput();
-        }
+        require(amount != 0 && receiver != address(0), ZeroInput());
 
         uint256 balanceBefore = address(this).balance;
         (bool success, ) = receiver.call{value: amount}("");
@@ -198,9 +187,10 @@ contract ORETH is IORETH, ERC20, Initializable, ReentrancyGuard, Ownable, GasMan
             unchecked {
                 providerFeeAmount = amount * _flashLoanFee.providerFeeRate / RATIO;
                 protocolFeeAmount = amount * _flashLoanFee.protocolFeeRate / RATIO;
-                if (address(this).balance < balanceBefore + providerFeeAmount + protocolFeeAmount) {
-                    revert FlashLoanRepayFailed();
-                }
+                require(
+                    address(this).balance >= balanceBefore + providerFeeAmount + protocolFeeAmount, 
+                    FlashLoanRepayFailed()
+                );
             }
             
             _mint(_orETHStakeManager, providerFeeAmount);

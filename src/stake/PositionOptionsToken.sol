@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 
@@ -21,17 +21,19 @@ abstract contract PositionOptionsToken is ERC1155Supply {
     mapping(uint256 positionId => Position) public positions;
     
     function burn(address account, uint256 id, uint256 value) public {
-        if (account != _msgSender() && !isApprovedForAll(account, _msgSender())) {
-            revert ERC1155MissingApprovalForAll(_msgSender(), account);
-        }
+        require(
+            account == _msgSender() || isApprovedForAll(account, _msgSender()), 
+            ERC1155MissingApprovalForAll(_msgSender(), account)
+        );
 
         _burn(account, id, value);
     }
 
     function burnBatch(address account, uint256[] memory ids, uint256[] memory values) public {
-        if (account != _msgSender() && !isApprovedForAll(account, _msgSender())) {
-            revert ERC1155MissingApprovalForAll(_msgSender(), account);
-        }
+        require(
+            account == _msgSender() || isApprovedForAll(account, _msgSender()), 
+            ERC1155MissingApprovalForAll(_msgSender(), account)
+        );
 
         _burnBatch(account, ids, values);
     }
