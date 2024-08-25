@@ -5,18 +5,6 @@ pragma solidity ^0.8.26;
  * @title IListaBNBStakeManager interface
  */
 interface IListaBNBStakeManager {
-    struct FlashLoanFeeRate {
-        uint128 providerFeeRate;
-        uint128 protocolFeeRate;
-    }
-
-    struct Position {
-        uint256 stakedAmount;       // Amount of Staked token
-        uint256 principalValue;     // The constant value of the principal, measured in native tokens
-        uint256 amountInPT;         // Amount of PTs generated
-        uint256 deadline;
-    }
-
     /** error **/
     error ZeroInput();
 
@@ -48,8 +36,6 @@ interface IListaBNBStakeManager {
 
     function maxLockupDays() external view returns (uint128);
 
-    function flashLoanFeeRate() external view returns (FlashLoanFeeRate memory);
-
     function avgStakeDays() external view returns (uint256);
 
     function calcPTAmount(uint256 amountInORETH, uint256 amountInREY) external view returns (uint256);
@@ -60,9 +46,9 @@ interface IListaBNBStakeManager {
 
     function setProtocolFeeRate(uint256 protocolFeeRate_) external;
 
-    function setBurnedYTFeeRate(uint256 _burnedYTFee) external;
+    function setBurnedYTFeeRate(uint256 _burnedYTFeeRate) external;
 
-    function setForceUnstakeFeeRate(uint256 _forceUnstakeFee) external;
+    function setForceUnstakeFeeRate(uint256 _forceUnstakeFeeRate) external;
 
     function setMinLockupDays(uint128 _minLockupDays) external;
 

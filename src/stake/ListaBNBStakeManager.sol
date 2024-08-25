@@ -44,8 +44,6 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
     uint128 private _maxLockupDays;
     FlashLoanFeeRate private _flashLoanFeeRate;
 
-    mapping(uint256 positionId => Position) public positions;
-
     /**
      * @param owner - Address of owner
      * @param slisBNB - Address of slisBNB
@@ -105,7 +103,7 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
         return _maxLockupDays;
     }
 
-    function flashLoanFeeRate() external view override returns (FlashLoanFeeRate memory) {
+    function flashLoanFeeRate() external view returns (FlashLoanFeeRate memory) {
         return _flashLoanFeeRate;
     }
 

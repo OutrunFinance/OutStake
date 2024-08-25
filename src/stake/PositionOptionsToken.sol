@@ -10,6 +10,20 @@ abstract contract PositionOptionsToken is ERC1155Supply {
     string public name = "Position Options Token";
     string public symbol = "POT";
     uint8 public decimals = 18;
+
+    struct FlashLoanFeeRate {
+        uint128 providerFeeRate;
+        uint128 protocolFeeRate;
+    }
+
+    struct Position {
+        uint256 stakedAmount;       // Amount of Staked token
+        uint256 principalValue;     // The constant value of the principal, measured in native tokens
+        uint256 amountInPT;         // Amount of PTs generated
+        uint256 deadline;
+    }
+
+    mapping(uint256 positionId => Position) public positions;
     
     function burn(address account, uint256 id, uint256 value) public {
         require(
