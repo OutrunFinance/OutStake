@@ -10,15 +10,6 @@ abstract contract PositionOptionsToken is ERC1155Supply {
     string public name = "Position Options Token";
     string public symbol = "POT";
     uint8 public decimals = 18;
-
-    struct Position {
-        address stakedToken;
-        uint128 stakedAmount;
-        uint128 PTAmount;
-        uint256 deadline;
-    }
-
-    mapping(uint256 positionId => Position) public positions;
     
     function burn(address account, uint256 id, uint256 value) public {
         require(
