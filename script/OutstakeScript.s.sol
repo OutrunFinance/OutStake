@@ -4,94 +4,58 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./BaseScript.s.sol";
-import "../src/token/ETH/ORETH.sol";
-import "../src/token/ETH/OSETH.sol";
-import "../src/token/ETH/REY.sol";
-import "../src/token/USDB/ORUSD.sol";
-import "../src/token/USDB/OSUSD.sol";
-import "../src/token/USDB/RUY.sol";
-import "../src/stake/ORETHStakeManager.sol";
-import "../src/stake/ORUSDStakeManager.sol";
+import "../src/token/slisBNB/OSlisBNB.sol";
+import "../src/token/slisBNB/YSlisBNB.sol";
+import "../src/stake/ListaBNBStakeManager.sol";
+
 
 contract OutstakeScript is BaseScript {
     address internal owner;
-    address internal autoBot;
-    address internal gasManager;
+    address internal slisBNB;
     address internal revenuePool;
-    address internal blastPoints;
-    address internal pointsOperator;
+    address internal listaStakeManager;
 
     function run() public broadcaster {
         owner = vm.envAddress("OWNER");
-        autoBot = vm.envAddress("AUTO_BOT");
+        slisBNB = vm.envAddress("SLISBNB");
         revenuePool = vm.envAddress("REVENUE_POOL");
-        gasManager = vm.envAddress("GAS_MANAGER");
-        pointsOperator = vm.envAddress("POINTS_OPERATOR");
+        listaStakeManager = vm.envAddress("LISTA_STAKE_MANAGER");
         
-        
-        //deployETH();
-        deployUSDB();
+        deploySlisBNB();
     }
 
-    function deployETH() internal {
-        ORETH orETH = new ORETH(owner, gasManager, autoBot, revenuePool, pointsOperator, 1000, 15, 5);
-        address orETHAddress = address(orETH);
+    function deploySlisBNB() internal {
+        OSlisBNB oslisBNB = new OSlisBNB(owner);
+        address oslisBNBAddress = address(oslisBNB);
 
-        OSETH osETH = new OSETH(owner, gasManager);
-        address osETHAddress = address(osETH);
+        YSlisBNB yslisBNB = new YSlisBNB(owner);
+        address yslisBNBAddress = address(yslisBNB);
 
-        REY rey = new REY(owner, gasManager);
-        address reyAddress = address(rey);
-
-        ORETHStakeManager stakeManager = new ORETHStakeManager(
-            owner,
-            gasManager,
-            orETHAddress,
-            osETHAddress,
-            reyAddress,
-            ""
-        );
-        address stakeAddress = address(stakeManager);
-        
-        stakeManager.initialize(50, 2000, 7, 365);
-        //orETH.initialize(stakeAddress);
-        osETH.initialize(stakeAddress);
-        rey.initialize(stakeAddress);
-
-        console.log("ORETH deployed on %s", orETHAddress);
-        console.log("OSETH deployed on %s", osETHAddress);
-        console.log("REY deployed on %s", reyAddress);
-        console.log("ORETHStakeManager deployed on %s", stakeAddress);
-    }
-
-    function deployUSDB() internal {
-        ORUSD orUSD = new ORUSD(owner, gasManager, autoBot, revenuePool, pointsOperator, 1000, 15, 5);
-        address orUSDAddress = address(orUSD);
-
-        OSUSD osUSD = new OSUSD(owner, gasManager);
-        address osUSDAddress = address(osUSD);
-
-        RUY ruy = new RUY(owner, gasManager);
-        address ruyAddress = address(ruy);
-
-        ORUSDStakeManager stakeManager = new ORUSDStakeManager(
+        ListaBNBStakeManager stakeManager = new ListaBNBStakeManager(
             owner, 
-            gasManager,
-            orUSDAddress,
-            osUSDAddress,
-            ruyAddress,
+            slisBNB,
+            oslisBNBAddress, 
+            yslisBNBAddress,
+            listaStakeManager,
             ""
         );
-        address stakeAddress = address(stakeManager);
+        address stakeManagerAddress = address(stakeManager);
 
-        stakeManager.initialize(50, 2000, 7, 365);
-        orUSD.initialize(stakeAddress);
-        osUSD.initialize(stakeAddress);
-        ruy.initialize(stakeAddress);
+        stakeManager.initialize(
+            revenuePool,
+            500,    // protocolFee: 5%
+            2000,   // burnedYTFee: 20%
+            50,     // forceUnstakeFee: 0.5%
+            7,      // minLockupDays: 7
+            365,    // maxLockupDays: 365
+            20,     // flashLoan providerFeeRate: 0.2%
+            10      // flashLoan protocolFeeRate: 0.1%
+        );
+        oslisBNB.initialize(stakeManagerAddress);
+        yslisBNB.initialize(stakeManagerAddress);
 
-        console.log("ORUSD deployed on %s", orUSDAddress);
-        console.log("OSUSD deployed on %s", osUSDAddress);
-        console.log("RUY deployed on %s", ruyAddress);
-        console.log("ORUSDStakeManager deployed on %s", stakeAddress);
+        console.log("oslisBNB deployed on %s", oslisBNBAddress);
+        console.log("yslisBNB deployed on %s", yslisBNBAddress);
+        console.log("ListaBNBStakeManager deployed on %s", stakeManagerAddress);
     }
 }
