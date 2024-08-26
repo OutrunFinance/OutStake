@@ -110,7 +110,13 @@ interface IListaBNBStakeManager {
         uint256 deadline
     );    
 
-    event Unstake(uint256 indexed positionId, uint256 reducedSlisBNBAmount, uint256 share, uint256 burnedYTAmount);
+    event Unstake(
+        uint256 indexed positionId, 
+        uint256 reducedSlisBNBAmount, 
+        uint256 share, 
+        uint256 burnedYTAmount, 
+        uint256 forceUnstakeFee
+    );
 
     event AccumSlisBNBYield(uint256 increasedYield);
 

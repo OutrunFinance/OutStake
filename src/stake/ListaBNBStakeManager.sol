@@ -282,6 +282,7 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
         }
 
         uint256 burnedYTAmount;
+        uint256 forceUnstakeFee;
         uint256 currentTime = block.timestamp;
         uint256 deadline = position.deadline;
         uint256 amountInSlisBNB = Math.mulDiv(stakedAmount, share, amountInPT);
@@ -292,16 +293,15 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
             IYSlisBNB(YT_SLISBNB).burn(msgSender, burnedYTAmount);
             position.deadline = currentTime;
 
-            uint256 fee;
             unchecked {
-                fee = reducedSlisBNBAmount * _forceUnstakeFeeRate / RATIO;
-                reducedSlisBNBAmount -= fee;
+                forceUnstakeFee = reducedSlisBNBAmount * _forceUnstakeFeeRate / RATIO;
+                reducedSlisBNBAmount -= forceUnstakeFee;
             }
-            IERC20(SLISBNB).safeTransfer(_revenuePool, fee);
+            IERC20(SLISBNB).safeTransfer(_revenuePool, forceUnstakeFee);
         }        
         IERC20(SLISBNB).safeTransfer(msgSender, reducedSlisBNBAmount);
 
-        emit Unstake(positionId, reducedSlisBNBAmount, share, burnedYTAmount);
+        emit Unstake(positionId, reducedSlisBNBAmount, share, burnedYTAmount, forceUnstakeFee);
     }
 
     /**
@@ -363,7 +363,7 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external override nonReentrant {
         require(amount != 0 && receiver != address(0), ZeroInput());
 
-        uint256 balanceBefore = _totalStaked;
+        uint256 balanceBefore = IERC20(SLISBNB).balanceOf(address(this));
         IERC20(SLISBNB).safeTransfer(receiver, amount);
         IOutFlashCallee(receiver).onFlashLoan(msg.sender, amount, data);
 
