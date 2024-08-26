@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./BaseScript.s.sol";
 import "../src/token/slisBNB/OSlisBNB.sol";
 import "../src/token/slisBNB/YSlisBNB.sol";
-import "../src/stake/ListaBNBStakeManager.sol";
+import "../src/stake/lista/ListaBNBStakeManager.sol";
 
 
 contract OutstakeScript is BaseScript {

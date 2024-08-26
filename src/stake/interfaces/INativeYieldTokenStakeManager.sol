@@ -2,9 +2,9 @@
 pragma solidity ^0.8.26;
 
 /**
- * @title IListaBNBStakeManager interface
+ * @title Native Yield Token StakeManager interface
  */
-interface IListaBNBStakeManager {
+interface INativeYieldTokenStakeManager {
     /** error **/
     error ZeroInput();
 
@@ -38,48 +38,48 @@ interface IListaBNBStakeManager {
 
     function avgStakeDays() external view returns (uint256);
 
-    function calcPTAmount(uint256 amountInORETH, uint256 amountInREY) external view returns (uint256);
+    function calcPTAmount(uint256 nativeYieldTokenAmount, uint256 amountInYT) external view returns (uint256);
 
 
     /** setter **/
-    function setRevenuePool(address revenuePool_) external;
+    function setRevenuePool(address revenuePool) external;
 
-    function setProtocolFeeRate(uint256 protocolFeeRate_) external;
+    function setProtocolFeeRate(uint256 protocolFeeRate) external;
 
-    function setBurnedYTFeeRate(uint256 _burnedYTFeeRate) external;
+    function setBurnedYTFeeRate(uint256 burnedYTFeeRate) external;
 
-    function setForceUnstakeFeeRate(uint256 _forceUnstakeFeeRate) external;
+    function setForceUnstakeFeeRate(uint256 forceUnstakeFeeRate) external;
 
-    function setMinLockupDays(uint128 _minLockupDays) external;
+    function setMinLockupDays(uint128 minLockupDays) external;
 
-    function setMaxLockupDays(uint128 _maxLockupDays) external;
+    function setMaxLockupDays(uint128 maxLockupDays) external;
 
-    function setFlashLoanFeeRate(uint128 _providerFeeRate, uint128 _protocolFeeRate) external;    
+    function setFlashLoanFeeRate(uint128 providerFeeRate, uint128 protocolFeeRate) external;    
 
 
     /** function **/
     function initialize(
-        address revenuePool_,
-        uint256 protocolFeeRate_, 
-        uint256 burnedYTFeeRate_,
-        uint256 forceUnstakeFeeRate_, 
-        uint128 minLockupDays_, 
-        uint128 maxLockupDays_,
-        uint128 flashLoanProviderFeeRate_, 
-        uint128 flashLoanProtocolFeeRate_
+        address revenuePool,
+        uint256 protocolFeeRate, 
+        uint256 burnedYTFeeRate,
+        uint256 forceUnstakeFeeRate, 
+        uint128 minLockupDays, 
+        uint128 maxLockupDays,
+        uint128 flashLoanProviderFeeRate, 
+        uint128 flashLoanProtocolFeeRate
     ) external;
 
     function stake(
-        uint256 slisBNBAmount,
+        uint256 stakedAmount,
         uint256 lockupDays, 
         address positionOwner, 
-        address pslisBNBTo, 
-        address yslisBNBTo
+        address ptRecipient, 
+        address ytRecipient
     ) external returns (uint256 amountInPT, uint256 amountInYT);
 
     function unstake(uint256 positionId, uint256 share) external;
 
-    function accumSlisBNBYield() external;
+    function accumYield() external;
 
     function withdrawYield(uint256 burnedYTAmount) external returns (uint256 yieldAmount);
 
@@ -101,9 +101,9 @@ interface IListaBNBStakeManager {
 
     event SetFlashLoanFeeRate(uint128 providerFeeRate, uint128 protocolFeeRate);
 
-    event StakeSlisBNB(
+    event Stake(
         uint256 indexed positionId,
-        uint256 slisBNBAmount,
+        uint256 stakedAmount,
         uint256 constPrincipalValue,
         uint256 amountInPT,
         uint256 amountInYT,
@@ -112,13 +112,13 @@ interface IListaBNBStakeManager {
 
     event Unstake(
         uint256 indexed positionId, 
-        uint256 reducedSlisBNBAmount, 
+        uint256 reducedAmount, 
         uint256 share, 
         uint256 burnedYTAmount, 
         uint256 forceUnstakeFee
     );
 
-    event AccumSlisBNBYield(uint256 increasedYield);
+    event AccumYield(uint256 increasedYield);
 
     event WithdrawYield(address indexed account, uint256 burnedYTAmount, uint256 yieldAmount);
 

@@ -8,20 +8,20 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 
-import "./PositionOptionsToken.sol";
-import "../utils/Initializable.sol";
-import "../utils/AutoIncrementId.sol";
-import "../utils/IOutFlashCallee.sol";
-import "../external/lista/IStakeManager.sol";
-import "../token/slisBNB/interfaces/IOSlisBNB.sol";
-import "../token/slisBNB/interfaces/IYSlisBNB.sol";
-import "./interfaces/IListaBNBStakeManager.sol";
+import "../../utils/Initializable.sol";
+import "../../utils/AutoIncrementId.sol";
+import "../../utils/IOutFlashCallee.sol";
+import "../common/PositionOptionsToken.sol";
+import "../../external/lista/IStakeManager.sol";
+import "../../token/slisBNB/interfaces/IOSlisBNB.sol";
+import "../../token/slisBNB/interfaces/IYSlisBNB.sol";
+import "../interfaces/INativeYieldTokenStakeManager.sol";
 
 /**
  * @title ListaBNB Stake Manager Contract
  * @dev Handles Staking of slisBNB
  */
-contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, Initializable, ReentrancyGuard, Ownable, AutoIncrementId {
+contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsToken, Initializable, ReentrancyGuard, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
@@ -111,9 +111,9 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
         return IERC20(YT_SLISBNB).totalSupply() / _totalStaked;
     }
 
-    function calcPTAmount(uint256 nativeYieldTokenAmount, uint256 amountInYT) public view override returns (uint256 amountInNativeToken) {
-        uint256 amountInNativeYieldToken = nativeYieldTokenAmount - (amountInYT * _yieldPool / IERC20(YT_SLISBNB).totalSupply());
-        amountInNativeToken = IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(amountInNativeYieldToken);
+    function calcPTAmount(uint256 stakedAmount, uint256 amountInYT) public view override returns (uint256) {
+        uint256 amountInNativeYieldToken = stakedAmount - (amountInYT * _yieldPool / IERC20(YT_SLISBNB).totalSupply());
+        return IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(amountInNativeYieldToken);
     }
 
 
@@ -217,6 +217,7 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
 
     /**
      * @dev Allows user to deposit native yield token, then mints PT, YT and POT for the user.
+     * @param stakedAmount - Staked amount of native yield token
      * @param lockupDays - User can withdraw after lockupDays
      * @param positionOwner - Owner of position
      * @param pslisBNBTo - Receiver of pslisBNB(PT)
@@ -224,38 +225,38 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
      * @notice User must have approved this contract to spend native yield token
      */
     function stake(
-        uint256 slisBNBAmount,
+        uint256 stakedAmount,
         uint256 lockupDays, 
         address positionOwner, 
         address pslisBNBTo, 
         address yslisBNBTo
     ) external override returns (uint256 amountInPT, uint256 amountInYT) {
-        require(slisBNBAmount >= MINSTAKE, MinStakeInsufficient(MINSTAKE));
+        require(stakedAmount >= MINSTAKE, MinStakeInsufficient(MINSTAKE));
         require(
             lockupDays >= _minLockupDays && lockupDays <= _maxLockupDays, 
             InvalidLockupDays(_minLockupDays, _maxLockupDays)
         );
 
         address msgSender = msg.sender;
-        IERC20(SLISBNB).safeTransferFrom(msgSender, address(this), slisBNBAmount);
-        uint256 constPrincipalValue = IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(slisBNBAmount);
+        IERC20(SLISBNB).safeTransferFrom(msgSender, address(this), stakedAmount);
+        uint256 constPrincipalValue = IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(stakedAmount);
 
         uint256 deadline;
         unchecked {
-            _totalStaked += slisBNBAmount;
+            _totalStaked += stakedAmount;
             _totalPrincipalValue += constPrincipalValue;
             deadline = block.timestamp + lockupDays * DAY;
-            amountInYT = slisBNBAmount * lockupDays;
+            amountInYT = stakedAmount * lockupDays;
         }
 
         IYSlisBNB(YT_SLISBNB).mint(yslisBNBTo, amountInYT);
-        amountInPT = calcPTAmount(slisBNBAmount, amountInYT);
+        amountInPT = calcPTAmount(stakedAmount, amountInYT);
         uint256 positionId = _nextId();
-        positions[positionId] = Position(slisBNBAmount, constPrincipalValue, amountInPT, deadline);
+        positions[positionId] = Position(stakedAmount, constPrincipalValue, amountInPT, deadline);
         _mint(positionOwner, positionId, amountInPT, "");
         IOSlisBNB(PT_SLISBNB).mint(pslisBNBTo, amountInPT);
 
-        emit StakeSlisBNB(positionId, slisBNBAmount, constPrincipalValue, amountInPT, amountInYT, deadline);
+        emit Stake(positionId, stakedAmount, constPrincipalValue, amountInPT, amountInYT, deadline);
     }
 
     /**
@@ -307,7 +308,7 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
     /**
      * @dev Accumulate slisBNB yield
      */
-    function accumSlisBNBYield() external override {
+    function accumYield() external override {
         uint256 totalValue = IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(_totalStaked);
 
         if (totalValue > _totalPrincipalValue) {
@@ -329,7 +330,7 @@ contract ListaBNBStakeManager is IListaBNBStakeManager, PositionOptionsToken, In
                     _yieldPool = slisBNBYield;
                 }
 
-                emit AccumSlisBNBYield(increasedYield);
+                emit AccumYield(increasedYield);
             }
         }
     }
