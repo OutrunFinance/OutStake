@@ -286,7 +286,7 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         uint256 forceUnstakeFee;
         uint256 currentTime = block.timestamp;
         uint256 deadline = position.deadline;
-        uint256 amountInSlisBNB = Math.mulDiv(stakedAmount, share, amountInPT);
+        uint256 amountInSlisBNB = Math.mulDiv(stakedAmount, share, amountInPT, Math.Rounding.Ceil);
         if (deadline > currentTime) {
             unchecked {
                 burnedYTAmount = amountInSlisBNB * Math.ceilDiv(deadline - currentTime, DAY) * (RATIO + _burnedYTFeeRate) / RATIO;
