@@ -13,8 +13,8 @@ import "../../utils/AutoIncrementId.sol";
 import "../../utils/IOutFlashCallee.sol";
 import "../common/PositionOptionsToken.sol";
 import "../../external/lista/IStakeManager.sol";
-import "../../token/slisBNB/interfaces/IOSlisBNB.sol";
-import "../../token/slisBNB/interfaces/IYSlisBNB.sol";
+import "../../token/lista/interfaces/IOSlisBNB.sol";
+import "../../token/lista/interfaces/IYSlisBNB.sol";
 import "../interfaces/INativeYieldTokenStakeManager.sol";
 
 /**

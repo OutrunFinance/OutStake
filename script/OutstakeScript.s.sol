@@ -4,8 +4,8 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./BaseScript.s.sol";
-import "../src/token/slisBNB/OSlisBNB.sol";
-import "../src/token/slisBNB/YSlisBNB.sol";
+import "../src/token/lista/OSlisBNB.sol";
+import "../src/token/lista/YSlisBNB.sol";
 import "../src/stake/lista/ListaBNBStakeManager.sol";
 
 
