@@ -13,25 +13,26 @@ import "../../utils/AutoIncrementId.sol";
 import "../../utils/IOutFlashCallee.sol";
 import "../common/PositionOptionsToken.sol";
 import "../../external/lista/IStakeManager.sol";
-import "../../token/lista/interfaces/IOSlisBNB.sol";
-import "../../token/lista/interfaces/IYSlisBNB.sol";
+import "../../external/chainlink/AggregatorV3Interface.sol";
+import "../../token/stone/interfaces/IOSTONE.sol";
+import "../../token/stone/interfaces/IYSTONE.sol";
 import "../interfaces/INativeYieldTokenStakeManager.sol";
 
 /**
- * @title ListaBNB Stake Manager Contract
- * @dev Handles Staking of slisBNB
+ * @title Stone ETH Stake Manager Contract
+ * @dev Handles Staking of STONE
  */
-contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsToken, Initializable, ReentrancyGuard, Ownable, AutoIncrementId {
+contract StoneETHStakeManager is INativeYieldTokenStakeManager, PositionOptionsToken, Initializable, ReentrancyGuard, Ownable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     uint256 public constant RATIO = 10000;
     uint256 public constant MINSTAKE = 1e16;
     uint256 public constant DAY = 24 * 3600;
 
-    address public immutable SLISBNB;
-    address public immutable PT_SLISBNB;
-    address public immutable YT_SLISBNB;
-    address public immutable LISTA_STAKE_MANAGER;
+    address public immutable STONE;
+    address public immutable PT_STONE;
+    address public immutable YT_STONE;
+    address public immutable STONE_ETH_DATA_FEED;
 
     address private _revenuePool;
     uint256 private _totalStaked;
@@ -46,23 +47,23 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
 
     /**
      * @param owner - Address of owner
-     * @param slisBNB - Address of slisBNB
-     * @param oslisBNB - Address of oslisBNB(PT) token
-     * @param yslisBNB - Address of yslisBNB(YT) token
-     * @param listaStakeManager - Address of listaStakeManager
+     * @param stone - Address of stone
+     * @param ostone - Address of ostone(PT) token
+     * @param ystone - Address of ystone(YT) token
+     * @param dataFeed - Address of STONE/ETH Chainlink dataFeed
      */
     constructor(
         address owner, 
-        address slisBNB,
-        address oslisBNB, 
-        address yslisBNB,
-        address listaStakeManager,
+        address stone,
+        address ostone, 
+        address ystone,
+        address dataFeed,
         string memory uri
     ) ERC1155(uri) Ownable(owner) {
-        SLISBNB = slisBNB;
-        PT_SLISBNB = oslisBNB;
-        YT_SLISBNB = yslisBNB;
-        LISTA_STAKE_MANAGER = listaStakeManager;
+        STONE = stone;
+        PT_STONE = ostone;
+        YT_STONE = ystone;
+        STONE_ETH_DATA_FEED = dataFeed;
     }
 
 
@@ -108,14 +109,32 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
     }
 
     function avgStakeDays() public view override returns (uint256) {
-        return IERC20(YT_SLISBNB).totalSupply() / _totalStaked;
+        return IERC20(YT_STONE).totalSupply() / _totalStaked;
     }
 
+    /**
+     * @dev Calculate PT amount
+     */
     function calcPTAmount(uint256 stakedAmount, uint256 amountInYT) public view override returns (uint256) {
-        uint256 amountInNativeYieldToken = stakedAmount - (amountInYT * _yieldPool / IERC20(YT_SLISBNB).totalSupply());
-        return IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(amountInNativeYieldToken);
+        uint256 amountInNativeYieldToken = stakedAmount - (amountInYT * _yieldPool / IERC20(YT_STONE).totalSupply());
+        return calcNativeTokenAmount(amountInNativeYieldToken);
     }
 
+    /**
+     * @dev Calculate native token exchange amount from native yield token amount
+     */
+    function calcNativeTokenAmount(uint256 nativeYieldTokenAmount) internal view returns (uint256) {
+        (, int256 answer, , , ) = AggregatorV3Interface(STONE_ETH_DATA_FEED).latestRoundData();
+        return Math.mulDiv(nativeYieldTokenAmount, uint256(answer), 1e18);
+    }
+
+    /**
+     * @dev Calculate native yield token exchange amount from native token amount
+     */
+    function calcNativeYieldTokenAmount(uint256 nativeTokenAmount) internal view returns (uint256) {
+        (, int256 answer, , , ) = AggregatorV3Interface(STONE_ETH_DATA_FEED).latestRoundData();
+        return Math.mulDiv(nativeTokenAmount, 1e18, uint256(answer));
+    }
 
     /** setter **/
     /**
@@ -215,7 +234,7 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         setFlashLoanFeeRate(flashLoanProviderFeeRate_, flashLoanProtocolFeeRate_);
     }
 
-    /**
+     /**
      * @dev Allows user to deposit native yield token, then mints PT, YT and POT for the user.
      * @param stakedAmount - Staked amount of native yield token
      * @param lockupDays - User can withdraw after lockupDays
@@ -238,10 +257,10 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         );
 
         address msgSender = msg.sender;
-        IERC20(SLISBNB).safeTransferFrom(msgSender, address(this), stakedAmount);
-        
+        IERC20(STONE).safeTransferFrom(msgSender, address(this), stakedAmount);
+
         // Calculate principal value
-        uint256 constPrincipalValue = IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(stakedAmount);
+        uint256 constPrincipalValue = calcNativeTokenAmount(stakedAmount);
         uint256 deadline;
         unchecked {
             _totalStaked += stakedAmount;
@@ -250,12 +269,12 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
             amountInYT = stakedAmount * lockupDays;
         }
 
-        IYSlisBNB(YT_SLISBNB).mint(ytRecipient, amountInYT);
+        IYSTONE(YT_STONE).mint(ytRecipient, amountInYT);
         amountInPT = calcPTAmount(stakedAmount, amountInYT);
         uint256 positionId = _nextId();
         positions[positionId] = Position(stakedAmount, constPrincipalValue, amountInPT, deadline);
         _mint(positionOwner, positionId, amountInPT, "");
-        IOSlisBNB(PT_SLISBNB).mint(ptRecipient, amountInPT);
+        IOSTONE(PT_STONE).mint(ptRecipient, amountInPT);
 
         emit Stake(positionId, stakedAmount, constPrincipalValue, amountInPT, amountInYT, deadline);
     }
@@ -274,12 +293,12 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         uint256 amountInPT = position.amountInPT;
         uint256 principalValue = position.principalValue;
 
-        IOSlisBNB(PT_SLISBNB).burn(msgSender, share);
+        IOSTONE(PT_STONE).burn(msgSender, share);
         uint256 reducedPrincipalValue = principalValue * share / amountInPT;
-        uint256 reducedSlisBNBAmount = IStakeManager(LISTA_STAKE_MANAGER).convertBnbToSnBnb(reducedPrincipalValue);
+        uint256 reducedAmount = calcNativeYieldTokenAmount(reducedPrincipalValue);
 
         unchecked {
-            _totalStaked -= reducedSlisBNBAmount;
+            _totalStaked -= reducedAmount;
             _totalPrincipalValue -= reducedPrincipalValue;
         }
 
@@ -287,48 +306,48 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         uint256 forceUnstakeFee;
         uint256 currentTime = block.timestamp;
         uint256 deadline = position.deadline;
-        uint256 amountInSlisBNB = Math.mulDiv(stakedAmount, share, amountInPT, Math.Rounding.Ceil);
+        uint256 amountInSTONE = Math.mulDiv(stakedAmount, share, amountInPT, Math.Rounding.Ceil);
         if (deadline > currentTime) {
             unchecked {
-                burnedYTAmount = amountInSlisBNB * Math.ceilDiv(deadline - currentTime, DAY) * (RATIO + _burnedYTFeeRate) / RATIO;
+                burnedYTAmount = amountInSTONE * Math.ceilDiv(deadline - currentTime, DAY) * (RATIO + _burnedYTFeeRate) / RATIO;
             }
-            IYSlisBNB(YT_SLISBNB).burn(msgSender, burnedYTAmount);
+            IYSTONE(YT_STONE).burn(msgSender, burnedYTAmount);
             position.deadline = currentTime;
 
             unchecked {
-                forceUnstakeFee = reducedSlisBNBAmount * _forceUnstakeFeeRate / RATIO;
-                reducedSlisBNBAmount -= forceUnstakeFee;
+                forceUnstakeFee = reducedAmount * _forceUnstakeFeeRate / RATIO;
+                reducedAmount -= forceUnstakeFee;
             }
-            IERC20(SLISBNB).safeTransfer(_revenuePool, forceUnstakeFee);
+            IERC20(STONE).safeTransfer(_revenuePool, forceUnstakeFee);
         }        
-        IERC20(SLISBNB).safeTransfer(msgSender, reducedSlisBNBAmount);
+        IERC20(STONE).safeTransfer(msgSender, reducedAmount);
 
-        emit Unstake(positionId, reducedSlisBNBAmount, share, burnedYTAmount, forceUnstakeFee);
+        emit Unstake(positionId, reducedAmount, share, burnedYTAmount, forceUnstakeFee);
     }
 
     /**
-     * @dev Accumulate slisBNB yield
+     * @dev Accumulate STONE yield
      */
     function accumYield() external override {
-        uint256 totalValue = IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(_totalStaked);
+        uint256 totalValue = calcNativeTokenAmount(_totalStaked);
 
         if (totalValue > _totalPrincipalValue) {
             uint256 nativeYield = totalValue - _totalPrincipalValue;
-            uint256 slisBNBYield = IStakeManager(LISTA_STAKE_MANAGER).convertBnbToSnBnb(nativeYield);
-            if (slisBNBYield > _yieldPool) {
-                uint256 increasedYield = slisBNBYield - _yieldPool;
+            uint256 stoneYield = calcNativeYieldTokenAmount(nativeYield);
+            if (stoneYield > _yieldPool) {
+                uint256 increasedYield = stoneYield - _yieldPool;
                 if (_protocolFeeRate > 0) {
                     uint256 feeAmount;
                     unchecked {
                         feeAmount = increasedYield * _protocolFeeRate / RATIO;
-                        slisBNBYield -= feeAmount;
+                        stoneYield -= feeAmount;
                         _totalStaked -= feeAmount;
                     }
-                    IERC20(SLISBNB).safeTransfer(_revenuePool, feeAmount);
+                    IERC20(STONE).safeTransfer(_revenuePool, feeAmount);
                 }
 
                 unchecked {
-                    _yieldPool = slisBNBYield;
+                    _yieldPool = stoneYield;
                 }
 
                 emit AccumYield(increasedYield);
@@ -344,29 +363,29 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         require(burnedYTAmount != 0, ZeroInput());
 
         unchecked {
-            yieldAmount = _yieldPool * burnedYTAmount / IYSlisBNB(YT_SLISBNB).totalSupply();
+            yieldAmount = _yieldPool * burnedYTAmount / IYSTONE(YT_STONE).totalSupply();
             _yieldPool -= yieldAmount;
             _totalStaked -= yieldAmount;
         }
 
         address msgSender = msg.sender;
-        IYSlisBNB(YT_SLISBNB).burn(msgSender, burnedYTAmount);
-        IERC20(SLISBNB).safeTransfer(msgSender, yieldAmount);
+        IYSTONE(YT_STONE).burn(msgSender, burnedYTAmount);
+        IERC20(STONE).safeTransfer(msgSender, yieldAmount);
 
         emit WithdrawYield(msgSender, burnedYTAmount, yieldAmount);
     }
 
     /**
-     * @dev slisBNB FlashLoan service
+     * @dev STONE FlashLoan service
      * @param receiver - Address of receiver
-     * @param amount - Amount of slisBNB loan
+     * @param amount - Amount of STONE loan
      * @param data - Additional data
      */
     function flashLoan(address payable receiver, uint256 amount, bytes calldata data) external override nonReentrant {
         require(amount != 0 && receiver != address(0), ZeroInput());
 
-        uint256 balanceBefore = IERC20(SLISBNB).balanceOf(address(this));
-        IERC20(SLISBNB).safeTransfer(receiver, amount);
+        uint256 balanceBefore = IERC20(STONE).balanceOf(address(this));
+        IERC20(STONE).safeTransfer(receiver, amount);
         IOutFlashCallee(receiver).onFlashLoan(msg.sender, amount, data);
 
         uint256 balanceAfter;
@@ -375,14 +394,14 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         unchecked {
             providerFeeAmount = amount * _flashLoanFeeRate.providerFeeRate / RATIO;
             protocolFeeAmount = amount * _flashLoanFeeRate.protocolFeeRate / RATIO;
-            balanceAfter = IERC20(SLISBNB).balanceOf(address(this));
+            balanceAfter = IERC20(STONE).balanceOf(address(this));
             require(
                 balanceAfter >= balanceBefore + providerFeeAmount + protocolFeeAmount, 
                 FlashLoanRepayFailed() 
             );
             _totalStaked = balanceAfter - protocolFeeAmount;
         }
-        IERC20(SLISBNB).safeTransfer(_revenuePool, protocolFeeAmount);
+        IERC20(STONE).safeTransfer(_revenuePool, protocolFeeAmount);
 
         emit FlashLoan(receiver, amount, providerFeeAmount, protocolFeeAmount);
     }
