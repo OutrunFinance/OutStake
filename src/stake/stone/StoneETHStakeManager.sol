@@ -251,9 +251,11 @@ contract StoneETHStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         address ytRecipient
     ) external override returns (uint256 amountInPT, uint256 amountInYT) {
         require(stakedAmount >= MINSTAKE, MinStakeInsufficient(MINSTAKE));
+        uint256 minLockupDays_ = _minLockupDays;
+        uint256 maxLockupDays_ = _maxLockupDays;
         require(
-            lockupDays >= _minLockupDays && lockupDays <= _maxLockupDays, 
-            InvalidLockupDays(_minLockupDays, _maxLockupDays)
+            lockupDays >= minLockupDays_ && lockupDays <= maxLockupDays_, 
+            InvalidLockupDays(minLockupDays_, maxLockupDays_)
         );
 
         address msgSender = msg.sender;
@@ -328,14 +330,15 @@ contract StoneETHStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
     /**
      * @dev Accumulate STONE yield
      */
-    function accumYield() external override {
+    function accumYield() public override {
         uint256 totalValue = calcNativeTokenAmount(_totalStaked);
 
         if (totalValue > _totalPrincipalValue) {
             uint256 nativeYield = totalValue - _totalPrincipalValue;
             uint256 stoneYield = calcNativeYieldTokenAmount(nativeYield);
-            if (stoneYield > _yieldPool) {
-                uint256 increasedYield = stoneYield - _yieldPool;
+            uint256 yieldPoolAmount = _yieldPool;
+            if (stoneYield > yieldPoolAmount) {
+                uint256 increasedYield = stoneYield - yieldPoolAmount;
                 if (_protocolFeeRate > 0) {
                     uint256 feeAmount;
                     unchecked {
@@ -361,6 +364,7 @@ contract StoneETHStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
      */
     function withdrawYield(uint256 burnedYTAmount) external override returns (uint256 yieldAmount) {
         require(burnedYTAmount != 0, ZeroInput());
+        accumYield();
 
         unchecked {
             yieldAmount = _yieldPool * burnedYTAmount / IYSTONE(YT_STONE).totalSupply();

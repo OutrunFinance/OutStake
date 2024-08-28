@@ -232,9 +232,11 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
         address ytRecipient
     ) external override returns (uint256 amountInPT, uint256 amountInYT) {
         require(stakedAmount >= MINSTAKE, MinStakeInsufficient(MINSTAKE));
+        uint256 minLockupDays_ = _minLockupDays;
+        uint256 maxLockupDays_ = _maxLockupDays;
         require(
-            lockupDays >= _minLockupDays && lockupDays <= _maxLockupDays, 
-            InvalidLockupDays(_minLockupDays, _maxLockupDays)
+            lockupDays >= minLockupDays_ && lockupDays <= maxLockupDays_, 
+            InvalidLockupDays(minLockupDays_, maxLockupDays_)
         );
 
         address msgSender = msg.sender;
@@ -309,14 +311,15 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
     /**
      * @dev Accumulate slisBNB yield
      */
-    function accumYield() external override {
+    function accumYield() public override {
         uint256 totalValue = IStakeManager(LISTA_STAKE_MANAGER).convertSnBnbToBnb(_totalStaked);
 
         if (totalValue > _totalPrincipalValue) {
             uint256 nativeYield = totalValue - _totalPrincipalValue;
             uint256 slisBNBYield = IStakeManager(LISTA_STAKE_MANAGER).convertBnbToSnBnb(nativeYield);
-            if (slisBNBYield > _yieldPool) {
-                uint256 increasedYield = slisBNBYield - _yieldPool;
+            uint256 yieldPoolAmount = _yieldPool;
+            if (slisBNBYield > yieldPoolAmount) {
+                uint256 increasedYield = slisBNBYield - yieldPoolAmount;
                 if (_protocolFeeRate > 0) {
                     uint256 feeAmount;
                     unchecked {
@@ -342,7 +345,8 @@ contract ListaBNBStakeManager is INativeYieldTokenStakeManager, PositionOptionsT
      */
     function withdrawYield(uint256 burnedYTAmount) external override returns (uint256 yieldAmount) {
         require(burnedYTAmount != 0, ZeroInput());
-
+        accumYield();
+        
         unchecked {
             yieldAmount = _yieldPool * burnedYTAmount / IYSlisBNB(YT_SLISBNB).totalSupply();
             _yieldPool -= yieldAmount;
