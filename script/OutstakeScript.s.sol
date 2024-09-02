@@ -1,61 +1,59 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "./BaseScript.s.sol";
-import "../src/token/lista/OSlisBNB.sol";
-import "../src/token/lista/YSlisBNB.sol";
-import "../src/stake/lista/ListaBNBStakeManager.sol";
-
+import "../src/core/position/OutrunPositionOptionToken.sol";
+import "../src/core/yield/implementations/Lista/OutrunSlisBNBSY.sol";
+import "../src/core/yield/implementations/Lista/OutrunSlisBNBYieldToken.sol";
+import "../src/core/yield/universalPrincipalToken/UniversalBNBPrincipalToken.sol";
 
 contract OutstakeScript is BaseScript {
     address internal owner;
     address internal slisBNB;
     address internal revenuePool;
-    address internal listaStakeManager;
+    address internal listaBNBStakeManager;
 
     function run() public broadcaster {
         owner = vm.envAddress("OWNER");
         slisBNB = vm.envAddress("SLISBNB");
         revenuePool = vm.envAddress("REVENUE_POOL");
-        listaStakeManager = vm.envAddress("LISTA_STAKE_MANAGER");
+        listaBNBStakeManager = vm.envAddress("LISTA_BNB_STAKE_MANAGER");
         
         deploySlisBNB();
     }
 
     function deploySlisBNB() internal {
-        OSlisBNB oslisBNB = new OSlisBNB(owner);
-        address oslisBNBAddress = address(oslisBNB);
+        // Universal PT
+        UniversalBNBPrincipalToken UBNB = new UniversalBNBPrincipalToken(owner);
+        address UBNBAddress = address(UBNB);
 
-        YSlisBNB yslisBNB = new YSlisBNB(owner);
-        address yslisBNBAddress = address(yslisBNB);
+        // SY
+        OutrunSlisBNBSY SY_SLISBNB = new OutrunSlisBNBSY(owner, slisBNB, listaBNBStakeManager);
+        address slisBNBSYAddress = address(SY_SLISBNB);
+        
+        // YT
+        OutrunSlisBNBYieldToken YT_SLISBNB = new OutrunSlisBNBYieldToken(owner, revenuePool, 500);
+        address slisBNBYTAddress = address(YT_SLISBNB);
 
-        ListaBNBStakeManager stakeManager = new ListaBNBStakeManager(
-            owner, 
-            slisBNB,
-            oslisBNBAddress, 
-            yslisBNBAddress,
-            listaStakeManager,
-            ""
+        // POT
+        OutrunPositionOptionToken POT_SLISBNB = new OutrunPositionOptionToken(
+            owner,
+            "SlisBNB Position Option Token",
+            "POT-slisBNB",
+            18,
+            1e17,
+            slisBNBSYAddress,
+            UBNBAddress,
+            slisBNBYTAddress
         );
-        address stakeManagerAddress = address(stakeManager);
+        POT_SLISBNB.setLockupDuration(30, 365);
+        address slisBNBPOTAddress = address(POT_SLISBNB);
 
-        stakeManager.initialize(
-            revenuePool,
-            500,    // protocolFee: 5%
-            2000,   // burnedYTFee: 20%
-            50,     // forceUnstakeFee: 0.5%
-            7,      // minLockupDays: 7
-            365,    // maxLockupDays: 365
-            20,     // flashLoan providerFeeRate: 0.2%
-            10      // flashLoan protocolFeeRate: 0.1%
-        );
-        oslisBNB.initialize(stakeManagerAddress);
-        yslisBNB.initialize(stakeManagerAddress);
+        YT_SLISBNB.initialize(slisBNBSYAddress, slisBNBPOTAddress);
 
-        console.log("oslisBNB deployed on %s", oslisBNBAddress);
-        console.log("yslisBNB deployed on %s", yslisBNBAddress);
-        console.log("ListaBNBStakeManager deployed on %s", stakeManagerAddress);
+        console.log("Universal PT UBNB deployed on %s", UBNBAddress);
+        console.log("SY_SLISBNB deployed on %s", slisBNBSYAddress);
+        console.log("YT_SLISBNB deployed on %s", slisBNBYTAddress);
+        console.log("POT_SLISBNB deployed on %s", slisBNBPOTAddress);
     }
 }
