@@ -14,6 +14,6 @@ interface IPrincipalToken is IERC20 {
 	function setAuthList(address authContract, bool authorized) external;
 
 	function mint(address account, uint256 amount) external;
-
+	
 	function burn(address account, uint256 amount) external;
 }

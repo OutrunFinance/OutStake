@@ -12,6 +12,6 @@ interface IYieldToken is IERC20 {
 	error PermissionDenied();
 
 	function initialize(address _SY, address _positionOptionContract) external;
-
+	
 	function mint(address _account, uint256 _amount) external;
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
  
 interface IYieldManager {
 	error FeeRateOverflow();
-
+	
 	function totalRedeemableYields() external view returns (uint256 amount);
 
 	function previewWithdrawYields(uint256 amountInBurnedYT) external view returns (uint256 amountYieldsOut);
@@ -23,6 +23,6 @@ interface IYieldManager {
 	event WithdrawYields(address account, uint256 amountYieldsOut);
 
 	event SetRevenuePool(address revenuePool);
-
+	
     event SetProtocolFeeRate(uint256 protocolFeeRate);
 }
