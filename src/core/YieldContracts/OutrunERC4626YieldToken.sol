@@ -8,8 +8,8 @@ import "./OutrunYieldToken.sol";
 import "./OutrunPrincipalToken.sol";
 import "./interfaces/IYieldManager.sol";
 import "../libraries/SYUtils.sol";
-import "../common/IOutrunStakeManager.sol";
 import "../StandardizedYield/IStandardizedYield.sol";
+import "../Position/interfaces/IOutrunStakeManager.sol";
 
 
 /**

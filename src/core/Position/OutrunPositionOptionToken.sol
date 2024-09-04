@@ -4,11 +4,11 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "../common/OutrunERC1155.sol";
-import "../common/AutoIncrementId.sol";
-import "../common/IOutrunStakeManager.sol";
 import "../libraries/SYUtils.sol";
 import "../libraries/TokenHelper.sol";
+import "../common/OutrunERC1155.sol";
+import "../common/AutoIncrementId.sol";
+import "./interfaces/IOutrunStakeManager.sol";
 import "../StandardizedYield/IStandardizedYield.sol";
 import "../YieldContracts/interfaces/IYieldToken.sol";
 import "../YieldContracts/interfaces/IYieldManager.sol";
