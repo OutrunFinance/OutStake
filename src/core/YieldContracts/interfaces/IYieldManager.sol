@@ -3,6 +3,8 @@ pragma solidity ^0.8.26;
  
 interface IYieldManager {
 	error FeeRateOverflow();
+
+	error InvalidInput();
 	
 	function totalRedeemableYields() external view returns (uint256 amount);
 

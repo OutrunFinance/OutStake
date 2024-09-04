@@ -31,7 +31,7 @@ interface IOutrunStakeManager {
 
     function totalPrincipalAssetValue() external view returns (uint256);
 
-    function syAvgStakingDays() external view returns (uint256);
+    function impliedStakingDays() external view returns (uint256);
 
     function calcPTAmount(uint256 nativeYieldTokenAmount, uint256 amountInYT) external view returns (uint256);
 

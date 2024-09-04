@@ -60,17 +60,19 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
     }
 
     /**
-     * @dev Average SY Staking Duration in Days
+     * @dev The average number of days staked based on YT. It isn't the true average number of days staked for the position.
      */
-    function syAvgStakingDays() external view override returns (uint256) {
+    function impliedStakingDays() external view override returns (uint256) {
         return IERC20(YT).totalSupply() / syTotalStaking;
     }
 
     /**
-     * @dev Calculate PT amount by YT amount and principal value
+     * @dev Calculate PT amount by YT amount and principal value, reasonable input needs to be provided during simulation calculations.
      */
-    function calcPTAmount(uint256 principalAssetValue, uint256 amountInYT) public view override returns (uint256) {
-        return principalAssetValue - (amountInYT * IYieldManager(YT).totalRedeemableYields() / IERC20(YT).totalSupply());
+    function calcPTAmount(uint256 principalAssetValue, uint256 amountInYT) public view override returns (uint256 amount) {
+        uint256 newYTSupply = IERC20(YT).totalSupply() + amountInYT;
+        uint256 yieldTokenValue = amountInYT * IYieldManager(YT).totalRedeemableYields() / newYTSupply;
+        amount = principalAssetValue > yieldTokenValue ? principalAssetValue - yieldTokenValue : 0;
     }
 
     /**
@@ -120,8 +122,8 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
             amountInYT = principalAssetValue * lockupDays;
         }
 
-        IYieldToken(YT).mint(YTRecipient, amountInYT);
         amountInPT = calcPTAmount(principalAssetValue, amountInYT);
+        IYieldToken(YT).mint(YTRecipient, amountInYT);
         uint256 positionId = _nextId();
         positions[positionId] = Position(stakedSYAmount, principalAssetValue, amountInPT, deadline);
         _mint(positionOwner, positionId, amountInPT, "");

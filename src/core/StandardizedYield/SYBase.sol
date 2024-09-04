@@ -63,14 +63,14 @@ abstract contract SYBase is IStandardizedYield, OutrunERC20Permit, TokenHelper, 
     ) external nonReentrant returns (uint256 amountTokenOut) {
         require(isValidTokenOut(tokenOut), SYInvalidTokenOut(tokenOut));
         require(amountSharesToRedeem != 0, SYZeroRedeem());
+        amountTokenOut = _redeem(receiver, tokenOut, amountSharesToRedeem);
 
         if (burnFromInternalBalance) {
             _burn(address(this), amountSharesToRedeem);
         } else {
             _burn(msg.sender, amountSharesToRedeem);
         }
-
-        amountTokenOut = _redeem(receiver, tokenOut, amountSharesToRedeem);
+        
         require(amountTokenOut >= minTokenOut, SYInsufficientTokenOut(amountTokenOut, minTokenOut));
 
         emit Redeem(msg.sender, receiver, tokenOut, amountSharesToRedeem, amountTokenOut);

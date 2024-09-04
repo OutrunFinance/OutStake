@@ -70,7 +70,9 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
      * @param amountInBurnedYT - The amount of burned YT
      */
     function previewWithdrawYields(uint256 amountInBurnedYT) public view override returns (uint256 amountYieldsOut) {
-        amountYieldsOut = amountInBurnedYT * totalRedeemableYields() / totalSupply();
+        uint256 _totalSupply = totalSupply();
+        require(amountInBurnedYT <= _totalSupply && _totalSupply > 0, InvalidInput());
+        amountYieldsOut = amountInBurnedYT * totalRedeemableYields() / _totalSupply;
     }
     /**
      * @dev Accumulate yields
@@ -96,10 +98,12 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
      */
     function withdrawYields(uint256 amountInBurnedYT) external override nonReentrant returns (uint256 amountYieldsOut) {
         require(amountInBurnedYT != 0, ZeroInput());
+        uint256 _totalSupply = totalSupply();
+        require(amountInBurnedYT <= _totalSupply && _totalSupply > 0, InvalidInput());
         accumulateYields();
-        
+
         unchecked {
-            amountYieldsOut = currentYields * amountInBurnedYT / totalSupply();
+            amountYieldsOut = currentYields * amountInBurnedYT / _totalSupply;
             currentYields -= amountYieldsOut;
         }
 

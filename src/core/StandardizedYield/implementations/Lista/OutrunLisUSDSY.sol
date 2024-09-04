@@ -42,7 +42,9 @@ contract OutrunLisUSDSY is SYBase {
     ) internal override returns (uint256 amountTokenOut) {
         uint256 claimableYields = IListaLisUSDJar(listaLisUSDJar).earned(address(this));
         uint256 totalAssets = totalDepositedInJar + claimableYields;
-        uint256 totalShares = totalSupply() + amountSharesToRedeem;
+        totalAssets = totalAssets == 0 ? 1 : totalAssets; 
+        uint256 totalShares = totalSupply();
+        totalShares = totalShares == 0 ? 1 : totalShares;
         amountTokenOut = amountSharesToRedeem * totalAssets / totalShares;
 
         IListaLisUSDJar(listaLisUSDJar).exit(amountTokenOut);
