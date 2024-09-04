@@ -28,13 +28,13 @@ Native Asset Token refers to the underlying asset token of a Native Yield Token.
 
 **SY = Standardized Yield Token**
 
-SY is a vault token based on the ERC5115 standard designed to encapsulate native yield tokens. It can wrap any native yield token and provides a standardized interface for interacting with the yield-generating mechanisms of any native yield token.
+SY is a vault token based on the [ERC5115](https://eips.ethereum.org/EIPS/eip-5115) standard designed to encapsulate native yield tokens. It can wrap any native yield token and provides a standardized interface for interacting with the yield-generating mechanisms of any native yield token.
 
 In OutStake, staking SY and specifying a lock-up period will mint three types of tokens: **POT (Position Option Token)**, **PT (Principal Token)**, and **YT (Yield Token)**.
 
 **POT = Position Option Token**
 
-POT is an option token based on the ERC1155 standard that is used to encapsulate a user's staked position. Holding a POT represents the right to redeem a position upon maturity. After the POT lock-up period expires, the POT can be burned along with the corresponding PT to redeem the staked Native Yield Tokens. Since POT is based on the ERC1155 standard, it supports partial redemption of the position.
+POT is an option token based on the [ERC1155](https://eips.ethereum.org/EIPS/eip-1155) standard that is used to encapsulate a user's staked position. Holding a POT represents the right to redeem a position upon maturity. After the POT lock-up period expires, the POT can be burned along with the corresponding PT to redeem the staked Native Yield Tokens. Since POT is based on the [ERC1155](https://eips.ethereum.org/EIPS/eip-1155) standard, it supports partial redemption of the position.
 
 POT records the amount of staked Native Yield Tokens, the fixed principal value, and the number of minted PTs. Upon maturity, there is a fixed relationship between the amount of POT burned, the number of PTs, and the value of the principal being redeemed, thereby establishing a fixed interest rate. Trading POT allows one to trade the right to obtain a fixed interest rate.
 
@@ -56,7 +56,7 @@ The redeemable value of YT (the native yield redeemable by burning YT) starts at
 
 ### SY
 
-SY is a token standard that implements a standardized API for wrapped native yield tokens within smart contracts. All native yield tokens can be wrapped into SY, giving them a common interface that can be built upon.
+SY is a vault token based on the [ERC5115](https://eips.ethereum.org/EIPS/eip-5115) standard designed to encapsulate native yield tokens. It can wrap any native yield token and provides a standardized interface for interacting with the yield-generating mechanisms of any native yield token.
 
 As all SYs have the same mechanism, Outstake interacts with SY as the main interface to all native yield tokens.OutStake automatically converts native yield tokens into SY and vice versa. This process happens automatically behind the scenes, making users feel as if they’re interacting directly with their native yield tokens instead of having to manually manage the conversion between SY and native yield tokens.
 
@@ -66,7 +66,7 @@ POT (Position Options Token) represents the right to redeem a position upon matu
 
 POT allows holders to burn a fixed amount of PT in the future, when the position lock-up period expires, to redeem a fixed amount of Native Yield Tokens. By trading POT, user can trade the right to obtain a fixed interest rate without needing to trade PT itself.
 
-POT is supported by the ERC1155 standard and divides the position into shares equal to the number of PTs minted, allowing users to trade partial redemption rights of their positions.
+POT is supported by the [ERC1155](https://eips.ethereum.org/EIPS/eip-1155) standard and divides the position into shares equal to the number of PTs minted, allowing users to trade partial redemption rights of their positions.
 
 ### PT
 
@@ -132,7 +132,7 @@ YT is not only a tool for helping long-term stakers earn more yield but also a t
 
 #### The mathematical model of YT
 
-While YT may appear simple on the surface, the ability for **YT** to be freely traded and for any **YT** holder to redeem native yields at any time introduces a highly complex game-theoretic process and mathematical model.
+While YT may appear simple on the surface, the ability for YT to be freely traded and for any YT holder to redeem native yields at any time introduces a highly complex game-theoretic process and mathematical model.
 
 The following, we construct a **minimal model** to calculate impermanent profit and losses.
 
@@ -173,8 +173,8 @@ Currently, Pendle is the most popular native yield staking protocol on the marke
 
 1. **Token Types and Composability**
 
-* **Pendle:** The minted PT (Principal Token) and YT (Yield Token) have expiration dates. PT and YT are not standard ERC20 tokens but are closer to NFTs (Non-Fungible Tokens). Throughout the operation of the protocol, Pendle deploys numerous PT and YT contracts for the same Native Yield Token with different staking expiration dates, leading to fragmented liquidity and limiting the composability and use cases of assets on Pendle. In particular, YT's value goes to zero upon expiration, further restricting its usability.
-* **Outstake:** The minted PT and YT are standard ERC20 tokens with no expiration date and can be freely integrated into other DeFi protocols. During the operation of the protocol, there is only one corresponding YT and PT contract for each Native Yield Token, which enhances composability and flexibility. Importantly, Outstake's PT is a universal asset principal token, allowing the minting of the same PT when staking Native Yield Tokens of the same asset type, thereby sharing liquidity. Additionally, Outstake's YT can be viewed as a stablecoin pegged to the yield rate, enabling users to take long or short positions on the yield rate.
+* **Pendle:** The minted PT (Principal Token) and YT (Yield Token) have **expiration dates**. PT and YT are not standard ERC20 tokens but are closer to **NFTs (Non-Fungible Tokens)**. Throughout the operation of the protocol, Pendle deploys numerous PT and YT contracts for the same Native Yield Token with different staking expiration dates, leading to fragmented liquidity and limiting the composability and use cases of assets on Pendle. In particular, YT's value goes to zero upon expiration, further restricting its usability.
+* **Outstake:** The minted PT and YT are standard ERC20 tokens with no expiration date and can be freely integrated into other DeFi protocols. During the operation of the protocol, there is only one corresponding YT and PT contract for each Native Yield Token, which enhances composability and flexibility. Importantly, Outstake's PT is a universal asset principal token, allowing the minting of the same PT when staking Native Yield Tokens of the same native asset type, thereby sharing liquidity. Additionally, Outstake's YT can be viewed as a stablecoin pegged to the yield rate, enabling users to take long or short positions on the yield rate.
 
 2. **Fixed Rate Yields**
 
