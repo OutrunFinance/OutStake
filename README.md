@@ -102,11 +102,11 @@ For example, with ETH, there are currently many LSTs (Liquid Staking Tokens) rel
 
 Introducing a universal asset principal token (UETH) can reduce these redundant processes. Suppose there is a liquidity-scarce LST called xETH. The market would only need liquidity pools such as UETH/ETH and UETH/USDT. By staking xETH through Outstake to mint UETH, it can connect to the existing liquidity in the market. As more market-validated LSTs are added, liquidity will become increasingly ample.
 
-## Yield Token (YT)
+### Yield Token (YT)
 
 YT represents the right to the yield of staked native yield tokens, obtained by staking native yield tokens and specifying a lock-up period. YT separates the native yield from the native yield tokens, allowing it to be traded on secondary markets and used to build other DeFi Lego components.
 
-### **A true universal fungible YieldToken**
+#### **A true universal fungible YieldToken**
 
 Unlike YieldTokens from other protocols in the market, which are either NFTs or special FTs (e.g., Pendle), **these are non-fungible**. This characteristic leads to a **lack of liquidity** for YieldTokens and **reduces the composability** of the protocol.
 
@@ -114,7 +114,7 @@ OutStake's YT is a **genuinely fungible token** **(FT),** offering **excellent l
 
 YT can be freely traded and can be redeemed at any time to claim the accumulated native yield in the yield pool. When burning YT, the redemption of native yield is proportional to the amount of YT burned relative to the total YT supply.
 
-### The Stability Mechanism of **YT**
+#### The Stability Mechanism of **YT**
 
 YT is also a **non-USD algorithmic stablecoin** pegged to the **native yield rate**. Theoretically, one YT represents the native yield produced by one native yield token over one day. Since YT is linked to the native yield rate and minted through the staking of native yield tokens, it differs from early algorithmic stablecoins like Luna. The value system of YT is a closed system, ensuring that **a price death spiral will never occur**.
 
@@ -130,7 +130,7 @@ However, in practice, some users may burn YT before the lock-up period of their 
 
 YT is not only a tool for helping long-term stakers earn more yield but also a truly fungible, universal yield token. Additionally, it represents **Web3's first decentralized algorithmic stablecoin anchored to native yield rates**. In the competitive market, YT remains connected to these native yield rates. Looking ahead, Outrun will utilize YT’s unique features and community to develop even more innovative products.
 
-### The mathematical model of YT
+#### The mathematical model of YT
 
 While YT may appear simple on the surface, the ability for **YT** to be freely traded and for any **YT** holder to redeem native yields at any time introduces a highly complex game-theoretic process and mathematical model.
 
@@ -173,8 +173,8 @@ Currently, Pendle is the most popular native yield staking protocol on the marke
 
 1. **Token Types and Composability**
 
-* **Pendle:** The minted Principal Tokens **(PT)** and Yield Tokens **(YT)** have an expiration date. PT and YT are not standard ERC20 tokens but are closer to NFTs (Non-fungible tokens). This limits the composability and use cases of assets on Pendle. Especially YT, whose value drops to zero at expiration, further restricts its usage.
-* **Outstake:** The minted PT and YT are standard ERC20 tokens without an expiration date, allowing them to be traded on any decentralized exchange (DEX) and freely integrated into other DeFi protocols. This design enhances composability and flexibility. Additionally, Outstake’s YT can be seen as a stablecoin tied to the yield rate, enabling users to take long or short positions on the yield rate.
+* **Pendle:** The minted PT (Principal Token) and YT (Yield Token) have expiration dates. PT and YT are not standard ERC20 tokens but are closer to NFTs (Non-Fungible Tokens). Throughout the operation of the protocol, Pendle deploys numerous PT and YT contracts for the same Native Yield Token with different staking expiration dates, leading to fragmented liquidity and limiting the composability and use cases of assets on Pendle. In particular, YT's value goes to zero upon expiration, further restricting its usability.
+* **Outstake:** The minted PT and YT are standard ERC20 tokens with no expiration date and can be freely integrated into other DeFi protocols. During the operation of the protocol, there is only one corresponding YT and PT contract for each Native Yield Token, which enhances composability and flexibility. Importantly, Outstake's PT is a universal asset principal token, allowing the minting of the same PT when staking Native Yield Tokens of the same asset type, thereby sharing liquidity. Additionally, Outstake's YT can be viewed as a stablecoin pegged to the yield rate, enabling users to take long or short positions on the yield rate.
 
 2. **Fixed Rate Yields**
 
