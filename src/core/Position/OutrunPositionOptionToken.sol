@@ -7,12 +7,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../common/OutrunERC1155.sol";
 import "../common/AutoIncrementId.sol";
 import "../common/IOutrunStakeManager.sol";
-import "../../core/yield/SYUtils.sol";
-import "../../core/libraries/TokenHelper.sol";
-import "../../core/yield/interfaces/IYieldToken.sol";
-import "../../core/yield/interfaces/IYieldManager.sol";
-import "../../core/yield/interfaces/IPrincipalToken.sol";
-import "../../core/yield/interfaces/IStandardizedYield.sol";
+import "../libraries/SYUtils.sol";
+import "../libraries/TokenHelper.sol";
+import "../StandardizedYield/IStandardizedYield.sol";
+import "../YieldContracts/interfaces/IYieldToken.sol";
+import "../YieldContracts/interfaces/IYieldManager.sol";
+import "../YieldContracts/interfaces/IPrincipalToken.sol";
 
 /**
  * @title Outrun Position Option Token

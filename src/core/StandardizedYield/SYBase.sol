@@ -4,10 +4,10 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+import "./IStandardizedYield.sol";
 import "../libraries/ArrayLib.sol";
 import "../libraries/TokenHelper.sol";
 import "../common/OutrunERC20Permit.sol";
-import "./interfaces/IStandardizedYield.sol";
 
 /**
  * @dev Standardized Yield Base Contract

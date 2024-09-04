@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "../../yield/OutrunPrincipalToken.sol";
-import "../../yield/interfaces/IStandardizedYield.sol";
+import "../OutrunPrincipalToken.sol";
 
 /**
  * @dev Outrun universal USD principal token, can be minted from various USD native yield tokens

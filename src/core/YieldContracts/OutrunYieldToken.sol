@@ -4,20 +4,16 @@ pragma solidity ^0.8.26;
 import "../common/OutrunERC20.sol";
 import "../common/Initializable.sol";
 import "./interfaces/IYieldToken.sol";
-import "../../core/yield/YieldManager.sol";
 
-abstract contract OutrunYieldToken is IYieldToken, YieldManager, OutrunERC20, Initializable {
+abstract contract OutrunYieldToken is IYieldToken, OutrunERC20, Initializable {
     address public SY;
     address public POT;
 
     constructor(
         string memory name_,
         string memory symbol_,
-        uint8 decimals_,
-        address owner_,
-        address revenuePool_,
-        uint256 protocolFeeRate_
-    ) OutrunERC20(name_, symbol_, decimals_) YieldManager(owner_, revenuePool_, protocolFeeRate_) {
+        uint8 decimals_
+    ) OutrunERC20(name_, symbol_, decimals_) {
     }
 
     modifier onlyPositionOptionContract() {

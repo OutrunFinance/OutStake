@@ -8,9 +8,7 @@ interface IYieldManager {
 
 	function previewWithdrawYields(uint256 amountInBurnedYT) external view returns (uint256 amountYieldsOut);
 
-	function accumulateYieldsFromPOT() external;
-
-	function accumulateYieldsFromSY(address nativeYieldToken, uint256 amountInYields) external;
+	function accumulateYields() external;
 
 	function withdrawYields(uint256 amountInBurnedYT) external returns (uint256 amountYieldsOut);
 

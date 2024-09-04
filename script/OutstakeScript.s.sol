@@ -2,10 +2,10 @@
 pragma solidity ^0.8.26;
 
 import "./BaseScript.s.sol";
-import "../src/core/position/OutrunPositionOptionToken.sol";
-import "../src/core/yield/implementations/Lista/OutrunSlisBNBSY.sol";
-import "../src/core/yield/implementations/Lista/OutrunSlisBNBYieldToken.sol";
-import "../src/core/yield/universalPrincipalToken/UniversalBNBPrincipalToken.sol";
+import "../src/core/Position/OutrunPositionOptionToken.sol";
+import "../src/core/YieldContracts/OutrunERC4626YieldToken.sol";
+import "../src/core/YieldContracts/universalPrincipalToken/UniversalBNBPrincipalToken.sol";
+import "../src/core/StandardizedYield/implementations/Lista/OutrunSlisBNBSY.sol";
 
 contract OutstakeScript is BaseScript {
     address internal owner;
@@ -32,7 +32,14 @@ contract OutstakeScript is BaseScript {
         address slisBNBSYAddress = address(SY_SLISBNB);
         
         // YT
-        OutrunSlisBNBYieldToken YT_SLISBNB = new OutrunSlisBNBYieldToken(owner, revenuePool, 500);
+        OutrunERC4626YieldToken YT_SLISBNB = new OutrunERC4626YieldToken(
+            "Outrun slisBNB Yield Token",
+            "YT-slisBNB",
+            18,
+            owner, 
+            revenuePool, 
+            500
+        );
         address slisBNBYTAddress = address(YT_SLISBNB);
 
         // POT
