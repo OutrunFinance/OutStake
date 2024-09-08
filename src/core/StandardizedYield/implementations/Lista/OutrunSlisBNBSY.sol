@@ -5,13 +5,13 @@ import "../../SYBase.sol";
 import "../../../../external/lista/IListaBNBStakeManager.sol";
 
 contract OutrunSlisBNBSY is SYBase {
-    address public immutable listaBNBStakeManager;
+    IListaBNBStakeManager public immutable listaBNBStakeManager;
     address public immutable YT;
 
     constructor(
         address _owner,
         address _slisBNB,
-        address _stakeManager
+        IListaBNBStakeManager _stakeManager
     ) SYBase("SY Lista slisBNB", "SY-slisBNB", _slisBNB, _owner) {
         listaBNBStakeManager = _stakeManager;
     }
@@ -21,8 +21,8 @@ contract OutrunSlisBNBSY is SYBase {
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) {
-            IListaBNBStakeManager(listaBNBStakeManager).deposit{value: amountDeposited}();
-            amountSharesOut = _selfBalance(nativeYieldToken);
+            listaBNBStakeManager.deposit{value: amountDeposited}();
+            amountSharesOut = listaBNBStakeManager.convertBnbToSnBnb(amountDeposited);
         } else {
             amountSharesOut = amountDeposited;
         }
@@ -38,7 +38,7 @@ contract OutrunSlisBNBSY is SYBase {
     }
 
     function exchangeRate() public view override returns (uint256 res) {
-        return IListaBNBStakeManager(listaBNBStakeManager).convertSnBnbToBnb(1 ether);
+        return listaBNBStakeManager.convertSnBnbToBnb(1 ether);
     }
 
     function _previewDeposit(
@@ -46,7 +46,7 @@ contract OutrunSlisBNBSY is SYBase {
         uint256 amountTokenToDeposit
     ) internal view override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) {
-            amountSharesOut = IListaBNBStakeManager(listaBNBStakeManager).convertBnbToSnBnb(amountTokenToDeposit);
+            amountSharesOut = listaBNBStakeManager.convertBnbToSnBnb(amountTokenToDeposit);
         } else {
             amountSharesOut = amountTokenToDeposit;
         }

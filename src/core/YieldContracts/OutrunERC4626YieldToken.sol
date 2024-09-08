@@ -11,7 +11,6 @@ import "../libraries/SYUtils.sol";
 import "../StandardizedYield/IStandardizedYield.sol";
 import "../Position/interfaces/IOutrunStakeManager.sol";
 
-
 /**
  * With YT yielding more SYs overtime, which is allowed to be redeemed by users, the yields distribution
  * should be based on the amount of SYs that their YT currently represent

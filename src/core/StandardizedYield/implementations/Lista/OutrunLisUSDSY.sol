@@ -6,7 +6,7 @@ import "../../../libraries/SYUtils.sol";
 import "../../../../external/lista/IListaLisUSDJar.sol";
 
 contract OutrunLisUSDSY is SYBase {
-    address public immutable listaLisUSDJar;
+    IListaLisUSDJar public immutable listaLisUSDJar;
     address public immutable YT;
 
     uint256 public totalDepositedInJar;
@@ -14,21 +14,18 @@ contract OutrunLisUSDSY is SYBase {
     constructor(
         address _owner,
         address _lisUSD,
-        address _jar,
-        address _YT
+        IListaLisUSDJar _jar
     ) SYBase("SY Lista lisUSD", "SY-lisUSD", _lisUSD, _owner) {
         listaLisUSDJar = _jar;
-        YT = _YT;
 
-        _safeApproveInf(nativeYieldToken, _jar);
-        _safeApproveInf(nativeYieldToken, _YT);
+        _safeApproveInf(nativeYieldToken, address(_jar));
     }
 
     function _deposit(
         address /*tokenIn*/,
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
-        IListaLisUSDJar(listaLisUSDJar).join(amountDeposited);
+        listaLisUSDJar.join(amountDeposited);
         unchecked {
             totalDepositedInJar += amountDeposited;
         }
@@ -40,16 +37,16 @@ contract OutrunLisUSDSY is SYBase {
         address /*tokenOut*/,
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 amountTokenOut) {
-        uint256 claimableYields = IListaLisUSDJar(listaLisUSDJar).earned(address(this));
+        uint256 claimableYields = listaLisUSDJar.earned(address(this));
         uint256 totalAssets = totalDepositedInJar + claimableYields;
         totalAssets = totalAssets == 0 ? 1 : totalAssets; 
         uint256 totalShares = totalSupply();
         totalShares = totalShares == 0 ? 1 : totalShares;
         amountTokenOut = amountSharesToRedeem * totalAssets / totalShares;
 
-        IListaLisUSDJar(listaLisUSDJar).exit(amountTokenOut);
+        listaLisUSDJar.exit(amountTokenOut);
         _transferOut(nativeYieldToken, receiver, amountTokenOut);
-        IListaLisUSDJar(listaLisUSDJar).join(claimableYields);
+        listaLisUSDJar.join(claimableYields);
 
         unchecked {
             totalDepositedInJar = totalDepositedInJar - amountTokenOut + claimableYields;
@@ -57,7 +54,7 @@ contract OutrunLisUSDSY is SYBase {
     }
 
     function exchangeRate() public view override returns (uint256 res) {
-        uint256 totalAssets = totalDepositedInJar + IListaLisUSDJar(listaLisUSDJar).earned(address(this));
+        uint256 totalAssets = totalDepositedInJar + listaLisUSDJar.earned(address(this));
         totalAssets = totalAssets == 0 ? 1 : totalAssets; 
 
         uint256 totalShares = totalSupply();
