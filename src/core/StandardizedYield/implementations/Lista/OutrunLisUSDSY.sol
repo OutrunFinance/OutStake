@@ -7,7 +7,6 @@ import "../../../../external/lista/IListaLisUSDJar.sol";
 
 contract OutrunLisUSDSY is SYBase {
     IListaLisUSDJar public immutable listaLisUSDJar;
-    address public immutable YT;
 
     uint256 public totalDepositedInJar;
 

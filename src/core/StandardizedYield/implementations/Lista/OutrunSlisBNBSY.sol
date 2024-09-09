@@ -6,7 +6,6 @@ import "../../../../external/lista/IListaBNBStakeManager.sol";
 
 contract OutrunSlisBNBSY is SYBase {
     IListaBNBStakeManager public immutable listaBNBStakeManager;
-    address public immutable YT;
 
     constructor(
         address _owner,
