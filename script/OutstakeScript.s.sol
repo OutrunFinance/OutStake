@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "./BaseScript.s.sol";
+import "../src/external/lista/IListaBNBStakeManager.sol";
 import "../src/core/Position/OutrunPositionOptionToken.sol";
 import "../src/core/YieldContracts/OutrunERC4626YieldToken.sol";
 import "../src/core/YieldContracts/universalPrincipalToken/UniversalBNBPrincipalToken.sol";
@@ -15,9 +16,9 @@ contract OutstakeScript is BaseScript {
 
     function run() public broadcaster {
         owner = vm.envAddress("OWNER");
-        slisBNB = vm.envAddress("SLISBNB");
+        slisBNB = vm.envAddress("TESTNET_SLISBNB");
         revenuePool = vm.envAddress("REVENUE_POOL");
-        listaBNBStakeManager = vm.envAddress("LISTA_BNB_STAKE_MANAGER");
+        listaBNBStakeManager = vm.envAddress("TESTNET_LISTA_BNB_STAKE_MANAGER");
         
         deploySlisBNB();
     }
@@ -28,7 +29,7 @@ contract OutstakeScript is BaseScript {
         address UBNBAddress = address(UBNB);
 
         // SY
-        OutrunSlisBNBSY SY_SLISBNB = new OutrunSlisBNBSY(owner, slisBNB, listaBNBStakeManager);
+        OutrunSlisBNBSY SY_SLISBNB = new OutrunSlisBNBSY(owner, slisBNB, IListaBNBStakeManager(listaBNBStakeManager));
         address slisBNBSYAddress = address(SY_SLISBNB);
         
         // YT
@@ -48,14 +49,15 @@ contract OutstakeScript is BaseScript {
             "SlisBNB Position Option Token",
             "POT-slisBNB",
             18,
-            1e17,
+            0,
             slisBNBSYAddress,
             UBNBAddress,
             slisBNBYTAddress
         );
-        POT_SLISBNB.setLockupDuration(30, 365);
+        POT_SLISBNB.setLockupDuration(1, 365);
         address slisBNBPOTAddress = address(POT_SLISBNB);
 
+        UBNB.setAuthList(slisBNBPOTAddress, true);
         YT_SLISBNB.initialize(slisBNBSYAddress, slisBNBPOTAddress);
 
         console.log("Universal PT UBNB deployed on %s", UBNBAddress);
