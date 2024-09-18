@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0
-// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/ERC20.sol)
 
 pragma solidity ^0.8.26;
 
@@ -11,7 +10,7 @@ import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.so
 /**
  * @dev Outrun's ERC20 implementation, modified from @openzeppelin implementation
  */
-abstract contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
+contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
     mapping(address account => uint256) private _balances;
 
     mapping(address account => mapping(address spender => uint256)) private _allowances;
@@ -151,12 +150,9 @@ abstract contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * NOTE: This function is not virtual, {_update} should be overridden instead.
      */
     function _transfer(address from, address to, uint256 value) internal {
-        if (from == address(0)) {
-            revert ERC20InvalidSender(address(0));
-        }
-        if (to == address(0)) {
-            revert ERC20InvalidReceiver(address(0));
-        }
+        require(from != address(0), ERC20InvalidSender(address(0)));
+        require(to != address(0), ERC20InvalidReceiver(address(0)));
+
         _update(from, to, value);
     }
 
@@ -168,14 +164,14 @@ abstract contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * Emits a {Transfer} event.
      */
     function _update(address from, address to, uint256 value) internal virtual {
+        _beforeTokenTransfer(from, to, value);
+
         if (from == address(0)) {
             // Overflow check required: The rest of the code assumes that totalSupply never overflows
             _totalSupply += value;
         } else {
             uint256 fromBalance = _balances[from];
-            if (fromBalance < value) {
-                revert ERC20InsufficientBalance(from, fromBalance, value);
-            }
+            require(fromBalance >= value, ERC20InsufficientBalance(from, fromBalance, value));
             unchecked {
                 // Overflow not possible: value <= fromBalance <= totalSupply.
                 _balances[from] = fromBalance - value;
@@ -194,6 +190,8 @@ abstract contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
             }
         }
 
+        _afterTokenTransfer(from, to, value);
+
         emit Transfer(from, to, value);
     }
 
@@ -206,9 +204,8 @@ abstract contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * NOTE: This function is not virtual, {_update} should be overridden instead.
      */
     function _mint(address account, uint256 value) internal {
-        if (account == address(0)) {
-            revert ERC20InvalidReceiver(address(0));
-        }
+        require(account != address(0), ERC20InvalidReceiver(address(0)));
+
         _update(address(0), account, value);
     }
 
@@ -221,9 +218,8 @@ abstract contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * NOTE: This function is not virtual, {_update} should be overridden instead
      */
     function _burn(address account, uint256 value) internal {
-        if (account == address(0)) {
-            revert ERC20InvalidSender(address(0));
-        }
+        require(account != address(0), ERC20InvalidSender(address(0)));
+
         _update(account, address(0), value);
     }
 
@@ -264,12 +260,9 @@ abstract contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * Requirements are the same as {_approve}.
      */
     function _approve(address owner, address spender, uint256 value, bool emitEvent) internal virtual {
-        if (owner == address(0)) {
-            revert ERC20InvalidApprover(address(0));
-        }
-        if (spender == address(0)) {
-            revert ERC20InvalidSpender(address(0));
-        }
+        require(owner != address(0), ERC20InvalidApprover(address(0)));
+        require(spender != address(0), ERC20InvalidSpender(address(0)));
+
         _allowances[owner][spender] = value;
         if (emitEvent) {
             emit Approval(owner, spender, value);
@@ -287,12 +280,41 @@ abstract contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
     function _spendAllowance(address owner, address spender, uint256 value) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            if (currentAllowance < value) {
-                revert ERC20InsufficientAllowance(spender, currentAllowance, value);
-            }
+            require(currentAllowance >= value, ERC20InsufficientAllowance(spender, currentAllowance, value));
+
             unchecked {
                 _approve(owner, spender, currentAllowance - value, false);
             }
         }
     }
+
+    /**
+     * @dev Hook that is called before any transfer of tokens. This includes
+     * minting and burning.
+     *
+     * Calling conditions:
+     *
+     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
+     * will be transferred to `to`.
+     * - when `from` is zero, `amount` tokens will be minted for `to`.
+     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
+     * - `from` and `to` are never both zero.
+     *
+     */
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {}
+
+    /**
+     * @dev Hook that is called after any transfer of tokens. This includes
+     * minting and burning.
+     *
+     * Calling conditions:
+     *
+     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
+     * has been transferred to `to`.
+     * - when `from` is zero, `amount` tokens have been minted for `to`.
+     * - when `to` is zero, `amount` of ``from``'s tokens have been burned.
+     * - `from` and `to` are never both zero.
+     *
+     */
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 }

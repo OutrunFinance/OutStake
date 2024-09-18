@@ -1,21 +1,32 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "../../SYBase.sol";
+import "../../SYBaseWithRewards.sol";
 import "../../../libraries/SYUtils.sol";
+import "../../../libraries/ArrayLib.sol";
 import "../../../../external/lista/IListaLisUSDJar.sol";
+import "../../../../external/lista/IStakeLisUSDListaDistributor.sol";
 
-contract OutrunLisUSDSY is SYBase {
+contract OutrunLisUSDSY is SYBaseWithRewards {
+    using ArrayLib for address[];
+
     IListaLisUSDJar public immutable listaLisUSDJar;
+    IStakeLisUSDListaDistributor public immutable distributor;
+    address public immutable defaultRewardToken;
 
+    address[] public additionalRewardTokens;
     uint256 public totalDepositedInJar;
 
     constructor(
         address _owner,
         address _lisUSD,
-        IListaLisUSDJar _jar
-    ) SYBase("SY Lista lisUSD", "SY-lisUSD", _lisUSD, _owner) {
+        address _defaultRewardToken,
+        IListaLisUSDJar _jar,
+        IStakeLisUSDListaDistributor _distributor
+    ) SYBaseWithRewards("SY Lista lisUSD", "SY-lisUSD", _lisUSD, _owner) {
         listaLisUSDJar = _jar;
+        distributor = _distributor;
+        defaultRewardToken = _defaultRewardToken;
 
         _safeApproveInf(nativeYieldToken, address(_jar));
     }
@@ -74,6 +85,17 @@ contract OutrunLisUSDSY is SYBase {
         uint256 amountSharesToRedeem
     ) internal view override returns (uint256 /*amountTokenOut*/) {
         return SYUtils.syToAsset(exchangeRate(), amountSharesToRedeem);
+    }
+
+    /**
+     * @dev See {IStandardizedYield-getRewardTokens}
+     */
+    function _getRewardTokens() internal view override returns (address[] memory) {
+        return additionalRewardTokens.appendHead(defaultRewardToken);
+    }
+
+    function _redeemExternalReward() internal override {
+        distributor.claimReward();
     }
 
     function getTokensIn() public view override returns (address[] memory res) {

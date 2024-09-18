@@ -158,6 +158,8 @@ abstract contract SYBase is IStandardizedYield, OutrunERC20Permit, TokenHelper, 
         return _previewRedeem(tokenOut, amountSharesToRedeem);
     }
 
+    function _beforeTokenTransfer(address from, address to, uint256 value) internal virtual override {}
+
     function _previewDeposit(
         address tokenIn,
         uint256 amountTokenToDeposit
