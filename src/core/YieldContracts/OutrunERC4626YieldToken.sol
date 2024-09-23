@@ -39,10 +39,10 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
         IOutrunStakeManager syStakeManager = IOutrunStakeManager(POT);
         uint256 exchangeRate = IStandardizedYield(SY).exchangeRate();
         uint256 totalCurrentAssetValue = SYUtils.syToAsset(exchangeRate, syStakeManager.syTotalStaking());
-        uint256 totalPrincipalAssetValue = syStakeManager.totalPrincipalAssetValue();
+        uint256 totalPrincipalValue = syStakeManager.totalPrincipalValue();
 
-        if (totalCurrentAssetValue > totalPrincipalAssetValue) {
-            uint256 yieldInAsset = totalCurrentAssetValue - totalPrincipalAssetValue;
+        if (totalCurrentAssetValue > totalPrincipalValue) {
+            uint256 yieldInAsset = totalCurrentAssetValue - totalPrincipalValue;
             latestYield = SYUtils.assetToSy(exchangeRate, yieldInAsset);
             uint256 _currentYields = currentYields;
             if (latestYield > _currentYields) {

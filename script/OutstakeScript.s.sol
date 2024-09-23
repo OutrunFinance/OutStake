@@ -13,13 +13,15 @@ contract OutstakeScript is BaseScript {
     address internal slisBNB;
     address internal revenuePool;
     address internal listaBNBStakeManager;
+    uint256 internal protocolFeeRate;
 
     function run() public broadcaster {
         owner = vm.envAddress("OWNER");
         slisBNB = vm.envAddress("TESTNET_SLISBNB");
         revenuePool = vm.envAddress("REVENUE_POOL");
         listaBNBStakeManager = vm.envAddress("TESTNET_LISTA_BNB_STAKE_MANAGER");
-        
+        protocolFeeRate = vm.envUint("PROTOCOL_FEE_RATE");
+
         deploySlisBNB();
     }
 
@@ -39,7 +41,7 @@ contract OutstakeScript is BaseScript {
             18,
             owner, 
             revenuePool, 
-            500
+            protocolFeeRate
         );
         address slisBNBYTAddress = address(YT_SLISBNB);
 
@@ -50,6 +52,8 @@ contract OutstakeScript is BaseScript {
             "POT-slisBNB",
             18,
             0,
+            protocolFeeRate,
+            revenuePool,
             slisBNBSYAddress,
             UBNBAddress,
             slisBNBYTAddress

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-interface IRewardManager {
-    function userReward(address token, address user) external view returns (uint128 index, uint128 accrued);
+interface IPositionRewardManager {
+    function positionReward(address token, uint256 positionId) external view returns (uint128 index, uint128 accrued, bool feesCollected);
 
     event RedeemRewards(
         uint256 indexed positionId, 

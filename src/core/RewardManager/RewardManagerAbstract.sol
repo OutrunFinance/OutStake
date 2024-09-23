@@ -6,16 +6,14 @@ import "./interfaces/IRewardManager.sol";
 import "../libraries/Math.sol";
 import "../libraries/ArrayLib.sol";
 import "../libraries/TokenHelper.sol";
-import "../common/Initializable.sol";
 
 /**
  * @notice RewardManager must not have duplicated rewardTokens
  */
-abstract contract RewardManagerAbstract is IRewardManager, TokenHelper, Initializable {
+abstract contract RewardManagerAbstract is IRewardManager, TokenHelper {
     using Math for uint256;
 
     uint256 internal constant INITIAL_REWARD_INDEX = 1;
-    address public POT;
 
     struct RewardState {
         uint128 index;
@@ -30,14 +28,6 @@ abstract contract RewardManagerAbstract is IRewardManager, TokenHelper, Initiali
     // [token] => [user] => (index,accrued)
     mapping(address => mapping(address => UserReward)) public userReward;
 
-    /**
-     * @dev Initializer
-     * @param _POT - Address of position option token contract
-     */
-    function initialize(address _POT) external virtual override initializer {
-        POT = _POT;
-    }
-
     function _updateAndDistributeRewards(address user) internal virtual {
         _updateAndDistributeRewardsForTwo(user, address(0));
     }
@@ -46,8 +36,8 @@ abstract contract RewardManagerAbstract is IRewardManager, TokenHelper, Initiali
         (address[] memory tokens, uint256[] memory indexes) = _updateRewardIndex();
         if (tokens.length == 0) return;
 
-        if (user1 != address(0) && user1 != address(this) && user1 != POT) _distributeRewardsPrivate(user1, tokens, indexes);
-        if (user2 != address(0) && user2 != address(this) && user2 != POT) _distributeRewardsPrivate(user2, tokens, indexes);
+        if (user1 != address(0) && user1 != address(this)) _distributeRewardsPrivate(user1, tokens, indexes);
+        if (user2 != address(0) && user2 != address(this)) _distributeRewardsPrivate(user2, tokens, indexes);
     }
 
     // should only be callable from `_updateAndDistributeRewardsForTwo` to guarantee user != address(0) && user != address(this)

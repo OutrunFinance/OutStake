@@ -3,12 +3,14 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "../libraries/SYUtils.sol";
 import "../libraries/TokenHelper.sol";
 import "../common/OutrunERC1155.sol";
 import "../common/AutoIncrementId.sol";
 import "./interfaces/IOutrunStakeManager.sol";
+import "../RewardManager/PositionRewardManager.sol";
 import "../StandardizedYield/IStandardizedYield.sol";
 import "../YieldContracts/interfaces/IYieldToken.sol";
 import "../YieldContracts/interfaces/IYieldManager.sol";
@@ -17,7 +19,17 @@ import "../YieldContracts/interfaces/IPrincipalToken.sol";
 /**
  * @title Outrun Position Option Token
  */
-contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenHelper, Ownable, AutoIncrementId {
+contract OutrunPositionOptionToken is 
+    IOutrunStakeManager, 
+    PositionRewardManager, 
+    AutoIncrementId, 
+    OutrunERC1155, 
+    TokenHelper, 
+    ReentrancyGuard, 
+    Ownable
+{
+    using Math for uint256;
+
     uint256 public constant DAY = 24 * 3600;
     address public immutable SY;
     address public immutable PT;
@@ -25,8 +37,11 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
 
     uint256 public minStake;
     uint256 public syTotalStaking;
-    uint256 public totalPrincipalAssetValue;
+    uint256 public totalPrincipalValue;
     LockupDuration public lockupDuration;
+
+    address public revenuePool;
+    uint256 public protocolFeeRate;
 
     mapping(uint256 positionId => Position) public positions;
 
@@ -36,6 +51,8 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
         string memory symbol_,
         uint8 decimals_,
         uint256 minStake_,
+        uint256 protocolFeeRate_,
+        address revenuePool_,
         address _SY,
         address _PT,
         address _YT
@@ -44,19 +61,13 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
         PT = _PT;
         YT = _YT;
         minStake = minStake_;
+        revenuePool = revenuePool_;
+        protocolFeeRate = protocolFeeRate_;
     }
 
     modifier onlyYT() {
         require(msg.sender == YT, PermissionDenied());
         _;
-    }
-    
-    function _transferSY(address receiver, uint256 syAmount) internal {
-        unchecked {
-            syTotalStaking -= syAmount;
-        }
-
-        _transferOut(SY, receiver, syAmount);
     }
 
     /**
@@ -69,10 +80,10 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
     /**
      * @dev Calculate PT amount by YT amount and principal value, reasonable input needs to be provided during simulation calculations.
      */
-    function calcPTAmount(uint256 principalAssetValue, uint256 amountInYT) public view override returns (uint256 amount) {
+    function calcPTAmount(uint256 principalValue, uint256 amountInYT) public view override returns (uint256 amount) {
         uint256 newYTSupply = IERC20(YT).totalSupply() + amountInYT;
         uint256 yieldTokenValue = amountInYT * IYieldManager(YT).totalRedeemableYields() / newYTSupply;
-        amount = principalAssetValue > yieldTokenValue ? principalAssetValue - yieldTokenValue : 0;
+        amount = principalValue > yieldTokenValue ? principalValue - yieldTokenValue : 0;
     }
 
     /**
@@ -101,7 +112,7 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
         address positionOwner, 
         address PTRecipient, 
         address YTRecipient
-    ) external override returns (uint256 amountInPT, uint256 amountInYT) {
+    ) external override nonReentrant returns (uint256 PTGenerated, uint256 YTGenerated) {
         require(stakedSYAmount >= minStake, MinStakeInsufficient(minStake));
         uint256 _minLockupDays = lockupDuration.minLockupDays;
         uint256 _maxLockupDays = lockupDuration.maxLockupDays;
@@ -114,50 +125,57 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
         _transferIn(SY, msgSender, stakedSYAmount);
         
         uint256 deadline;
-        uint256 principalAssetValue = SYUtils.syToAsset(IStandardizedYield(SY).exchangeRate(), stakedSYAmount);
+        uint256 principalValue = SYUtils.syToAsset(IStandardizedYield(SY).exchangeRate(), stakedSYAmount);
         unchecked {
             syTotalStaking += stakedSYAmount;
-            totalPrincipalAssetValue += principalAssetValue;
+            totalPrincipalValue += principalValue;
             deadline = block.timestamp + lockupDays * DAY;
-            amountInYT = principalAssetValue * lockupDays;
+            YTGenerated = principalValue * lockupDays;
         }
 
-        amountInPT = calcPTAmount(principalAssetValue, amountInYT);
-        IYieldToken(YT).mint(YTRecipient, amountInYT);
         uint256 positionId = _nextId();
-        positions[positionId] = Position(stakedSYAmount, principalAssetValue, amountInPT, deadline);
-        _mint(positionOwner, positionId, amountInPT, "");
-        IPrincipalToken(PT).mint(PTRecipient, amountInPT);
+        PTGenerated = calcPTAmount(principalValue, YTGenerated);
+        positions[positionId] = Position(stakedSYAmount, principalValue, PTGenerated, deadline);
+        IYieldToken(YT).mint(YTRecipient, YTGenerated);
+        IPrincipalToken(PT).mint(PTRecipient, PTGenerated);
+        _mint(positionOwner, positionId, PTGenerated, "");  // mint POT
 
-        emit Stake(positionId, stakedSYAmount, principalAssetValue, amountInPT, amountInYT, deadline);
+        _storeRewardIndexes(positionId);
+
+        emit Stake(positionId, stakedSYAmount, principalValue, PTGenerated, YTGenerated, deadline);
     }
 
     /**
      * @dev Allows user to unstake SY by burnning PT and POT.
      * @param positionId - Position Id
-     * @param share - Share of the position
+     * @param positionShare - Share of the position
      */
-    function redeem(uint256 positionId, uint256 share) external override {
+    function redeem(uint256 positionId, uint256 positionShare) external override nonReentrant {
         Position storage position = positions[positionId];
         uint256 deadline = position.deadline;
         require(deadline <= block.timestamp, LockTimeNotExpired(deadline));
 
         address msgSender = msg.sender;
-        burn(msgSender, positionId, share);
+        burn(msgSender, positionId, positionShare);
         
-        uint256 amountInPT = position.amountInPT;
-        uint256 principalAssetValue = position.principalAssetValue;
+        uint256 PTRedeemable = position.PTRedeemable;
+        uint256 principalRedeemable = position.principalRedeemable;
 
-        IPrincipalToken(PT).burn(msgSender, share);
-        uint256 reducedAssetValue = principalAssetValue * share / amountInPT;
-        uint256 reducedStakedSYAmount = SYUtils.assetToSy(IStandardizedYield(SY).exchangeRate(), reducedAssetValue);
+        IPrincipalToken(PT).burn(msgSender, positionShare);
+        _redeemRewards(positionId, positionShare, position.SYRedeemable, PTRedeemable);
 
+        uint256 reducedPrincipalValue = principalRedeemable * positionShare / PTRedeemable;
+        uint256 reducedStakedSYAmount = SYUtils.assetToSy(IStandardizedYield(SY).exchangeRate(), reducedPrincipalValue);
         unchecked {
-            totalPrincipalAssetValue -= reducedAssetValue;
+            totalPrincipalValue -= reducedPrincipalValue;
+            position.SYRedeemable -= reducedStakedSYAmount;
+            position.PTRedeemable -= positionShare;
+            position.principalRedeemable -= reducedPrincipalValue;
         }
-        _transferSY(msgSender, reducedStakedSYAmount);
 
-        emit Redeem(positionId, reducedStakedSYAmount, share);
+        _transferSY(msgSender, reducedStakedSYAmount);
+        
+        emit Redeem(positionId, msgSender, reducedStakedSYAmount, positionShare);
     }
 
     /**
@@ -168,5 +186,97 @@ contract OutrunPositionOptionToken is IOutrunStakeManager, OutrunERC1155, TokenH
     function transferYields(address receiver, uint256 syAmount) external override onlyYT {
         require(msg.sender == YT, PermissionDenied());
         _transferSY(receiver, syAmount);
+    }
+
+    function _transferSY(address receiver, uint256 syAmount) internal {
+        unchecked {
+            syTotalStaking -= syAmount;
+        }
+
+        _transferOut(SY, receiver, syAmount);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                               REWARDS-RELATED
+    //////////////////////////////////////////////////////////////*/
+
+    function getRewardTokens() public view returns (address[] memory) {
+        return IStandardizedYield(SY).getRewardTokens();
+    }
+
+    function _storeRewardIndexes(uint256 positionId) internal {
+        (address[] memory tokens, uint256[] memory indexes) = _updateRewardIndex();
+        if (tokens.length == 0) return;
+
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            positionReward[tokens[i]][positionId] = PositionReward(indexes[i].Uint128(), 0, false);
+        }
+    }
+
+    function _redeemRewards(
+        uint256 positionId, 
+        uint256 positionShare, 
+        uint256 SYRedeemable, 
+        uint256 PTRedeemable
+    ) internal returns (uint256[] memory rewardsOut) {
+        _updatePositionRewards(positionId, SYRedeemable);
+        
+        address msgSender = msg.sender;
+        rewardsOut = _doTransferOutRewards(msgSender, positionId, positionShare, PTRedeemable);
+
+        emit RedeemRewards(positionId, msgSender, rewardsOut, positionShare);
+    }
+
+    function _doTransferOutRewards(
+        address receiver, 
+        uint256 positionId, 
+        uint256 positionShare, 
+        uint256 PTRedeemable
+    ) internal override returns (uint256[] memory rewardAmounts) {
+        bool redeemExternalThisRound;
+
+        address[] memory tokens = getRewardTokens();
+        rewardAmounts = new uint256[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            PositionReward storage rewardOfPosition = positionReward[tokens[i]][positionId];
+            uint128 totalRewards = rewardOfPosition.accrued;
+            uint256 shareRewards = totalRewards * positionShare / PTRedeemable;
+            rewardAmounts[i] = shareRewards;
+            positionReward[tokens[i]][positionId].accrued = (totalRewards - shareRewards).Uint128();
+
+            if (!redeemExternalThisRound) {
+                if (_selfBalance(tokens[i]) < totalRewards) {
+                    _redeemExternalReward();
+                    redeemExternalThisRound = true;
+                }
+            }
+
+            // The protocol fee will only be charged once during the lock-up period, and no fee will be charged for rewards after the lock-up expire time.
+            if (!rewardOfPosition.feesCollected) {
+                uint256 feeAmount = uint256(totalRewards).mulDown(protocolFeeRate);
+                _transferOut(tokens[i], revenuePool, feeAmount);
+                rewardAmounts[i] -= shareRewards.mulDown(protocolFeeRate);
+
+                emit CollectRewardFee(tokens[i], feeAmount);
+            }
+            
+            _transferOut(tokens[i], receiver, rewardAmounts[i]);
+        }
+    }
+
+    /**
+     * @notice updates and returns the reward indexes
+     */
+    function rewardIndexesCurrent() external override returns (uint256[] memory) {
+        return IStandardizedYield(SY).rewardIndexesCurrent();
+    }
+
+    function _updateRewardIndex() internal override returns (address[] memory tokens, uint256[] memory indexes) {
+        tokens = getRewardTokens();
+        indexes = IStandardizedYield(SY).rewardIndexesCurrent();
+    }
+
+    function _redeemExternalReward() internal virtual override {
+        IStandardizedYield(SY).claimRewards(address(this));
     }
 }
