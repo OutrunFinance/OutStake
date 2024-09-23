@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./OutrunYieldToken.sol";
 import "./OutrunPrincipalToken.sol";
 import "./interfaces/IYieldManager.sol";
+import "../libraries/Math.sol";
 import "../libraries/SYUtils.sol";
 import "../StandardizedYield/IStandardizedYield.sol";
 import "../Position/interfaces/IOutrunStakeManager.sol";
@@ -16,7 +17,7 @@ import "../Position/interfaces/IOutrunStakeManager.sol";
  * should be based on the amount of SYs that their YT currently represent
  */
 contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyGuard, Ownable {
-    uint256 public constant RATIO = 10000;
+    using Math for uint256;
 
     address public revenuePool;
     uint256 public protocolFeeRate;
@@ -57,7 +58,7 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
         (uint256 latestYield, uint256 increasedYield) = _latestYieldInfo();
         if (increasedYield > 0) {
             unchecked {
-                uint256 protocolFee = increasedYield * protocolFeeRate / RATIO;
+                uint256 protocolFee = increasedYield.mulDown(protocolFeeRate);
                 latestYield -= protocolFee;
             }
         }
@@ -81,7 +82,7 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
         if (increasedYield > 0) {
             uint256 protocolFee;
             unchecked {
-                protocolFee = increasedYield * protocolFeeRate / RATIO;
+                protocolFee = increasedYield.mulDown(protocolFeeRate);
                 latestYield -= protocolFee;
                 currentYields = latestYield;
             }
@@ -125,7 +126,7 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
      * @param _protocolFeeRate - Protocol fee rate
      */
     function setProtocolFeeRate(uint256 _protocolFeeRate) public override onlyOwner {
-        require(_protocolFeeRate <= RATIO, FeeRateOverflow());
+        require(_protocolFeeRate <= 1e18, FeeRateOverflow());
 
         protocolFeeRate = _protocolFeeRate;
         emit SetProtocolFeeRate(_protocolFeeRate);
