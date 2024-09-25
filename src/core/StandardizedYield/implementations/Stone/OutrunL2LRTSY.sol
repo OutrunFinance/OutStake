@@ -48,14 +48,14 @@ contract OutrunL2LRTSY is SYBase {
     }
 
     function _previewDeposit(
-        address,
+        address /*tokenIn*/,
         uint256 amountTokenToDeposit
     ) internal pure override returns (uint256 /*amountSharesOut*/) {
         return amountTokenToDeposit;
     }
 
     function _previewRedeem(
-        address,
+        address /*tokenOut*/,
         uint256 amountSharesToRedeem
     ) internal pure override returns (uint256 /*amountTokenOut*/) {
         return amountSharesToRedeem;

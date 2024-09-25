@@ -8,7 +8,6 @@ import "../RewardManager/RewardManager.sol";
  * @notice NativeYieldToken MUST NEVER BE a rewardToken, else the rewardManager will behave erroneously
  */
 abstract contract SYBaseWithRewards is SYBase, RewardManager {
-
     constructor(
         string memory _name,
         string memory _symbol,
