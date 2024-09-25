@@ -224,7 +224,7 @@ contract OutrunPositionOptionToken is
         address msgSender = msg.sender;
         rewardsOut = _doTransferOutRewards(msgSender, positionId, positionShare, PTRedeemable);
 
-        emit RedeemRewards(positionId, msgSender, rewardsOut, positionShare);
+        if (rewardsOut.length != 0) emit RedeemRewards(positionId, msgSender, rewardsOut, positionShare);
     }
 
     function _doTransferOutRewards(
