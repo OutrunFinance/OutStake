@@ -5,10 +5,11 @@ import "./BaseScript.s.sol";
 import "../src/external/lista/IListaBNBStakeManager.sol";
 import "../src/core/Position/OutrunPositionOptionToken.sol";
 import "../src/core/YieldContracts/OutrunERC4626YieldToken.sol";
-import "../src/core/YieldContracts/universalPrincipalToken/UniversalBNBPrincipalToken.sol";
+import "../src/core/YieldContracts/universalPrincipalToken/UniversalPrincipalToken.sol";
 import "../src/core/StandardizedYield/implementations/Lista/OutrunSlisBNBSY.sol";
+import "../src/core/StandardizedYield/implementations/Blast/OutrunBlastETHSY.sol";
 
-contract OutstakeScript is BaseScript {
+contract OutstakeScriptOnBNB is BaseScript {
     address internal owner;
     address internal slisBNB;
     address internal revenuePool;
@@ -22,12 +23,20 @@ contract OutstakeScript is BaseScript {
         listaBNBStakeManager = vm.envAddress("TESTNET_LISTA_BNB_STAKE_MANAGER");
         protocolFeeRate = vm.envUint("PROTOCOL_FEE_RATE");
 
-        deploySlisBNB();
+        supportSlisBNB();
     }
 
-    function deploySlisBNB() internal {
+    /**
+     * Support slisBNB 
+     */
+    function supportSlisBNB() internal {
         // Universal PT
-        UniversalBNBPrincipalToken UBNB = new UniversalBNBPrincipalToken(owner);
+        UniversalPrincipalToken UBNB = new UniversalPrincipalToken(
+            owner,
+            "Universal BNB Principal Token",
+            "UBNB",
+            18
+        );
         address UBNBAddress = address(UBNB);
 
         // SY

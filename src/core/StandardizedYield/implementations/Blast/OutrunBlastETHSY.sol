@@ -13,9 +13,9 @@ contract OutrunBlastETHSY is SYBase, GasManagerable {
     address public immutable nrETH;
 
     constructor(
-        address _owner,
         address _WETH,
         address _nrETH,
+        address _owner,
         address _gasManager,
         address _blastPoints,
         address _pointsOperator

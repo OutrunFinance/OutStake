@@ -10,28 +10,28 @@ import "../../../../external/blast/GasManagerable.sol";
 
 contract OutrunBlastUSDSY is SYBase, GasManagerable {
     address public immutable USDB;
-    address public immutable nrUSD;
+    address public immutable nrUSDB;
 
     constructor(
-        address _owner,
         address _USDB,
-        address _nrUSD,
+        address _nrUSDB,
+        address _owner,
         address _gasManager,
         address _blastPoints,
         address _pointsOperator
-    ) SYBase("SY Blast USD", "SY-USDB", _nrUSD, _owner) GasManagerable(_gasManager) {
+    ) SYBase("SY Blast USD", "SY-USDB", _nrUSDB, _owner) GasManagerable(_gasManager) {
         USDB = _USDB;
-        nrUSD = _nrUSD;
+        nrUSDB = _nrUSDB;
         IBlastPoints(_blastPoints).configurePointsOperator(_pointsOperator);
 
-        _safeApprove(_USDB, _nrUSD, type(uint256).max);
+        _safeApprove(_USDB, _nrUSDB, type(uint256).max);
     }
 
     function _deposit(
         address tokenIn,
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
-        amountSharesOut = tokenIn == nrUSD ? amountDeposited : INrERC20(nrUSD).wrap(amountDeposited);
+        amountSharesOut = tokenIn == nrUSDB ? amountDeposited : INrERC20(nrUSDB).wrap(amountDeposited);
     }
 
     function _redeem(
@@ -39,42 +39,42 @@ contract OutrunBlastUSDSY is SYBase, GasManagerable {
         address tokenOut,
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 amountTokenOut) {
-        amountTokenOut = tokenOut == nrUSD ? amountSharesToRedeem : INrERC20(nrUSD).unwrap(amountSharesToRedeem);
+        amountTokenOut = tokenOut == nrUSDB ? amountSharesToRedeem : INrERC20(nrUSDB).unwrap(amountSharesToRedeem);
         _transferOut(tokenOut, receiver, amountTokenOut);
     }
 
     function exchangeRate() public view override returns (uint256 res) {
-        res = INrERC20(nrUSD).stERC20PerToken();
+        res = INrERC20(nrUSDB).stERC20PerToken();
     }
 
     function _previewDeposit(
         address tokenIn,
         uint256 amountTokenToDeposit
     ) internal view override returns (uint256 amountSharesOut) {
-        amountSharesOut = tokenIn == nrUSD ? amountTokenToDeposit : INrERC20(nrUSD).getNrERC20ByStERC20(amountTokenToDeposit);
+        amountSharesOut = tokenIn == nrUSDB ? amountTokenToDeposit : INrERC20(nrUSDB).getNrERC20ByStERC20(amountTokenToDeposit);
     }
 
     function _previewRedeem(
         address tokenOut,
         uint256 amountSharesToRedeem
     ) internal view override returns (uint256 amountTokenOut) {
-        amountTokenOut = tokenOut == nrUSD ? amountSharesToRedeem : INrERC20(nrUSD).getStERC20ByNrERC20(amountSharesToRedeem);
+        amountTokenOut = tokenOut == nrUSDB ? amountSharesToRedeem : INrERC20(nrUSDB).getStERC20ByNrERC20(amountSharesToRedeem);
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(USDB, nrUSD);
+        return ArrayLib.create(USDB, nrUSDB);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(USDB, nrUSD);
+        return ArrayLib.create(USDB, nrUSDB);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == USDB || token == nrUSD;
+        return token == USDB || token == nrUSDB;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == USDB || token == nrUSD;
+        return token == USDB || token == nrUSDB;
     }
 
     function assetInfo() external view returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {
