@@ -7,12 +7,12 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IStandardizedYield.sol";
 import "../libraries/ArrayLib.sol";
 import "../libraries/TokenHelper.sol";
-import "../common/OutrunERC20Permit.sol";
+import "../common/OutrunERC20.sol";
 
 /**
  * @dev Standardized Yield Base Contract
  */
-abstract contract SYBase is IStandardizedYield, OutrunERC20Permit, TokenHelper, ReentrancyGuard, Ownable {
+abstract contract SYBase is IStandardizedYield, OutrunERC20, TokenHelper, ReentrancyGuard, Ownable {
     address public immutable nativeYieldToken;
 
     constructor(
@@ -20,7 +20,7 @@ abstract contract SYBase is IStandardizedYield, OutrunERC20Permit, TokenHelper, 
         string memory symbol_,
         address _nativeYieldToken,
         address _owner
-    ) OutrunERC20Permit(name_, symbol_, IERC20Metadata(_nativeYieldToken).decimals()) Ownable(_owner) {
+    ) OutrunERC20(name_, symbol_, IERC20Metadata(_nativeYieldToken).decimals()) Ownable(_owner) {
         nativeYieldToken = _nativeYieldToken;
     }
 
