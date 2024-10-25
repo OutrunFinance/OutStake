@@ -19,3 +19,4 @@ docs/
 #node.js
 .deps
 package.json
+node_modules/
