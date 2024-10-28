@@ -1,84 +1,145 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "./interfaces/ActionType.sol";
-import "../core/libraries/Math.sol";
+import "./interfaces/IOutStakeRouter.sol";
 import "../core/libraries/TokenHelper.sol";
 import "../core/StandardizedYield/IStandardizedYield.sol";
-import "../core/YieldContracts/interfaces/IYieldToken.sol";
+import "../core/Position/interfaces/IOutrunStakeManager.sol";
 
-abstract contract OutStakeRouter is TokenHelper {
-    using Math for uint256;
-
-    // ----------------- MINT REDEEM SY -----------------
-    function _mintSYFromToken(
-        address receiver,
+contract OutStakeRouter is IOutStakeRouter, TokenHelper {
+    /** MINT/REDEEM SY **/
+    function mintSYFromToken(
         address SY,
-        uint256 minSyOut,
-        TokenInput calldata input
-    ) internal returns (uint256 amountInSYOut) {
-        uint256 amountInDeposited;
-        TokenType tokenType = input.tokenType;
-        if (tokenType == TokenType.NONE) {
-            _transferIn(input.tokenIn, msg.sender, input.amount);
-            amountInDeposited = input.amount;
-        } else {
-            _transferIn(input.tokenIn, msg.sender, input.amount);
-            _wrap_unwrap_ETH(input.tokenIn, input.depositedToken, input.amount);
-            amountInDeposited = input.amount;
-        }
+        address tokenIn,
+        address receiver,
+        uint256 amountInput,
+        uint256 minSyOut
+    ) external returns (uint256 amountInSYOut) {
+        _transferIn(tokenIn, msg.sender, amountInput);
 
-        amountInSYOut = _mintSY(receiver, SY, amountInDeposited, minSyOut, input);
+        amountInSYOut = _mintSY(SY, tokenIn, receiver, amountInput, minSyOut);
+    }
+
+    function redeemSyToToken(
+        address SY,
+        address receiver,
+        address tokenOut,
+        uint256 amountInSY,
+        uint256 minTokenOut
+    ) external returns (uint256 amountInTokenOut) {
+        amountInTokenOut = _redeemSy(SY, receiver, tokenOut, amountInSY, minTokenOut);
     }
 
     function _mintSY(
-        address receiver,
         address SY,
-        uint256 amountInDeposited,
-        uint256 minSyOut,
-        TokenInput calldata input
+        address tokenIn,
+        address receiver,
+        uint256 amountInput,
+        uint256 minSyOut
     ) private returns (uint256 amountInSYOut) {
-        uint256 amountInNative = input.depositedToken == NATIVE ? amountInDeposited : 0;
-        _safeApproveInf(input.depositedToken, SY);
+        uint256 amountInNative = tokenIn == NATIVE ? amountInput : 0;
+        _safeApproveInf(tokenIn, SY);
         amountInSYOut = IStandardizedYield(SY).deposit{value: amountInNative}(
             receiver,
-            input.depositedToken,
-            amountInDeposited,
+            tokenIn,
+            amountInput,
             minSyOut
         );
     }
 
-    function _redeemSyToToken(
-        address receiver,
+    function _redeemSy(
         address SY,
+        address receiver,
+        address tokenOut,
         uint256 amountInSY,
-        TokenOutput calldata output,
-        bool doPull
-    ) internal returns (uint256 amountInTokenOut) {
-        TokenType tokenType = output.tokenType;
+        uint256 minTokenOut
+    ) private returns (uint256 amountInRedeemed) {
+        _transferFrom(IERC20(SY), msg.sender, SY, amountInSY);
 
-        if (tokenType == TokenType.NONE) {
-            amountInTokenOut = _redeemSy(receiver, SY, amountInSY, output, doPull);
-        } else {
-            amountInTokenOut = _redeemSy(address(this), SY, amountInSY, output, doPull); // ETH:WETH is 1:1
-            _wrap_unwrap_ETH(output.redeemedToken, output.tokenOut, amountInTokenOut);
-            _transferOut(output.tokenOut, receiver, amountInTokenOut);
-        }
-
-        if (amountInTokenOut < output.minTokenOut) revert("Slippage: INSUFFICIENT_TOKEN_OUT");
+        amountInRedeemed = IStandardizedYield(SY).redeem(receiver, amountInSY, tokenOut, minTokenOut, true);
     }
 
-    function _redeemSy(
-        address receiver,
+    /** MINT Yield Tokens(PT, YT, POT) **/
+    function mintYieldTokensFromToken(
         address SY,
-        uint256 amountInSY,
-        TokenOutput calldata output,
-        bool doPull
-    ) private returns (uint256 amountInRedeemed) {
-        if (doPull) {
-            _transferFrom(IERC20(SY), msg.sender, SY, amountInSY);
-        }
+        address POT,
+        address tokenIn,
+        uint256 tokenAmount,
+        StakeParam calldata stakeParam
+    ) external returns (uint256 PTGenerated, uint256 YTGenerated) {
+        _transferIn(tokenIn, msg.sender, tokenAmount);
+        uint256 amountInSY = _mintSY(SY, tokenIn, address(this), tokenAmount, 0);
 
-        amountInRedeemed = IStandardizedYield(SY).redeem(receiver, amountInSY, output.redeemedToken, 0, true);
+        _safeApproveInf(SY, POT);
+        (PTGenerated, YTGenerated) = _mintYieldTokensFromSY(
+            POT,
+            amountInSY, 
+            stakeParam.lockupDays,
+            stakeParam.minPTGenerated,
+            stakeParam.PTRecipient, 
+            stakeParam.YTRecipient, 
+            stakeParam.positionOwner
+        );
+    }
+
+    function mintYieldTokensFromSY(
+        address SY,
+        address POT,
+        uint256 amountInSY,
+        StakeParam calldata stakeParam
+    ) external returns (uint256 PTGenerated, uint256 YTGenerated) {
+        _transferFrom(IERC20(SY), msg.sender, address(this), amountInSY);
+
+        _safeApproveInf(SY, POT);
+        (PTGenerated, YTGenerated) = _mintYieldTokensFromSY(
+            POT,
+            amountInSY, 
+            stakeParam.lockupDays,
+            stakeParam.minPTGenerated,
+            stakeParam.PTRecipient, 
+            stakeParam.YTRecipient, 
+            stakeParam.positionOwner
+        );
+    }
+
+    function _mintYieldTokensFromSY(
+        address POT,
+        uint256 amountInSY,
+        uint256 lockupDays, 
+        uint256 minPTGenerated,
+        address PTRecipient, 
+        address YTRecipient,
+        address positionOwner
+    ) internal returns (uint256 PTGenerated, uint256 YTGenerated) {
+        (PTGenerated, YTGenerated) = IOutrunStakeManager(POT).stake(
+            amountInSY, 
+            lockupDays,
+            PTRecipient, 
+            YTRecipient, 
+            positionOwner
+        );
+
+        require(PTGenerated >= minPTGenerated, InsufficientPTGenerated(PTGenerated, minPTGenerated));
+    }
+
+    /** REDEEM From Yield Tokens(PT, POT) **/
+    function redeemYieldTokensToSy(
+        address SY,
+        address PT,
+        address POT,
+        address receiver,
+        RedeemParam calldata redeemParam
+    ) external returns (uint256 redeemedSyAmount) {
+        uint256 share = redeemParam.positionShare;
+        _transferFrom(IERC20(PT), msg.sender, address(this), share);
+
+        uint256 positionId = redeemParam.positionId;
+        _transferFrom(IERC1155(POT), msg.sender, address(this), positionId, share);
+
+        redeemedSyAmount = IOutrunStakeManager(POT).redeem(positionId, share);
+        uint256 minRedeemedSyAmount = redeemParam.minRedeemedSyAmount;
+        require(redeemedSyAmount >= minRedeemedSyAmount, InsufficientSYRedeemed(redeemedSyAmount, minRedeemedSyAmount));
+        
+        _transferOut(SY, receiver, redeemedSyAmount);
     }
 }
