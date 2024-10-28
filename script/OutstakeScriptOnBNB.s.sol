@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "./BaseScript.s.sol";
+import "../src/router/OutStakeRouter.sol";
 import "../src/external/lista/IListaBNBStakeManager.sol";
 import "../src/core/Position/OutrunPositionOptionToken.sol";
 import "../src/core/YieldContracts/OutrunERC4626YieldToken.sol";
@@ -23,7 +24,17 @@ contract OutstakeScriptOnBNB is BaseScript {
         listaBNBStakeManager = vm.envAddress("TESTNET_LISTA_BNB_STAKE_MANAGER");
         protocolFeeRate = vm.envUint("PROTOCOL_FEE_RATE");
 
+        deployRouter();
         supportSlisBNB();
+    }
+
+    /**
+     * Deploy router 
+     */
+    function deployRouter() internal {
+        // Router
+        OutStakeRouter router = new OutStakeRouter();
+        console.log("OutStakeRouter deployed on %s", address(router));
     }
 
     /**

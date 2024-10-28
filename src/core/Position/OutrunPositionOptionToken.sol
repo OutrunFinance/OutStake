@@ -2,7 +2,6 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "../libraries/SYUtils.sol";
@@ -111,7 +110,7 @@ contract OutrunPositionOptionToken is
         uint256 positionId, 
         uint256 positionShare
     ) external view override returns (uint256 redeemableSyAmount) {
-        Position storage position = positions[positionId];
+        Position memory position = positions[positionId];
         uint256 redeemedPrincipalValue = position.principalRedeemable * positionShare / position.PTRedeemable;
         redeemableSyAmount = SYUtils.assetToSy(IStandardizedYield(SY).exchangeRate(), redeemedPrincipalValue);
     }
