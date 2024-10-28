@@ -39,3 +39,4 @@ pnpm-error.log
 #node.js
 .deps
 package.json
+node_modules/

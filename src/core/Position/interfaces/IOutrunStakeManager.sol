@@ -28,6 +28,8 @@ interface IOutrunStakeManager {
 
     error InvalidLockupDays(uint256 minLockupDays, uint256 maxLockupDays);
 
+    error InsufficientSYRedeemed(uint256 redeemedSyAmount, uint256 mintRedeemedSyAmount);
+
 
     function syTotalStaking() external view returns (uint256);
 
@@ -37,24 +39,37 @@ interface IOutrunStakeManager {
 
     function calcPTAmount(uint256 principalValue, uint256 amountInYT) external view returns (uint256);
 
-    function setLockupDuration(uint128 minLockupDays, uint128 maxLockupDays) external;
+    function previewStake(
+        uint256 amountInSY, 
+        uint256 lockupDays
+    ) external view returns (uint256 PTGenerated, uint256 YTGenerated);
+    
+    function previewRedeem(
+        uint256 positionId, 
+        uint256 positionShare
+    ) external view returns (uint256 redeemableSyAmount);
 
     function stake(
-        uint256 stakedSYAmount,
-        uint256 lockupDays, 
-        address positionOwner, 
+        uint256 amountInSY,
+        uint256 lockupDays,
         address PTRecipient, 
-        address YTRecipient
+        address YTRecipient,
+        address positionOwner
     ) external returns (uint256 PTGenerated, uint256 YTGenerated);
 
-    function redeem(uint256 positionId, uint256 positionShare) external;
+    function redeem(
+        uint256 positionId, 
+        uint256 positionShare
+    ) external returns (uint256 redeemedSyAmount);
 
     function transferYields(address receiver, uint256 syAmount) external;
+
+    function setLockupDuration(uint128 minLockupDays, uint128 maxLockupDays) external;
 
 
     event Stake(
         uint256 indexed positionId,
-        uint256 stakedSYAmount,
+        uint256 amountInSY,
         uint256 principalValue,
         uint256 PTGenerated,
         uint256 YTGenerated,
@@ -64,7 +79,7 @@ interface IOutrunStakeManager {
     event Redeem(
         uint256 indexed positionId, 
         address indexed account,
-        uint256 reducedStakedSYAmount, 
+        uint256 redeemedSyAmount, 
         uint256 positionShare
     );
 

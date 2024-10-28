@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../external/IWETH.sol";
 
 abstract contract TokenHelper {
@@ -18,6 +19,10 @@ abstract contract TokenHelper {
 
     function _transferFrom(IERC20 token, address from, address to, uint256 amount) internal {
         if (amount != 0) token.safeTransferFrom(from, to, amount);
+    }
+
+    function _transferFrom(IERC1155 token, address from, address to, uint256 id, uint256 amount) internal {
+        if (amount != 0) token.safeTransferFrom(from, to, id, amount, "");
     }
 
     function _transferOut(address token, address to, uint256 amount) internal {

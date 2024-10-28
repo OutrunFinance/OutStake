@@ -2,7 +2,6 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "../libraries/SYUtils.sol";
@@ -87,47 +86,58 @@ contract OutrunPositionOptionToken is
     }
 
     /**
-     * @param _minLockupDays - Min lockup days
-     * @param _maxLockupDays - Max lockup days
+     * @dev Preview PT generateable amount and YT generateable amount before stake
+     * @param amountInSY - Staked amount of SY
+     * @param lockupDays - User can redeem after lockupDays
      */
-    function setLockupDuration(uint128 _minLockupDays, uint128 _maxLockupDays) external override onlyOwner {
-        lockupDuration.minLockupDays = _minLockupDays;
-        lockupDuration.maxLockupDays = _maxLockupDays;
+    function previewStake(
+        uint256 amountInSY, 
+        uint256 lockupDays
+    ) external view override returns (uint256 PTGenerateable, uint256 YTGenerateable) {
+        _stakeParamValidate(amountInSY, lockupDays);
 
-        emit SetLockupDuration(_minLockupDays, _maxLockupDays);
+        uint256 principalValue = SYUtils.syToAsset(IStandardizedYield(SY).exchangeRate(), amountInSY);
+        PTGenerateable = principalValue * lockupDays;
+        YTGenerateable = calcPTAmount(principalValue, YTGenerateable);
+    }
+
+    /**
+     * @dev Preview redeemable SY amount before redeem
+     * @param positionId - Position Id
+     * @param positionShare - Share of the position
+     */
+    function previewRedeem(
+        uint256 positionId, 
+        uint256 positionShare
+    ) external view override returns (uint256 redeemableSyAmount) {
+        Position memory position = positions[positionId];
+        uint256 redeemedPrincipalValue = position.principalRedeemable * positionShare / position.PTRedeemable;
+        redeemableSyAmount = SYUtils.assetToSy(IStandardizedYield(SY).exchangeRate(), redeemedPrincipalValue);
     }
 
     /**
      * @dev Allows user to deposit SY, then mints PT, YT and POT for the user.
-     * @param stakedSYAmount - Staked amount of SY
+     * @param amountInSY - Staked amount of SY
      * @param lockupDays - User can redeem after lockupDays
-     * @param positionOwner - Owner of position
      * @param PTRecipient - Receiver of PT
      * @param YTRecipient - Receiver of YT
+     * @param positionOwner - Owner of position
      * @notice User must have approved this contract to spend SY
      */
     function stake(
-        uint256 stakedSYAmount,
-        uint256 lockupDays, 
-        address positionOwner, 
+        uint256 amountInSY,
+        uint256 lockupDays,
         address PTRecipient, 
-        address YTRecipient
+        address YTRecipient,
+        address positionOwner
     ) external override nonReentrant returns (uint256 PTGenerated, uint256 YTGenerated) {
-        require(stakedSYAmount >= minStake, MinStakeInsufficient(minStake));
-        uint256 _minLockupDays = lockupDuration.minLockupDays;
-        uint256 _maxLockupDays = lockupDuration.maxLockupDays;
-        require(
-            lockupDays >= _minLockupDays && lockupDays <= _maxLockupDays, 
-            InvalidLockupDays(_minLockupDays, _maxLockupDays)
-        );
-
-        address msgSender = msg.sender;
-        _transferIn(SY, msgSender, stakedSYAmount);
+        _stakeParamValidate(amountInSY, lockupDays);
+        _transferIn(SY, msg.sender, amountInSY);
         
         uint256 deadline;
-        uint256 principalValue = SYUtils.syToAsset(IStandardizedYield(SY).exchangeRate(), stakedSYAmount);
+        uint256 principalValue = SYUtils.syToAsset(IStandardizedYield(SY).exchangeRate(), amountInSY);
         unchecked {
-            syTotalStaking += stakedSYAmount;
+            syTotalStaking += amountInSY;
             totalPrincipalValue += principalValue;
             deadline = block.timestamp + lockupDays * DAY;
             YTGenerated = principalValue * lockupDays;
@@ -135,14 +145,14 @@ contract OutrunPositionOptionToken is
 
         uint256 positionId = _nextId();
         PTGenerated = calcPTAmount(principalValue, YTGenerated);
-        positions[positionId] = Position(stakedSYAmount, principalValue, PTGenerated, deadline);
+        positions[positionId] = Position(amountInSY, principalValue, PTGenerated, deadline);
         IYieldToken(YT).mint(YTRecipient, YTGenerated);
         IPrincipalToken(PT).mint(PTRecipient, PTGenerated);
         _mint(positionOwner, positionId, PTGenerated, "");  // mint POT
 
         _storeRewardIndexes(positionId);
 
-        emit Stake(positionId, stakedSYAmount, principalValue, PTGenerated, YTGenerated, deadline);
+        emit Stake(positionId, amountInSY, principalValue, PTGenerated, YTGenerated, deadline);
     }
 
     /**
@@ -150,7 +160,10 @@ contract OutrunPositionOptionToken is
      * @param positionId - Position Id
      * @param positionShare - Share of the position
      */
-    function redeem(uint256 positionId, uint256 positionShare) external override nonReentrant {
+    function redeem(
+        uint256 positionId, 
+        uint256 positionShare
+    ) external override nonReentrant returns (uint256 redeemedSyAmount) {
         Position storage position = positions[positionId];
         uint256 deadline = position.deadline;
         require(deadline <= block.timestamp, LockTimeNotExpired(deadline));
@@ -164,18 +177,19 @@ contract OutrunPositionOptionToken is
         IPrincipalToken(PT).burn(msgSender, positionShare);
         _redeemRewards(positionId, positionShare, position.SYRedeemable, PTRedeemable);
 
-        uint256 reducedPrincipalValue = principalRedeemable * positionShare / PTRedeemable;
-        uint256 reducedStakedSYAmount = SYUtils.assetToSy(IStandardizedYield(SY).exchangeRate(), reducedPrincipalValue);
+        uint256 redeemedPrincipalValue = principalRedeemable * positionShare / PTRedeemable;
+        redeemedSyAmount = SYUtils.assetToSy(IStandardizedYield(SY).exchangeRate(), redeemedPrincipalValue);
+        
         unchecked {
-            totalPrincipalValue -= reducedPrincipalValue;
-            position.SYRedeemable -= reducedStakedSYAmount;
+            totalPrincipalValue -= redeemedPrincipalValue;
+            position.SYRedeemable -= redeemedSyAmount;
             position.PTRedeemable -= positionShare;
-            position.principalRedeemable -= reducedPrincipalValue;
+            position.principalRedeemable -= redeemedPrincipalValue;
         }
 
-        _transferSY(msgSender, reducedStakedSYAmount);
+        _transferSY(msgSender, redeemedSyAmount);
         
-        emit Redeem(positionId, msgSender, reducedStakedSYAmount, positionShare);
+        emit Redeem(positionId, msgSender, redeemedSyAmount, positionShare);
     }
 
     /**
@@ -188,12 +202,33 @@ contract OutrunPositionOptionToken is
         _transferSY(receiver, syAmount);
     }
 
+    /**
+     * @param _minLockupDays - Min lockup days
+     * @param _maxLockupDays - Max lockup days
+     */
+    function setLockupDuration(uint128 _minLockupDays, uint128 _maxLockupDays) external override onlyOwner {
+        lockupDuration.minLockupDays = _minLockupDays;
+        lockupDuration.maxLockupDays = _maxLockupDays;
+
+        emit SetLockupDuration(_minLockupDays, _maxLockupDays);
+    }
+
     function _transferSY(address receiver, uint256 syAmount) internal {
         unchecked {
             syTotalStaking -= syAmount;
         }
 
         _transferOut(SY, receiver, syAmount);
+    }
+
+    function _stakeParamValidate(uint256 amountInSY, uint256 lockupDays) internal view {
+        require(amountInSY >= minStake, MinStakeInsufficient(minStake));
+        uint256 _minLockupDays = lockupDuration.minLockupDays;
+        uint256 _maxLockupDays = lockupDuration.maxLockupDays;
+        require(
+            lockupDays >= _minLockupDays && lockupDays <= _maxLockupDays, 
+            InvalidLockupDays(_minLockupDays, _maxLockupDays)
+        );
     }
 
     /*///////////////////////////////////////////////////////////////
