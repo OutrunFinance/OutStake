@@ -6,7 +6,7 @@ import { IOFT, OFTCore } from "@layerzerolabs/oft-evm/contracts/OFTCore.sol";
 import { OutrunERC20 } from "./OutrunERC20.sol";
 
 /**
- * @title OFT Contract
+ * @title Outrun OFT Contract
  * @dev OFT is an ERC-20 token that extends the functionality of the OFTCore contract.
  */
 abstract contract OutrunOFT is OFTCore, OutrunERC20 {
