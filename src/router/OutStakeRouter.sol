@@ -14,7 +14,7 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address receiver,
         uint256 amountInput,
         uint256 minSyOut
-    ) external returns (uint256 amountInSYOut) {
+    ) external payable returns (uint256 amountInSYOut) {
         _transferIn(tokenIn, msg.sender, amountInput);
 
         amountInSYOut = _mintSY(SY, tokenIn, receiver, amountInput, minSyOut);
@@ -36,7 +36,7 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address receiver,
         uint256 amountInput,
         uint256 minSyOut
-    ) private returns (uint256 amountInSYOut) {
+    ) internal returns (uint256 amountInSYOut) {
         uint256 amountInNative = tokenIn == NATIVE ? amountInput : 0;
         _safeApproveInf(tokenIn, SY);
         amountInSYOut = IStandardizedYield(SY).deposit{value: amountInNative}(
@@ -53,7 +53,7 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address tokenOut,
         uint256 amountInSY,
         uint256 minTokenOut
-    ) private returns (uint256 amountInRedeemed) {
+    ) internal returns (uint256 amountInRedeemed) {
         _transferFrom(IERC20(SY), msg.sender, SY, amountInSY);
 
         amountInRedeemed = IStandardizedYield(SY).redeem(receiver, amountInSY, tokenOut, minTokenOut, true);
@@ -66,7 +66,7 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address tokenIn,
         uint256 tokenAmount,
         StakeParam calldata stakeParam
-    ) external returns (uint256 PTGenerated, uint256 YTGenerated) {
+    ) external payable returns (uint256 PTGenerated, uint256 YTGenerated) {
         _transferIn(tokenIn, msg.sender, tokenAmount);
         uint256 amountInSY = _mintSY(SY, tokenIn, address(this), tokenAmount, 0);
 

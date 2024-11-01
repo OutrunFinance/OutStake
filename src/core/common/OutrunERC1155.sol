@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
 // OpenZeppelin Contracts (last updated v5.0.0) (token/ERC1155/ERC1155.sol)
-
 pragma solidity ^0.8.26;
 
 import {Arrays} from "@openzeppelin/contracts/utils/Arrays.sol";
