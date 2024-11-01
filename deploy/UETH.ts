@@ -32,21 +32,32 @@ const deploy: DeployFunction = async (hre) => {
     //   }
     // }
     const endpointV2Deployment = await hre.deployments.get('EndpointV2')
-
+    const constructorArgs = [
+        'Omnichain Universal Principal ETH', // name
+        'UETH', // symbol
+        18, // decimals
+        endpointV2Deployment.address, // LayerZero's EndpointV2 address
+        deployer, // owner
+    ];
     const { address } = await deploy(contractName, {
         from: deployer,
-        args: [
-            'Omnichain Universal Principal ETH', // name
-            'UETH', // symbol
-            18, // decimals
-            endpointV2Deployment.address, // LayerZero's EndpointV2 address
-            deployer, // owner
-        ],
+        args: constructorArgs,
         log: true,
         skipIfAlreadyDeployed: false,
     })
 
     console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${address}`)
+
+    try {
+        console.log("Verifying contract...");
+        await hre.run("verify:verify", {
+            address: address,
+            constructorArguments: constructorArgs,
+        });
+        console.log(`Contract: ${contractName} verified!, network: ${hre.network.name}, address: ${address}`);
+    } catch (err) {
+        console.error(`Contract: ${contractName} verification failed!, network: ${hre.network.name}, address: ${address}`, err);
+    }
 }
 
 deploy.tags = [contractName]

@@ -74,7 +74,7 @@ const config: HardhatUserConfig = {
     },
     namedAccounts: {
         deployer: {
-            default: 0xcae21365145C467F8957607aE364fb29Ee073209, // wallet address of index[0], of the mnemonic in .env
+            default: 0, // wallet address of index[0], of the mnemonic in .env
         },
     },
 }
