@@ -2,6 +2,7 @@
 cache/
 out/
 
+lib
 node_modules
 coverage
 coverage.json
