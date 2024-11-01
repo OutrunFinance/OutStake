@@ -73,7 +73,7 @@ interface IOutrunStakeManager {
         uint256 principalValue,
         uint256 PTGenerated,
         uint256 YTGenerated,
-        uint256 deadline
+        uint256 indexed deadline
     );    
 
     event Redeem(

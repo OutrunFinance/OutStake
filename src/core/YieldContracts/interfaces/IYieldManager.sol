@@ -20,7 +20,7 @@ interface IYieldManager {
 
 	event AccumulateYields(uint256 amountInYields, uint256 protocolFee);
 
-	event WithdrawYields(address account, uint256 amountYieldsOut);
+	event WithdrawYields(address indexed account, uint256 amountYieldsOut);
 
 	event SetRevenuePool(address revenuePool);
 	
