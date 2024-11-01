@@ -1,13 +1,9 @@
-// Get the environment configuration from .env file
-//
-// To make use of automatic environment setup:
-// - Duplicate .env.example file and name it .env
-// - Fill in the environment variables
 import 'dotenv/config'
 
 import 'hardhat-deploy'
 import 'hardhat-contract-sizer'
 import '@nomiclabs/hardhat-ethers'
+import '@nomicfoundation/hardhat-verify';
 import '@layerzerolabs/toolbox-hardhat'
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 
@@ -50,6 +46,7 @@ const config: HardhatUserConfig = {
                         enabled: true,
                         runs: 100000,
                     },
+                    viaIR: true,
                 },
             },
         ],
@@ -72,11 +69,28 @@ const config: HardhatUserConfig = {
             accounts,
         },
     },
+    etherscan: {
+        apiKey: {
+            bscTestnet: process.env.BSCSCAN_API_KEY as string,
+            baseSepolia: process.env.BASESCAN_API_KEY as string,
+            blastSepolia: process.env.BLASTSCAN_API_KEY as string
+        },
+        customChains: [
+            {
+              network: "blastSepolia",
+              chainId: 168587773,
+              urls: {
+                apiURL: process.env.BLASTSCAN_API_URL as string,
+                browserURL: "https://testnet.blastscan.io/"
+              }
+            }
+        ]
+    },
     namedAccounts: {
         deployer: {
-            default: 0xcae21365145C467F8957607aE364fb29Ee073209, // wallet address of index[0], of the mnemonic in .env
+            default: 0, // wallet address of index[0], of the mnemonic in .env
         },
-    },
+    }
 }
 
 export default config
