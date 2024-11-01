@@ -24,7 +24,7 @@ abstract contract OutrunOFT is OFTCore, OutrunERC20 {
         uint8 decimals_,
         address _lzEndpoint,
         address _delegate
-    ) OutrunERC20(name_, symbol_, decimals_) OFTCore(decimals(), _lzEndpoint, _delegate) {}
+    ) OutrunERC20(name_, symbol_, decimals_) OFTCore(decimals_, _lzEndpoint, _delegate) {}
 
     /**
      * @dev Retrieves the address of the underlying ERC20 implementation.
