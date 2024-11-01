@@ -36,7 +36,10 @@ if (accounts == null) {
 
 const config: HardhatUserConfig = {
     paths: {
-        cache: 'cache/hardhat',
+        sources: "src",
+        tests: "test",
+        cache: "cache/hardhat",
+        artifacts: "artifacts"
     },
     solidity: {
         compilers: [
@@ -51,21 +54,27 @@ const config: HardhatUserConfig = {
             },
         ],
     },
+    // Get eid from https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts
     networks: {
-        'sepolia-testnet': {
-            eid: EndpointId.SEPOLIA_V2_TESTNET,
-            url: process.env.RPC_URL_SEPOLIA || 'https://rpc.sepolia.org/',
+        'bsc-testnet': {
+            eid: EndpointId.BSC_V2_TESTNET,
+            url: process.env.BSC_TESTNET_RPC,
             accounts,
         },
-        'avalanche-testnet': {
-            eid: EndpointId.AVALANCHE_V2_TESTNET,
-            url: process.env.RPC_URL_FUJI || 'https://rpc.ankr.com/avalanche_fuji',
+        'base-sepolia': {
+            eid: EndpointId.BASESEP_V2_TESTNET,
+            url: process.env.BASE_SEPOLIA_RPC,
+            accounts,
+        },
+        'blast-sepolia': {
+            eid: EndpointId.BLAST_V2_TESTNET,
+            url: process.env.BLAST_SEPOLIA_RPC,
             accounts,
         },
     },
     namedAccounts: {
         deployer: {
-            default: 0, // wallet address of index[0], of the mnemonic in .env
+            default: 0xcae21365145C467F8957607aE364fb29Ee073209, // wallet address of index[0], of the mnemonic in .env
         },
     },
 }
