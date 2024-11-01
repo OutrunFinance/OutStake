@@ -56,16 +56,19 @@ const config: HardhatUserConfig = {
         'bsc-testnet': {
             eid: EndpointId.BSC_V2_TESTNET,
             url: process.env.BSC_TESTNET_RPC,
+            gasPrice: 3000000000,
             accounts,
         },
         'base-sepolia': {
             eid: EndpointId.BASESEP_V2_TESTNET,
             url: process.env.BASE_SEPOLIA_RPC,
+            gasPrice: 1500000,
             accounts,
         },
         'blast-sepolia': {
             eid: EndpointId.BLAST_V2_TESTNET,
             url: process.env.BLAST_SEPOLIA_RPC,
+            gasPrice: 1200000,
             accounts,
         },
     },
