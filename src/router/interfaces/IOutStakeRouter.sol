@@ -30,7 +30,7 @@ interface IOutStakeRouter {
         address receiver,
         uint256 amountInput,
         uint256 minSyOut
-    ) external returns (uint256 amountInSYOut);
+    ) external payable returns (uint256 amountInSYOut);
 
     function redeemSyToToken(
         address SY,
@@ -48,7 +48,7 @@ interface IOutStakeRouter {
         address tokenIn,
         uint256 tokenAmount,
         StakeParam calldata stakeParam
-    ) external returns (uint256 PTGenerated, uint256 YTGenerated);
+    ) external payable returns (uint256 PTGenerated, uint256 YTGenerated);
 
     function mintYieldTokensFromSY(
         address SY,
