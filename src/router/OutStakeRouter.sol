@@ -14,11 +14,10 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address tokenIn,
         address receiver,
         uint256 amountInput,
-        uint256 minSyOut
+        uint256 minSyOut,
+        bool doPull
     ) external payable returns (uint256 amountInSYOut) {
-        _transferIn(tokenIn, msg.sender, amountInput);
-
-        amountInSYOut = _mintSY(SY, tokenIn, receiver, amountInput, minSyOut);
+        amountInSYOut = _mintSY(SY, tokenIn, receiver, amountInput, minSyOut, doPull);
     }
 
     function redeemSyToToken(
@@ -26,9 +25,10 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address receiver,
         address tokenOut,
         uint256 amountInSY,
-        uint256 minTokenOut
+        uint256 minTokenOut,
+        bool doPull
     ) external returns (uint256 amountInTokenOut) {
-        amountInTokenOut = _redeemSy(SY, receiver, tokenOut, amountInSY, minTokenOut);
+        amountInTokenOut = _redeemSy(SY, receiver, tokenOut, amountInSY, minTokenOut, doPull);
     }
 
     function _mintSY(
@@ -36,8 +36,11 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address tokenIn,
         address receiver,
         uint256 amountInput,
-        uint256 minSyOut
+        uint256 minSyOut,
+        bool doPull
     ) internal returns (uint256 amountInSYOut) {
+        if(doPull) _transferIn(tokenIn, msg.sender, amountInput);
+
         uint256 amountInNative = tokenIn == NATIVE ? amountInput : 0;
         _safeApproveInf(tokenIn, SY);
         amountInSYOut = IStandardizedYield(SY).deposit{value: amountInNative}(
@@ -53,14 +56,19 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address receiver,
         address tokenOut,
         uint256 amountInSY,
-        uint256 minTokenOut
+        uint256 minTokenOut,
+        bool doPull
     ) internal returns (uint256 amountInRedeemed) {
-        _transferFrom(IERC20(SY), msg.sender, SY, amountInSY);
+        if(doPull) _transferFrom(IERC20(SY), msg.sender, SY, amountInSY);
 
         amountInRedeemed = IStandardizedYield(SY).redeem(receiver, amountInSY, tokenOut, minTokenOut, true);
     }
 
     /** MINT PT(UPT), YT, POT Tokens **/
+    /**
+     * @dev Mint PT(UPT), POT, YT from native yield token
+     * @notice When minting UPT is not required, mintUPTParam can be empty
+     */
     function mintPPYFromToken(
         address SY,
         address POT,
@@ -70,7 +78,7 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         MintUPTParam calldata mintUPTParam
     ) external payable returns (uint256 PTGenerated, uint256 YTGenerated) {
         _transferIn(tokenIn, msg.sender, tokenAmount);
-        uint256 amountInSY = _mintSY(SY, tokenIn, address(this), tokenAmount, 0);
+        uint256 amountInSY = _mintSY(SY, tokenIn, address(this), tokenAmount, 0, true);
 
         _safeApproveInf(SY, POT);
         (PTGenerated, YTGenerated) = _mintPPYFromSY(
@@ -81,6 +89,10 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         );
     }
 
+    /**
+     * @dev Mint PT(UPT), POT, YT by staking SY
+     * @notice When minting UPT is not required, mintUPTParam can be empty
+     */
     function mintPPYFromSY(
         address SY,
         address POT,
@@ -122,6 +134,10 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
     }
 
     /** REDEEM From PT, POT **/
+    /**
+     * @dev Redeem SY by burnning PT and POT
+     * @notice When redeeming from UPT is not required, UPT can be address(0)
+     */
     function redeemPPToSy(
         address SY,
         address PT,
@@ -130,6 +146,41 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         address receiver,
         RedeemParam calldata redeemParam
     ) external returns (uint256 redeemedSyAmount) {
+        redeemedSyAmount = _redeemPPToSy(PT, UPT, POT, redeemParam);
+
+        uint256 minRedeemedSyAmount = redeemParam.minRedeemedSyAmount;
+        require(redeemedSyAmount >= minRedeemedSyAmount, InsufficientSYRedeemed(redeemedSyAmount, minRedeemedSyAmount));
+        
+        _transferOut(SY, receiver, redeemedSyAmount);
+    }
+
+    /**
+     * @dev Redeem native yield token(tokenOut) by burnning PT and POT
+     * @notice When redeeming from UPT is not required, UPT can be address(0)
+     */
+    function redeemPPToToken(
+        address SY,
+        address PT,
+        address UPT,
+        address POT,
+        address tokenOut,
+        address receiver,
+        RedeemParam calldata redeemParam
+    ) external returns (uint256 redeemedSyAmount) {
+        redeemedSyAmount = _redeemPPToSy(PT, UPT, POT, redeemParam);
+
+        uint256 minRedeemedSyAmount = redeemParam.minRedeemedSyAmount;
+        require(redeemedSyAmount >= minRedeemedSyAmount, InsufficientSYRedeemed(redeemedSyAmount, minRedeemedSyAmount));
+        
+        _redeemSy(SY, receiver, tokenOut, redeemedSyAmount, 0, false);
+    }
+
+    function _redeemPPToSy(
+        address PT,
+        address UPT,
+        address POT,
+        RedeemParam calldata redeemParam
+    ) internal returns (uint256 redeemedSyAmount) {
         uint256 share = redeemParam.positionShare;
 
         if (UPT != address(0)) {
@@ -143,9 +194,5 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         _transferFrom(IERC1155(POT), msg.sender, address(this), positionId, share);
 
         redeemedSyAmount = IOutrunStakeManager(POT).redeem(positionId, share);
-        uint256 minRedeemedSyAmount = redeemParam.minRedeemedSyAmount;
-        require(redeemedSyAmount >= minRedeemedSyAmount, InsufficientSYRedeemed(redeemedSyAmount, minRedeemedSyAmount));
-        
-        _transferOut(SY, receiver, redeemedSyAmount);
     }
 }

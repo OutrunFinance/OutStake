@@ -34,7 +34,8 @@ interface IOutStakeRouter {
         address tokenIn,
         address receiver,
         uint256 amountInput,
-        uint256 minSyOut
+        uint256 minSyOut,
+        bool doPull
     ) external payable returns (uint256 amountInSYOut);
 
     function redeemSyToToken(
@@ -42,7 +43,8 @@ interface IOutStakeRouter {
         address receiver,
         address tokenOut,
         uint256 amountInSY,
-        uint256 minTokenOut
+        uint256 minTokenOut,
+        bool doPull
     ) external returns (uint256 amountInTokenOut);
 
 
@@ -71,6 +73,16 @@ interface IOutStakeRouter {
         address PT,
         address UPT,
         address POT,
+        address receiver,
+        RedeemParam calldata redeemParam
+    ) external returns (uint256 redeemedSyAmount);
+
+    function redeemPPToToken(
+        address SY,
+        address PT,
+        address UPT,
+        address POT,
+        address tokenOut,
         address receiver,
         RedeemParam calldata redeemParam
     ) external returns (uint256 redeemedSyAmount);
