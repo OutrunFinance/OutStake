@@ -21,6 +21,11 @@ interface IOutStakeRouter {
         uint256 positionShare;
         uint256 minRedeemedSyAmount;
     }
+
+    struct MintUPTParam {
+        address PT;
+        address UPT;
+    }
     
 
     /** MINT/REDEEM SY **/
@@ -41,27 +46,30 @@ interface IOutStakeRouter {
     ) external returns (uint256 amountInTokenOut);
 
 
-    /** MINT Yield Tokens(PT, YT, POT) **/
-    function mintYieldTokensFromToken(
+    /** MINT PT(UPT), YT, POT Tokens **/
+    function mintPPYFromToken(
         address SY,
         address POT,
         address tokenIn,
         uint256 tokenAmount,
-        StakeParam calldata stakeParam
+        StakeParam calldata stakeParam,
+        MintUPTParam calldata mintUPTParam
     ) external payable returns (uint256 PTGenerated, uint256 YTGenerated);
 
-    function mintYieldTokensFromSY(
+    function mintPPYFromSY(
         address SY,
         address POT,
         uint256 amountInSY,
-        StakeParam calldata stakeParam
+        StakeParam calldata stakeParam,
+        MintUPTParam calldata mintUPTParam
     ) external returns (uint256 PTGenerated, uint256 YTGenerated);
 
 
-    /** REDEEM From Yield Tokens(PT, POT) **/
-    function redeemYieldTokensToSy(
+    /** REDEEM From PT, POT **/
+    function redeemPPToSy(
         address SY,
         address PT,
+        address UPT,
         address POT,
         address receiver,
         RedeemParam calldata redeemParam

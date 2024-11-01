@@ -3,11 +3,16 @@ pragma solidity ^0.8.26;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../common/OutrunOFT.sol";
-import "./interfaces/IPrincipalToken.sol";
+import { OutrunOFT } from "../common/OutrunOFT.sol";
+import { TokenHelper } from "../libraries/TokenHelper.sol";
+import { IPrincipalToken } from "./interfaces/IPrincipalToken.sol";
+import { IUniversalPrincipalToken } from "./interfaces/IUniversalPrincipalToken.sol";
 
-contract OutrunOmnichainUniversalPrincipalToken is IPrincipalToken, OutrunOFT {
-    mapping(address authContract => bool) public authList;
+/**
+ * @dev Outrun Omnichain Universal Principal Token
+ */
+contract OutrunOmnichainUniversalPrincipalToken is IUniversalPrincipalToken, OutrunOFT, TokenHelper {
+    mapping(address PT => bool) public authorizedPTs;
 
     constructor(
         string memory name_,
@@ -17,34 +22,42 @@ contract OutrunOmnichainUniversalPrincipalToken is IPrincipalToken, OutrunOFT {
         address _delegate
     ) OutrunOFT(name_, symbol_, decimals_, _lzEndpoint, _delegate) Ownable(_delegate) {}
 
-    modifier onlyAuthList() {
-        require(authList[msg.sender], PermissionDenied());
+    modifier onlyAuthorizedPT(address PT) {
+        require(authorizedPTs[PT], PermissionDenied());
         _;
     }
 
     /**
-     * @param authContract - Address of auth contract
+     * @param PT - Address of PT
      * @param authorized - Authorization status
      */
-    function setAuthList(address authContract, bool authorized) external override onlyOwner {
-        authList[authContract] = authorized;
+    function setAuthorizedPTs(address PT, bool authorized) external override onlyOwner {
+        authorizedPTs[PT] = authorized;
     }
 
     /**
-     * @dev Only auth contract can mint when the user stake native yield token
-     * @param account Address who receive PT 
-     * @param amount The amount of minted PT
+     * @dev Mint UPT from authorized PT
+     * @param authorizedPT - Address of authorized PT
+     * @param receiver - Address of UPT receiver
+     * @param amountInPT - Amount of PT
      */
-    function mint(address account, uint256 amount) external override onlyAuthList {
-        _mint(account, amount);
+    function mintUPTFromPT(address authorizedPT, address receiver, uint256 amountInPT) external override onlyAuthorizedPT(authorizedPT) {
+        IPrincipalToken(authorizedPT).burn(msg.sender, amountInPT);
+        _mint(receiver, amountInPT);
+
+        emit MintUPT(authorizedPT, receiver, amountInPT);
     }
 
     /**
-     * @dev Only auth contract can burn when the user redempt the native yield token 
-     * @param account Address who burn PT
-     * @param amount The amount of burned PT
+     * @dev Redeem authorized PT from UPT
+     * @param authorizedPT - Address of authorized PT
+     * @param receiver - Address of PT receiver
+     * @param amountInUPT - Amount of UPT
      */
-    function burn(address account, uint256 amount) external override onlyAuthList {
-        _burn(account, amount);
+    function redeemPTFromUPT(address authorizedPT, address receiver, uint256 amountInUPT) external override onlyAuthorizedPT(authorizedPT) {
+        _burn(msg.sender, amountInUPT);
+        IPrincipalToken(authorizedPT).mint(receiver, amountInUPT);
+
+        emit RedeemPT(authorizedPT, receiver, amountInUPT);
     }
 }
