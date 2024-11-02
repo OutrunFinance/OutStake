@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "./OutrunPositionOptionToken.sol";
-import "../../external/blast/GasManagerable.sol";
+import { OutrunPositionOptionToken } from "./OutrunPositionOptionToken.sol";
+import { GasManagerable } from "../../external/blast/GasManagerable.sol";
 
 /**
  * @title Outrun Position Option Token On Blast

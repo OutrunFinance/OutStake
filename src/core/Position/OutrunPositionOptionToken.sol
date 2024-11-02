@@ -1,19 +1,20 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "../libraries/SYUtils.sol";
-import "../libraries/TokenHelper.sol";
-import "../common/OutrunERC1155.sol";
-import "../common/AutoIncrementId.sol";
-import "./interfaces/IOutrunStakeManager.sol";
-import "../RewardManager/PositionRewardManager.sol";
-import "../StandardizedYield/IStandardizedYield.sol";
-import "../YieldContracts/interfaces/IYieldToken.sol";
-import "../YieldContracts/interfaces/IYieldManager.sol";
-import "../YieldContracts/interfaces/IPrincipalToken.sol";
+import { SYUtils } from "../libraries/SYUtils.sol";
+import { TokenHelper } from "../libraries/TokenHelper.sol";
+import { OutrunERC1155 } from "../common/OutrunERC1155.sol";
+import { AutoIncrementId } from "../common/AutoIncrementId.sol";
+import { IOutrunStakeManager } from "./interfaces/IOutrunStakeManager.sol";
+import { PositionRewardManager, Math } from "../RewardManager/PositionRewardManager.sol";
+import { IStandardizedYield } from "../StandardizedYield/IStandardizedYield.sol";
+import { IYieldToken } from "../YieldContracts/interfaces/IYieldToken.sol";
+import { IYieldManager } from "../YieldContracts/interfaces/IYieldManager.sol";
+import { IPrincipalToken } from "../YieldContracts/interfaces/IPrincipalToken.sol";
 
 /**
  * @title Outrun Position Option Token

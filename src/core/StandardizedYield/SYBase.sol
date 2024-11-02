@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "./IStandardizedYield.sol";
-import "../libraries/ArrayLib.sol";
-import "../libraries/TokenHelper.sol";
-import "../common/OutrunERC20.sol";
+import { IStandardizedYield } from "./IStandardizedYield.sol";
+import { ArrayLib } from "../libraries/ArrayLib.sol";
+import { TokenHelper } from "../libraries/TokenHelper.sol";
+import { OutrunERC20, IERC20Metadata } from "../common/OutrunERC20.sol";
 
 /**
  * @dev Standardized Yield Base Contract

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "./interfaces/IExchangeRateOracle.sol";
-import "./interfaces/IChainlinkPriceFeed.sol";
+import { IExchangeRateOracle } from "./interfaces/IExchangeRateOracle.sol";
+import { IChainlinkPriceFeed } from "./interfaces/IChainlinkPriceFeed.sol";
 
 contract OutrunChainlinkRateOracleAdapter is IExchangeRateOracle {
     address public immutable oracle;

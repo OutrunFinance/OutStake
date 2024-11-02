@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../common/OutrunERC20.sol";
-import "./interfaces/IPrincipalToken.sol";
+import { OutrunERC20 } from "../common/OutrunERC20.sol";
+import { IPrincipalToken } from "./interfaces/IPrincipalToken.sol";
 
 contract OutrunPrincipalToken is IPrincipalToken, OutrunERC20, Ownable {
     address public immutable POT;

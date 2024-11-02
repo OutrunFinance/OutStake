@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "../../SYBase.sol";
-import "../../../../external/lista/IListaBNBStakeManager.sol";
+import { SYBase, ArrayLib } from "../../SYBase.sol";
+import { IListaBNBStakeManager } from "../../../../external/lista/IListaBNBStakeManager.sol";
 
 contract OutrunSlisBNBSY is SYBase {
     IListaBNBStakeManager public immutable listaBNBStakeManager;

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
  /**
   * @title Outrun yield token interface
   */
-interface IYieldToken is IERC20 {
+interface IYieldToken {
 	error ZeroInput();
 
 	error PermissionDenied();

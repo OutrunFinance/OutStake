@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "../libraries/Math.sol";
-import "./interfaces/IPositionRewardManager.sol";
+import { Math } from "../libraries/Math.sol";
+import { IPositionRewardManager } from "./interfaces/IPositionRewardManager.sol";
 
 /**
  * @notice PositionRewardManager must not have duplicated rewardTokens

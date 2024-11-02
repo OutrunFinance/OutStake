@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.26;
 
-import "./OutrunERC4626YieldToken.sol";
-import "../../external/blast/GasManagerable.sol";
+import { OutrunERC4626YieldToken } from "./OutrunERC4626YieldToken.sol";
+import { GasManagerable } from "../../external/blast/GasManagerable.sol";
 
 contract OutrunERC4626YieldTokenOnBlast is OutrunERC4626YieldToken, GasManagerable {
     constructor(

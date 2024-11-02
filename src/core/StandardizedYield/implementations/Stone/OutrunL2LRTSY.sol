@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.17;
 
-import "../../SYBase.sol";
-import "../../../../oracles/interfaces/IExchangeRateOracle.sol";
+import { SYBase, ArrayLib } from "../../SYBase.sol";
+import { IExchangeRateOracle } from "../../../../oracles/interfaces/IExchangeRateOracle.sol";
 
 contract OutrunL2LRTSY is SYBase {
     address public exchangeRateOracle;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "./RewardManagerAbstract.sol";
+import { Math, ArrayLib, RewardManagerAbstract } from "./RewardManagerAbstract.sol";
 
 /**
  * @notice RewardManager must not have duplicated rewardTokens

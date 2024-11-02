@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "../../SYBaseWithRewards.sol";
-import "../../../libraries/SYUtils.sol";
-import "../../../libraries/ArrayLib.sol";
-import "../../../../external/lista/IListaLisUSDJar.sol";
-import "../../../../external/lista/IStakeLisUSDListaDistributor.sol";
+import { SYBaseWithRewards, IERC20Metadata } from "../../SYBaseWithRewards.sol";
+import { SYUtils } from "../../../libraries/SYUtils.sol";
+import { ArrayLib } from "../../../libraries/ArrayLib.sol";
+import { IListaLisUSDJar } from "../../../../external/lista/IListaLisUSDJar.sol";
+import { IStakeLisUSDListaDistributor } from "../../../../external/lista/IStakeLisUSDListaDistributor.sol";
 
 contract OutrunLisUSDSY is SYBaseWithRewards {
     using ArrayLib for address[];

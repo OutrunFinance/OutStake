@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import "../common/OutrunERC20.sol";
-import "../common/Initializable.sol";
-import "./interfaces/IYieldToken.sol";
+import { OutrunERC20 } from "../common/OutrunERC20.sol";
+import { Initializable } from "../common/Initializable.sol";
+import { IYieldToken } from "./interfaces/IYieldToken.sol";
 
 abstract contract OutrunYieldToken is IYieldToken, OutrunERC20, Initializable {
     address public SY;
