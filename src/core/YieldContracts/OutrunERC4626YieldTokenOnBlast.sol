@@ -13,7 +13,7 @@ import { IStandardizedYield } from "../StandardizedYield/IStandardizedYield.sol"
 import { IOutrunStakeManager } from "../Position/interfaces/IOutrunStakeManager.sol";
 import { GasManagerable } from "../../external/blast/GasManagerable.sol";
 
-contract OutrunERC4626YieldTokenOnBlast is IYieldManager, OutrunYieldToken, ReentrancyGuard, Ownable, GasManagerable {
+contract OutrunERC4626YieldTokenOnBlast is IYieldManager, OutrunYieldToken, ReentrancyGuard, GasManagerable {
     using Math for uint256;
 
     address public revenuePool;

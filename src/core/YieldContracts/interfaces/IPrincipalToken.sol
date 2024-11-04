@@ -13,6 +13,8 @@ interface IPrincipalToken {
 
 	function UPTConvertiblestatus() external view returns (bool);
 
+	function initialize(address _POT) external;
+
 	function updateConvertibleStatus(address UPT, bool status) external;
 
 	function mint(address account, uint256 amount) external;

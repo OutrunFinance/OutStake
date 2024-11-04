@@ -4,11 +4,11 @@ pragma solidity ^0.8.26;
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import { OutrunERC20 } from "../common/OutrunERC20.sol";
+import { Initializable } from "../common/Initializable.sol";
 import { IPrincipalToken } from "./interfaces/IPrincipalToken.sol";
 
-contract OutrunPrincipalToken is IPrincipalToken, OutrunERC20, Ownable {
-    address public immutable POT;
-
+contract OutrunPrincipalToken is IPrincipalToken, OutrunERC20, Ownable, Initializable {
+    address public POT;
     address public UPT;
     bool public UPTConvertiblestatus;
 
@@ -16,15 +16,20 @@ contract OutrunPrincipalToken is IPrincipalToken, OutrunERC20, Ownable {
         string memory name_,
         string memory symbol_,
         uint8 decimals_,
-        address owner_,
-        address POT_
-    ) OutrunERC20(name_, symbol_, decimals_) Ownable(owner_) {
-        POT = POT_;
-    }
+        address owner_
+    ) OutrunERC20(name_, symbol_, decimals_) Ownable(owner_) {}
 
     modifier onlyAuthorized() {
         require(msg.sender == POT || (msg.sender == UPT && UPTConvertiblestatus), PermissionDenied());
         _;
+    }
+
+    /**
+     * @dev Initializer
+     * @param _POT - Address of positionOptionContract
+     */
+    function initialize(address _POT) external virtual override onlyOwner initializer {
+        POT = _POT;
     }
 
     /**

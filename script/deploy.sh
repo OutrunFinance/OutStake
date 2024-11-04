@@ -8,9 +8,9 @@ forge clean && forge build
 #     --broadcast --ffi -vvvv \
 #     --verify 
 
-forge script OutstakeScriptOnBNB.s.sol:OutstakeScriptOnBNB --rpc-url bsc_testnet \
+forge script OutstakeScript.s.sol:OutstakeScript --rpc-url bsc_testnet \
     --with-gas-price 3000000000 \
-    --optimize --optimizer-runs 2000 \
+    --optimize --optimizer-runs 100000 \
     --via-ir \
     --broadcast --ffi -vvvv \
     --verify 

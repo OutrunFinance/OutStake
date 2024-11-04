@@ -16,7 +16,7 @@ import { IOutrunStakeManager } from "../Position/interfaces/IOutrunStakeManager.
  * With YT yielding more SYs overtime, which is allowed to be redeemed by users, the yields distribution
  * should be based on the amount of SYs that their YT currently represent
  */
-contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyGuard, Ownable {
+contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyGuard {
     using Math for uint256;
 
     address public revenuePool;

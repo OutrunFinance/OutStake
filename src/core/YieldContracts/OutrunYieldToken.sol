@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+
 import { OutrunERC20 } from "../common/OutrunERC20.sol";
 import { Initializable } from "../common/Initializable.sol";
 import { IYieldToken } from "./interfaces/IYieldToken.sol";
 
-abstract contract OutrunYieldToken is IYieldToken, OutrunERC20, Initializable {
+abstract contract OutrunYieldToken is IYieldToken, OutrunERC20, Initializable, Ownable {
     address public SY;
     address public POT;
 
@@ -25,7 +27,7 @@ abstract contract OutrunYieldToken is IYieldToken, OutrunERC20, Initializable {
      * @dev Initializer
      * @param _POT - Address of positionOptionContract
      */
-    function initialize(address _SY, address _POT) external virtual override initializer {
+    function initialize(address _SY, address _POT) external virtual override onlyOwner initializer {
         SY = _SY;
         POT = _POT;
     }
