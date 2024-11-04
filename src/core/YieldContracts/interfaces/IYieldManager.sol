@@ -18,11 +18,11 @@ interface IYieldManager {
 
     function setProtocolFeeRate(uint256 protocolFeeRate) external;
 
-	event AccumulateYields(uint256 amountInYields, uint256 protocolFee);
-
-	event WithdrawYields(address indexed account, uint256 amountYieldsOut);
-
 	event SetRevenuePool(address revenuePool);
 	
     event SetProtocolFeeRate(uint256 protocolFeeRate);
+
+	event WithdrawYields(address indexed account, uint256 amountYieldsOut);
+
+	event AccumulateYields(uint256 amountInYields, uint256 protocolFee, uint256 syTotalStaking);
 }
