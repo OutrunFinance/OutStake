@@ -1,15 +1,15 @@
 import { EndpointId } from '@layerzerolabs/lz-definitions'
 const base_sepoliaContract = {
     eid: EndpointId.BASESEP_V2_TESTNET,
-    contractName: 'OutrunOmnichainUniversalPrincipalToken',
+    contractName: 'OutrunUniversalPrincipalToken',
 }
 const blast_sepoliaContract = {
     eid: EndpointId.BLAST_V2_TESTNET,
-    contractName: 'OutrunOmnichainUniversalPrincipalToken',
+    contractName: 'OutrunUniversalPrincipalTokenOnBlast',
 }
 const bsc_testnetContract = {
     eid: EndpointId.BSC_V2_TESTNET,
-    contractName: 'OutrunOmnichainUniversalPrincipalToken',
+    contractName: 'OutrunUniversalPrincipalToken',
 }
 export default {
     contracts: [

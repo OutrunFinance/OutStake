@@ -20,8 +20,9 @@ contract OutrunUniversalPrincipalTokenOnBlast is IUniversalPrincipalToken, Outru
         string memory symbol_,
         uint8 decimals_,
         address _lzEndpoint,
-        address _delegate
-    ) OutrunOFT(name_, symbol_, decimals_, _lzEndpoint, _delegate) Ownable(_delegate) GasManagerable(_delegate) {}
+        address _delegate,
+        address _gasManager
+    ) OutrunOFT(name_, symbol_, decimals_, _lzEndpoint, _delegate) Ownable(_delegate) GasManagerable(_gasManager) {}
 
     modifier onlyAuthorizedPT(address PT) {
         require(authorizedPTs[PT], PermissionDenied());

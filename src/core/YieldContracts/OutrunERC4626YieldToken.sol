@@ -87,8 +87,10 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
                 currentYields = latestYield;
             }
 
-            IOutrunStakeManager(POT).transferYields(revenuePool, protocolFee);
-            emit AccumulateYields(increasedYield, protocolFee);
+            IOutrunStakeManager syStakeManager = IOutrunStakeManager(POT);
+            syStakeManager.transferYields(revenuePool, protocolFee);
+            
+            emit AccumulateYields(increasedYield, protocolFee, syStakeManager.syTotalStaking());
         }
     }
 
