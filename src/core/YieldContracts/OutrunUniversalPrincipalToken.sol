@@ -9,9 +9,9 @@ import { IPrincipalToken } from "./interfaces/IPrincipalToken.sol";
 import { IUniversalPrincipalToken } from "./interfaces/IUniversalPrincipalToken.sol";
 
 /**
- * @dev Outrun Omnichain Universal Principal Token
+ * @dev Outrun Universal Principal Token
  */
-contract OutrunOmnichainUniversalPrincipalToken is IUniversalPrincipalToken, OutrunOFT, TokenHelper {
+contract OutrunUniversalPrincipalToken is IUniversalPrincipalToken, OutrunOFT, TokenHelper {
     mapping(address PT => bool) public authorizedPTs;
 
     constructor(

@@ -32,15 +32,16 @@ const deploy: DeployFunction = async (hre) => {
 
     console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${address}`)
 
+    // Verifying contract
     try {
         console.log("Verifying contract...");
         await hre.run("verify:verify", {
             address: address,
             constructorArguments: constructorArgs,
         });
-        console.log(`Contract: ${contractName} verified!, network: ${hre.network.name}, address: ${address}`);
+        console.log(`Contract: ${contractName} on ${hre.network.name} verified!, address: ${address}`);
     } catch (err) {
-        console.error(`Contract: ${contractName} verification failed!, network: ${hre.network.name}, address: ${address}`, err);
+        console.error(`Contract: ${contractName} on ${hre.network.name} verification failed!, address: ${address}`, err);
     }
 }
 
