@@ -1,8 +1,7 @@
 import assert from 'assert'
-
 import { type DeployFunction } from 'hardhat-deploy/types'
 
-const contractName = 'OutrunOmnichainUniversalPrincipalToken'
+const contractName = 'OutrunUniversalPrincipalToken';
 
 const deploy: DeployFunction = async (hre) => {
     const { getNamedAccounts, deployments } = hre
@@ -33,16 +32,20 @@ const deploy: DeployFunction = async (hre) => {
     console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${address}`)
 
     // Verifying contract
-    try {
-        console.log("Verifying contract...");
-        await hre.run("verify:verify", {
-            address: address,
-            constructorArguments: constructorArgs,
-        });
-        console.log(`Contract: ${contractName} on ${hre.network.name} verified!, address: ${address}`);
-    } catch (err) {
-        console.error(`Contract: ${contractName} on ${hre.network.name} verification failed!, address: ${address}`, err);
-    }
+    let count = 0;
+    do {
+        try {
+            console.log(`Verifying contract ${contractName} on ${hre.network.name}, address: ${address}`);
+            await hre.run("verify:verify", {
+                address: address,
+                constructorArguments: constructorArgs,
+            });
+            console.log(`Contract: ${contractName} on ${hre.network.name} verified!, address: ${address}`);
+            count = 5;
+        } catch (err) {
+            console.error(`Contract: ${contractName} on ${hre.network.name} verification failed!, address: ${address}`, err);
+        }
+    } while (count < 5);
 }
 
 deploy.tags = [contractName]
