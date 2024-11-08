@@ -20,6 +20,8 @@ interface IOutrunStakeManager {
 
     error ZeroInput();
 
+    error ErrorInput();
+
     error PermissionDenied();
 
     error LockTimeNotExpired(uint256 deadLine);
