@@ -146,7 +146,7 @@ contract OutrunPositionOptionToken is
 
         uint256 positionId = _nextId();
         PTGenerated = calcPTAmount(principalValue, YTGenerated);
-        positions[positionId] = Position(amountInSY, principalValue, PTGenerated, deadline);
+        positions[positionId] = Position(amountInSY, principalValue, PTGenerated, deadline, positionOwner);
         IYieldToken(YT).mint(YTRecipient, YTGenerated);
         IPrincipalToken(PT).mint(PTRecipient, PTGenerated);
         _mint(positionOwner, positionId, PTGenerated, "");  // mint POT
@@ -176,7 +176,7 @@ contract OutrunPositionOptionToken is
         uint256 principalRedeemable = position.principalRedeemable;
 
         IPrincipalToken(PT).burn(msgSender, positionShare);
-        _redeemRewards(positionId, positionShare, position.SYRedeemable, PTRedeemable);
+        _redeemRewards(position.initOwner, positionId, position.SYRedeemable);
 
         uint256 redeemedPrincipalValue = principalRedeemable * positionShare / PTRedeemable;
         redeemedSyAmount = SYUtils.assetToSy(IStandardizedYield(SY).exchangeRate(), redeemedPrincipalValue);
@@ -191,6 +191,18 @@ contract OutrunPositionOptionToken is
         _transferSY(msgSender, redeemedSyAmount);
         
         emit Redeem(positionId, msgSender, redeemedSyAmount, positionShare);
+    }
+
+    /**
+     * @dev Allows redemption of generated rewards after position unlocks
+     * @param positionId - Position id
+     */
+    function redeemReward(uint256 positionId) external override {
+        Position storage position = positions[positionId];
+        uint256 deadline = position.deadline;
+        require(deadline <= block.timestamp, LockTimeNotExpired(deadline));
+
+        _redeemRewards(position.initOwner, positionId, position.SYRedeemable);
     }
 
     /**
@@ -257,53 +269,49 @@ contract OutrunPositionOptionToken is
     }
 
     function _redeemRewards(
+        address initOwner,
         uint256 positionId, 
-        uint256 positionShare, 
-        uint256 SYRedeemable, 
-        uint256 PTRedeemable
+        uint256 SYRedeemable
     ) internal returns (uint256[] memory rewardsOut) {
         _updatePositionRewards(positionId, SYRedeemable);
-        
-        address msgSender = msg.sender;
-        rewardsOut = _doTransferOutRewards(msgSender, positionId, positionShare, PTRedeemable);
-
-        if (rewardsOut.length != 0) emit RedeemRewards(positionId, msgSender, rewardsOut, positionShare);
+        rewardsOut = _doTransferOutRewards(initOwner, positionId);
+        if (rewardsOut.length != 0) emit RedeemRewards(positionId, initOwner, rewardsOut);
     }
 
-    function _doTransferOutRewards(
-        address receiver, 
-        uint256 positionId, 
-        uint256 positionShare, 
-        uint256 PTRedeemable
-    ) internal override returns (uint256[] memory rewardAmounts) {
+    function _doTransferOutRewards(address receiver, uint256 positionId) internal override returns (uint256[] memory rewardAmounts) {
         bool redeemExternalThisRound;
 
         address[] memory tokens = getRewardTokens();
         rewardAmounts = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            PositionReward storage rewardOfPosition = positionReward[tokens[i]][positionId];
+            address token = tokens[i];
+            PositionReward storage rewardOfPosition = positionReward[token][positionId];
             uint128 totalRewards = rewardOfPosition.accrued;
-            uint256 shareRewards = totalRewards * positionShare / PTRedeemable;
-            rewardAmounts[i] = shareRewards;
-            positionReward[tokens[i]][positionId].accrued = (totalRewards - shareRewards).Uint128();
+
+            if (totalRewards == 0) continue;
 
             if (!redeemExternalThisRound) {
-                if (_selfBalance(tokens[i]) < totalRewards) {
+                if (_selfBalance(token) < totalRewards) {
                     _redeemExternalReward();
                     redeemExternalThisRound = true;
                 }
             }
 
-            // The protocol fee will only be charged once during the lock-up period, and no fee will be charged for rewards after the lock-up expire time.
-            if (!rewardOfPosition.feesCollected) {
-                uint256 feeAmount = uint256(totalRewards).mulDown(protocolFeeRate);
-                _transferOut(tokens[i], revenuePool, feeAmount);
-                rewardAmounts[i] -= shareRewards.mulDown(protocolFeeRate);
+            uint256 revenue;
+            if (!rewardOfPosition.ownerCollected) {
+                revenue = uint256(totalRewards).mulDown(protocolFeeRate);
+                totalRewards -= revenue.Uint128();
+                rewardAmounts[i] = totalRewards;
+                positionReward[token][positionId].accrued = 0;
 
-                emit CollectRewardFee(tokens[i], feeAmount);
+                _transferOut(token, receiver, totalRewards);
+            } else {
+                revenue = totalRewards;
             }
-            
-            _transferOut(tokens[i], receiver, rewardAmounts[i]);
+
+            _transferOut(token, revenuePool, revenue);
+
+            emit ProtocolRewardRevenue(token, revenue);
         }
     }
 

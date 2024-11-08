@@ -10,6 +10,7 @@ interface IOutrunStakeManager {
         uint256 PTRedeemable;           // Amount of PT redeemable
         uint256 principalRedeemable;    // The principal value redeemable
         uint256 deadline;               // Position unlock time
+        address initOwner;              // Address of init staker(For redeem reward)
     }
 
     struct LockupDuration {
