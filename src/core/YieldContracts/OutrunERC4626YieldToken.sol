@@ -120,6 +120,8 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
      * @param _revenuePool - Address of revenue pool
      */
     function setRevenuePool(address _revenuePool) public override onlyOwner {
+        require(_revenuePool != address(0), ZeroInput());
+
         revenuePool = _revenuePool;
         emit SetRevenuePool(_revenuePool);
     }
