@@ -12,11 +12,6 @@ abstract contract PositionRewardManager is IPositionRewardManager {
 
     uint256 internal constant INITIAL_REWARD_INDEX = 1;
 
-    struct RewardState {
-        uint128 index;
-        uint128 lastBalance;
-    }
-
     struct PositionReward {
         uint128 index;
         uint128 accrued;
