@@ -54,13 +54,12 @@ contract OutrunLisUSDSY is SYBaseWithRewards {
         totalShares = totalShares == 0 ? 1 : totalShares;
         amountTokenOut = amountSharesToRedeem * totalAssets / totalShares;
 
-        listaLisUSDJar.exit(amountTokenOut);
+        listaLisUSDJar.exit(totalDepositedInJar);
         _transferOut(nativeYieldToken, receiver, amountTokenOut);
-        listaLisUSDJar.join(claimableYields);
-
         unchecked {
-            totalDepositedInJar = totalDepositedInJar - amountTokenOut + claimableYields;
+            totalDepositedInJar = totalAssets - amountTokenOut;
         }
+        listaLisUSDJar.join(totalDepositedInJar);
     }
 
     function exchangeRate() public view override returns (uint256 res) {
