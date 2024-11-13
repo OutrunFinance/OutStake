@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import { IBlast } from "./IBlast.sol";
+import { IBlast, BlastModeEnum } from "./IBlast.sol";
 
 abstract contract GasManagerable {
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);  // TODO mainnet
@@ -19,7 +19,6 @@ abstract contract GasManagerable {
     constructor(address initialGasManager) {
         require(initialGasManager != address(0), GasZeroAddress());
         _transferGasManager(initialGasManager);
-        BLAST.configureClaimableGas();
     }
 
     modifier onlyGasManager() {
@@ -56,6 +55,7 @@ abstract contract GasManagerable {
     function _transferGasManager(address newGasManager) internal {
         address oldGasManager = gasManager;
         gasManager = newGasManager;
+        BLAST.configure(BlastModeEnum.YieldMode.CLAIMABLE, BlastModeEnum.GasMode.CLAIMABLE, newGasManager);
 
         emit GasManagerTransferred(oldGasManager, newGasManager);
     }
