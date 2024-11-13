@@ -4,27 +4,24 @@ pragma solidity ^0.8.26;
 import { SYBase, ArrayLib } from "../../SYBase.sol";
 import { SYUtils } from "../../../libraries/SYUtils.sol";
 import { IWETH } from "../../../../external/IWETH.sol";
-import { INrERC20 } from "../../../../external/blast/INrERC20.sol";
 import { IBlastPoints } from "../../../../external/blast/IBlastPoints.sol";
+import { IERC20Rebasing } from "../../../../external/blast/IERC20Rebasing.sol";
 import { GasManagerable } from "../../../../external/blast/GasManagerable.sol";
 
 contract OutrunBlastETHSY is SYBase, GasManagerable {
     address public immutable WETH;
-    address public immutable nrETH;
+
+    uint256 public totalAssets;
 
     constructor(
         address _WETH,
-        address _nrETH,
         address _owner,
         address _gasManager,
         address _blastPoints,
         address _pointsOperator
-    ) SYBase("SY Blast ETH", "SY-BETH", _nrETH, _owner) GasManagerable(_gasManager) {
+    ) SYBase("SY Blast ETH", "SY-BETH", _WETH, _owner) GasManagerable(_gasManager) {
         WETH = _WETH;
-        nrETH = _nrETH;
         IBlastPoints(_blastPoints).configurePointsOperator(_pointsOperator);
-
-        _safeApprove(_WETH, _nrETH, type(uint256).max);
     }
 
     function _deposit(
@@ -32,7 +29,10 @@ contract OutrunBlastETHSY is SYBase, GasManagerable {
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) IWETH(WETH).deposit{value: amountDeposited}();
-        amountSharesOut = tokenIn == nrETH ? amountDeposited : INrERC20(nrETH).wrap(amountDeposited);
+        amountSharesOut = SYUtils.assetToSy(exchangeRate(), amountDeposited);
+        unchecked {
+            totalAssets += amountDeposited;
+        }
     }
 
     function _redeem(
@@ -40,43 +40,66 @@ contract OutrunBlastETHSY is SYBase, GasManagerable {
         address tokenOut,
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 amountTokenOut) {
-        amountTokenOut = tokenOut == nrETH ? amountSharesToRedeem : INrERC20(nrETH).unwrap(amountSharesToRedeem);
+        uint256 claimableYields = IERC20Rebasing(WETH).getClaimableAmount(address(this));
+        uint256 _totalAssets = totalAssets;
+        if (claimableYields > 0) {
+            IERC20Rebasing(WETH).claim(address(this), claimableYields);
+            unchecked {
+                _totalAssets += claimableYields;
+            }
+        }
+
+        _totalAssets = _totalAssets == 0 ? 1 : _totalAssets;
+        uint256 totalShares = totalSupply();
+        totalShares = totalShares == 0 ? 1 : totalShares; 
+
+        unchecked {
+            amountTokenOut = amountSharesToRedeem * totalAssets / totalShares;
+            totalAssets = _totalAssets - amountTokenOut;
+        }
+        
         if (tokenOut == NATIVE) IWETH(WETH).withdraw(amountTokenOut);
         _transferOut(tokenOut, receiver, amountTokenOut);
     }
 
     function exchangeRate() public view override returns (uint256 res) {
-        res = INrERC20(nrETH).stERC20PerToken();
+        uint256 _totalAssets = totalAssets + IERC20Rebasing(WETH).getClaimableAmount(address(this));
+        _totalAssets = _totalAssets == 0 ? 1 : _totalAssets; 
+
+        uint256 totalShares = totalSupply();
+        totalShares = totalShares == 0 ? 1 : totalShares;
+ 
+        res = (1e18 * _totalAssets) / totalShares;
     }
 
     function _previewDeposit(
-        address tokenIn,
+        address /*tokenIn*/,
         uint256 amountTokenToDeposit
     ) internal view override returns (uint256 amountSharesOut) {
-        amountSharesOut = tokenIn == nrETH ? amountTokenToDeposit : INrERC20(nrETH).getNrERC20ByStERC20(amountTokenToDeposit);
+        amountSharesOut = SYUtils.assetToSy(exchangeRate(), amountTokenToDeposit);
     }
 
     function _previewRedeem(
-        address tokenOut,
+        address /*tokenOut*/,
         uint256 amountSharesToRedeem
     ) internal view override returns (uint256 amountTokenOut) {
-        amountTokenOut = tokenOut == nrETH ? amountSharesToRedeem : INrERC20(nrETH).getStERC20ByNrERC20(amountSharesToRedeem);
+        amountTokenOut = SYUtils.syToAsset(exchangeRate(), amountSharesToRedeem);
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(WETH, NATIVE, nrETH);
+        return ArrayLib.create(WETH, NATIVE);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(WETH, NATIVE, nrETH);
+        return ArrayLib.create(WETH, NATIVE);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == WETH || token == NATIVE || token == nrETH;
+        return token == WETH || token == NATIVE;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == WETH || token == NATIVE || token == nrETH;
+        return token == WETH || token == NATIVE;
     }
 
     function assetInfo() external pure returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {
