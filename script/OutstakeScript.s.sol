@@ -3,12 +3,14 @@ pragma solidity ^0.8.26;
 
 import "./BaseScript.s.sol";
 import { OutStakeRouter } from "../src/router/OutStakeRouter.sol";
+import { IOutrunDeployer, OutrunDeployer } from "../src/external/OutrunDeployer.sol";
 import { IListaBNBStakeManager } from "../src/external/lista/IListaBNBStakeManager.sol";
 import { OutrunPositionOptionToken } from "../src/core/Position/OutrunPositionOptionToken.sol";
 import { IPrincipalToken, OutrunPrincipalToken } from "../src/core/YieldContracts/OutrunPrincipalToken.sol";
 import { IYieldToken } from "../src/core/YieldContracts/interfaces/IYieldToken.sol";
 import { OutrunERC4626YieldToken } from "../src/core/YieldContracts/OutrunERC4626YieldToken.sol";
 import { OutrunSlisBNBSY } from "../src/core/StandardizedYield/implementations/Lista/OutrunSlisBNBSY.sol";
+import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 
 contract OutstakeScript is BaseScript {
     address internal owner;
@@ -25,7 +27,17 @@ contract OutstakeScript is BaseScript {
         protocolFeeRate = vm.envUint("PROTOCOL_FEE_RATE");
 
         // deployOutStakeRouter();
-        supportSlisBNB();
+        //supportSlisBNB();
+        deployOutrunDeployer();
+    }
+
+    function deployOutrunDeployer() internal {
+        bytes32 salt = keccak256(abi.encodePacked(owner, stringToBytes32("zxczxc")));
+        address realOutrunDeployer = Create2.deploy(0, salt, abi.encodePacked(type(OutrunDeployer).creationCode, abi.encode(owner)));
+        address testAddress = IOutrunDeployer(realOutrunDeployer).deploy(stringToBytes32("Outrun"), abi.encodePacked(type(OutrunDeployer).creationCode, abi.encode(owner)));
+
+        console.log("RealOutrunDeployer deployed on %s", realOutrunDeployer);
+        console.log("TestAddress deployed on %s", testAddress);
     }
 
     function deployOutStakeRouter() internal {
@@ -86,4 +98,15 @@ contract OutstakeScript is BaseScript {
         // console.log("YT_SLISBNB deployed on %s", slisBNBYTAddress);
         console.log("POT_SLISBNB deployed on %s", slisBNBPOTAddress);
     }
+
+    function stringToBytes32(string memory str) public pure returns (bytes32) {
+        bytes memory temp = bytes(str);
+        require(temp.length <= 32, "String too long");
+        bytes32 result;
+        assembly {
+            result := mload(add(str, 32))
+        }
+        return result;
+    }
+
 }
