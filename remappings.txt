@@ -1,5 +1,4 @@
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
-@solmate/=lib/solmate/src/
 @chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/
 erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
