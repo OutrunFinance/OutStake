@@ -41,3 +41,4 @@ pnpm-error.log
 #node.js
 .deps
 node_modules/
+package-lock.json
