@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.26;
 
-import { CREATE3 } from "@solmate/utils/CREATE3.sol";
+import { CREATE3 } from "solmate/src/utils/CREATE3.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IOutrunDeployer} from "./IOutrunDeployer.sol";

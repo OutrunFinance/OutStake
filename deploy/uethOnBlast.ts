@@ -27,17 +27,22 @@ const deploy: DeployFunction = async (hre) => {
         deployer  // gasManager
     ];
 
-    const salt = hre.ethers.utils.id('Outrun');
+    const salt = hre.ethers.utils.id('testnet');
     const creationCode = await hre.artifacts.readArtifact(contractName);
     const encodedArgs = hre.ethers.utils.defaultAbiCoder.encode(
         ['string', 'string', 'uint8', 'address', 'address', 'address'],
         constructorArgs
     );
     const bytecodeWithArgs = creationCode.bytecode + encodedArgs.slice(2);
-    const deployTx = await outrunDeployer.deploy(salt, bytecodeWithArgs, { value: hre.ethers.utils.parseEther('0') });
-    const deployedAddress = deployTx.address;
 
+    await outrunDeployer.deploy(salt, bytecodeWithArgs, { value: hre.ethers.utils.parseEther('0') });
+    const deployedAddress = await outrunDeployer.getDeployed(deployer, salt);
     console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${deployedAddress}`)
+
+    await deployments.save(contractName, {
+        address: deployedAddress,
+        abi: creationCode.abi
+    });
 
     // Verifying contract
     let count = 0;
@@ -51,6 +56,7 @@ const deploy: DeployFunction = async (hre) => {
             console.log(`Contract: ${contractName} on ${hre.network.name} verified!, address: ${deployedAddress}`);
             count = 5;
         } catch (err) {
+            count++;
             console.error(`Contract: ${contractName} on ${hre.network.name} verification failed!, address: ${deployedAddress}`, err);
         }
     } while (count < 5);
