@@ -6,10 +6,10 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IOutrunDeployer} from "./IOutrunDeployer.sol";
 
-/// @title Factory for deploying contracts to deterministic addresses via CREATE3
-/// @author zefram.eth
-/// @notice Enables deploying contracts using CREATE3. Each deployer (msg.sender) has
-/// its own namespace for deployed addresses.
+/**
+ * @title Factory for deploying contracts to deterministic addresses via CREATE3
+ * @notice Enables deploying contracts using CREATE3. Each deployer (msg.sender) has its own namespace for deployed addresses.
+ */
 contract OutrunDeployer is IOutrunDeployer, Ownable {
     constructor(address _owner) Ownable(_owner) {
     }
