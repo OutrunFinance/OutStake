@@ -2,15 +2,15 @@
 pragma solidity ^0.8.26;
 
 import { OutrunPositionOptionToken } from "./OutrunPositionOptionToken.sol";
-import { GasManagerable } from "../../external/blast/GasManagerable.sol";
+import { BlastGovernorable } from "../../external/blast/BlastGovernorable.sol";
 
 /**
  * @title Outrun Position Option Token On Blast
  */
-contract OutrunPositionOptionTokenOnBlast is OutrunPositionOptionToken, GasManagerable {
+contract OutrunPositionOptionTokenOnBlast is OutrunPositionOptionToken, BlastGovernorable {
     constructor(
         address owner_,
-        address gasManager_,
+        address blastGovernor_,
         string memory name_,
         string memory symbol_,
         uint8 decimals_,
@@ -31,6 +31,6 @@ contract OutrunPositionOptionTokenOnBlast is OutrunPositionOptionToken, GasManag
         _SY, 
         _PT, 
         _YT
-    ) GasManagerable(gasManager_) {
+    ) BlastGovernorable(blastGovernor_) {
     }
 }

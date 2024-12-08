@@ -6,9 +6,9 @@ import { SYUtils } from "../../../libraries/SYUtils.sol";
 import { IWETH } from "../../../../external/IWETH.sol";
 import { IBlastPoints } from "../../../../external/blast/IBlastPoints.sol";
 import { IERC20Rebasing } from "../../../../external/blast/IERC20Rebasing.sol";
-import { GasManagerable } from "../../../../external/blast/GasManagerable.sol";
+import { BlastGovernorable } from "../../../../external/blast/BlastGovernorable.sol";
 
-contract OutrunBlastETHSY is SYBase, GasManagerable {
+contract OutrunBlastETHSY is SYBase, BlastGovernorable {
     address public immutable WETH;
 
     uint256 public totalAssets;
@@ -16,10 +16,10 @@ contract OutrunBlastETHSY is SYBase, GasManagerable {
     constructor(
         address _WETH,
         address _owner,
-        address _gasManager,
+        address _blastGovernor,
         address _blastPoints,
         address _pointsOperator
-    ) SYBase("SY Blast ETH", "SY-BETH", _WETH, _owner) GasManagerable(_gasManager) {
+    ) SYBase("SY Blast ETH", "SY-BETH", _WETH, _owner) BlastGovernorable(_blastGovernor) {
         WETH = _WETH;
         IBlastPoints(_blastPoints).configurePointsOperator(_pointsOperator);
     }

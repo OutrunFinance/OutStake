@@ -5,9 +5,9 @@ import { SYBase, ArrayLib } from "../../SYBase.sol";
 import { SYUtils } from "../../../libraries/SYUtils.sol";
 import { IBlastPoints } from "../../../../external/blast/IBlastPoints.sol";
 import { IERC20Rebasing } from "../../../../external/blast/IERC20Rebasing.sol";
-import { GasManagerable } from "../../../../external/blast/GasManagerable.sol";
+import { BlastGovernorable } from "../../../../external/blast/BlastGovernorable.sol";
 
-contract OutrunBlastUSDSY is SYBase, GasManagerable {
+contract OutrunBlastUSDSY is SYBase, BlastGovernorable {
     address public immutable USDB;
 
     uint256 public totalAssets;
@@ -15,10 +15,10 @@ contract OutrunBlastUSDSY is SYBase, GasManagerable {
     constructor(
         address _USDB,
         address _owner,
-        address _gasManager,
+        address _blastGovernor,
         address _blastPoints,
         address _pointsOperator
-    ) SYBase("SY Blast USD", "SY-USDB", _USDB, _owner) GasManagerable(_gasManager) {
+    ) SYBase("SY Blast USD", "SY-USDB", _USDB, _owner) BlastGovernorable(_blastGovernor) {
         USDB = _USDB;
         IBlastPoints(_blastPoints).configurePointsOperator(_pointsOperator);
     }
