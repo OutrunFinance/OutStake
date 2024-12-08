@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
-import { IBlast, BlastModeEnum } from "./IBlast.sol";
+import { IBlast } from "./IBlast.sol";
+import { IBlastGovernorable } from "./IBlastGovernorable.sol";
 
-abstract contract BlastGovernorable {
+abstract contract BlastGovernorable is IBlastGovernorable {
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);  // TODO mainnet
 
     address public blastGovernor;
@@ -27,14 +28,14 @@ abstract contract BlastGovernorable {
         _;
     }
 
-    function configure(BlastModeEnum.YieldMode yieldMode, BlastModeEnum.GasMode gasMode) external onlyBlastGovernor {
+    function configure(YieldMode yieldMode, GasMode gasMode) external override onlyBlastGovernor {
         BLAST.configure(yieldMode, gasMode, blastGovernor);
     }
 
     /**
      * @dev Read all gas remaining balance 
      */
-    function readGasBalance() external view onlyBlastGovernor returns (uint256) {
+    function readGasBalance() external view override onlyBlastGovernor returns (uint256) {
         (, uint256 gasBanlance, , ) = BLAST.readGasParams(address(this));
         return gasBanlance;
     }
@@ -43,14 +44,14 @@ abstract contract BlastGovernorable {
      * @dev Claim max gas of this contract
      * @param recipient - Address of receive gas
      */
-    function claimMaxGas(address recipient) external onlyBlastGovernor returns (uint256 gasAmount) {
+    function claimMaxGas(address recipient) external override onlyBlastGovernor returns (uint256 gasAmount) {
         require(recipient != address(0), BlastZeroAddress());
 
         gasAmount = BLAST.claimMaxGas(address(this), recipient);
         emit ClaimMaxGas(recipient, gasAmount);
     }
 
-    function transferGasManager(address newBlastGovernor) public onlyBlastGovernor {
+    function transferGasManager(address newBlastGovernor) external override onlyBlastGovernor {
         require(newBlastGovernor != address(0), BlastZeroAddress());
 
         _transferBlastGovernor(newBlastGovernor);
@@ -59,7 +60,7 @@ abstract contract BlastGovernorable {
     function _transferBlastGovernor(address newBlastGovernor) internal {
         address oldBlastGovernor = blastGovernor;
         blastGovernor = newBlastGovernor;
-        BLAST.configure(BlastModeEnum.YieldMode.CLAIMABLE, BlastModeEnum.GasMode.CLAIMABLE, newBlastGovernor);
+        BLAST.configure(YieldMode.CLAIMABLE, GasMode.CLAIMABLE, newBlastGovernor);
 
         emit BlastGovernorTransferred(oldBlastGovernor, newBlastGovernor);
     }
