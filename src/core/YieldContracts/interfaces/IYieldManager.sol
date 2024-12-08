@@ -10,7 +10,7 @@ interface IYieldManager {
 
 	function previewWithdrawYields(uint256 amountInBurnedYT) external view returns (uint256 amountYieldsOut);
 
-	function accumulateYields() external;
+	function accumulateYields() external returns (uint256 increasedYield, uint256 syTotalStaking);
 
 	function withdrawYields(uint256 amountInBurnedYT) external returns (uint256 amountYieldsOut);
 

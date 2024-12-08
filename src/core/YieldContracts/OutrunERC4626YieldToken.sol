@@ -77,8 +77,9 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
     /**
      * @dev Accumulate yields
      */
-    function accumulateYields() public override {
-        (uint256 latestYield, uint256 increasedYield) = _latestYieldInfo();
+    function accumulateYields() public override returns (uint256 increasedYield, uint256 syTotalStaking) {
+        uint256 latestYield;
+        (latestYield, increasedYield) = _latestYieldInfo();
         if (increasedYield > 0) {
             uint256 protocolFee;
             unchecked {
@@ -89,8 +90,9 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
 
             IOutrunStakeManager syStakeManager = IOutrunStakeManager(POT);
             syStakeManager.transferYields(revenuePool, protocolFee);
-            
-            emit AccumulateYields(increasedYield, protocolFee, syStakeManager.syTotalStaking());
+            syTotalStaking = syStakeManager.syTotalStaking();
+
+            emit AccumulateYields(increasedYield, protocolFee, syTotalStaking);
         }
     }
 
