@@ -2,7 +2,17 @@
 pragma solidity ^0.8.26;
 
 import { IBlast } from "./IBlast.sol";
-import { IBlastGovernorable } from "./IBlastGovernorable.sol";
+import { BlastModeEnum } from "./BlastModeEnum.sol";
+
+interface IBlastGovernorable is BlastModeEnum  {
+    function configure(YieldMode yieldMode, GasMode gasMode) external;
+
+    function readGasBalance() external view returns (uint256);
+
+    function claimMaxGas(address recipient) external returns (uint256 gasAmount);
+
+    function transferGasManager(address newBlastGovernor) external;
+}
 
 abstract contract BlastGovernorable is IBlastGovernorable {
     IBlast public constant BLAST = IBlast(0x4300000000000000000000000000000000000002);  // TODO mainnet
