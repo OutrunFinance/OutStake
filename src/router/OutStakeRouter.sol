@@ -68,7 +68,7 @@ contract OutStakeRouter is IOutStakeRouter, IERC1155Receiver, TokenHelper {
     ) internal returns (uint256 amountInRedeemed) {
         if(doPull) _transferFrom(IERC20(SY), msg.sender, SY, amountInSY);
 
-        amountInRedeemed = IStandardizedYield(SY).redeem(receiver, amountInSY, tokenOut, minTokenOut, true);
+        amountInRedeemed = IStandardizedYield(SY).redeem(receiver, amountInSY, tokenOut, minTokenOut, doPull);
     }
 
     /** MINT PT(UPT), YT, POT Tokens **/
@@ -84,7 +84,6 @@ contract OutStakeRouter is IOutStakeRouter, IERC1155Receiver, TokenHelper {
         StakeParam calldata stakeParam,
         MintUPTParam calldata mintUPTParam
     ) external payable returns (uint256 PTGenerated, uint256 YTGenerated) {
-        _transferIn(tokenIn, msg.sender, tokenAmount);
         uint256 amountInSY = _mintSY(SY, tokenIn, address(this), tokenAmount, 0, true);
 
         _safeApproveInf(SY, POT);

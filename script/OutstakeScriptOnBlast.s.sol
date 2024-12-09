@@ -31,7 +31,7 @@ contract OutstakeScriptOnBlast is BaseScript {
         blastPoints = vm.envAddress("BLAST_POINTS");
         pointsOperator = vm.envAddress("POINTS_OPERATOR");
 
-        deployOutStakeRouter(1);
+        deployOutStakeRouter(2);
         // supportBlastETH();
         // supportBlastUSD();
     }

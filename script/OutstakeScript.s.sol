@@ -28,7 +28,7 @@ contract OutstakeScript is BaseScript {
         OUTRUN_DEPLOYER = vm.envAddress("OUTRUN_DEPLOYER");
         protocolFeeRate = vm.envUint("PROTOCOL_FEE_RATE");
 
-        deployOutStakeRouter(1);
+        deployOutStakeRouter(2);
         // supportSlisBNB();
         // deployOutrunDeployer(1);
     }
