@@ -1,13 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.26;
 
+
+import { IERC1155Receiver, IERC165 } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+
 import { IOutStakeRouter } from "./interfaces/IOutStakeRouter.sol";
 import { TokenHelper, IERC20, IERC1155 } from "../core/libraries/TokenHelper.sol";
 import { IStandardizedYield } from "../core/StandardizedYield/IStandardizedYield.sol";
 import { IOutrunStakeManager } from "../core/Position/interfaces/IOutrunStakeManager.sol";
 import { IUniversalPrincipalToken } from "../core/YieldContracts/interfaces/IUniversalPrincipalToken.sol";
 
-contract OutStakeRouter is IOutStakeRouter, TokenHelper {
+contract OutStakeRouter is IOutStakeRouter, IERC1155Receiver, TokenHelper {
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+        return interfaceId == type(IERC165).interfaceId || interfaceId == type(IERC1155Receiver).interfaceId;
+    }
+
     /** MINT/REDEEM SY **/
     function mintSYFromToken(
         address SY,
@@ -194,5 +201,25 @@ contract OutStakeRouter is IOutStakeRouter, TokenHelper {
         _transferFrom(IERC1155(POT), msg.sender, address(this), positionId, share);
 
         redeemedSyAmount = IOutrunStakeManager(POT).redeem(positionId, share);
+    }
+
+    function onERC1155Received(
+        address /*operator*/,
+        address /*from*/,
+        uint256 /*id*/,
+        uint256 /*value*/,
+        bytes calldata /*data*/
+    ) external pure override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address /*operator*/,
+        address /*from*/,
+        uint256[] calldata /*ids*/,
+        uint256[] calldata /*values*/,
+        bytes calldata /*data*/
+    ) external pure override returns (bytes4) {
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 }
