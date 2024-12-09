@@ -17,6 +17,7 @@ contract OutstakeScript is BaseScript {
     address internal slisBNB;
     address internal revenuePool;
     address internal listaBNBStakeManager;
+    address internal OUTRUN_DEPLOYER;
     uint256 internal protocolFeeRate;
 
     function run() public broadcaster {
@@ -24,26 +25,27 @@ contract OutstakeScript is BaseScript {
         slisBNB = vm.envAddress("TESTNET_SLISBNB");
         revenuePool = vm.envAddress("REVENUE_POOL");
         listaBNBStakeManager = vm.envAddress("TESTNET_LISTA_BNB_STAKE_MANAGER");
+        OUTRUN_DEPLOYER = vm.envAddress("OUTRUN_DEPLOYER");
         protocolFeeRate = vm.envUint("PROTOCOL_FEE_RATE");
 
-        // deployOutStakeRouter();
-        //supportSlisBNB();
-        deployOutrunDeployer();
+        deployOutStakeRouter(1);
+        // supportSlisBNB();
+        // deployOutrunDeployer(1);
     }
 
-    function deployOutrunDeployer() internal {
-        bytes32 salt = keccak256(abi.encodePacked(owner, stringToBytes32("zxczxc")));
-        address realOutrunDeployer = Create2.deploy(0, salt, abi.encodePacked(type(OutrunDeployer).creationCode, abi.encode(owner)));
-        address testAddress = IOutrunDeployer(realOutrunDeployer).deploy(stringToBytes32("Outrun"), abi.encodePacked(type(OutrunDeployer).creationCode, abi.encode(owner)));
+    function deployOutrunDeployer(uint256 nonce) internal {
+        bytes32 salt = keccak256(abi.encodePacked(owner, "OutrunDeployer", nonce));
+        address outrunDeployerAddr = Create2.deploy(0, salt, abi.encodePacked(type(OutrunDeployer).creationCode, abi.encode(owner)));
 
-        console.log("RealOutrunDeployer deployed on %s", realOutrunDeployer);
-        console.log("TestAddress deployed on %s", testAddress);
+        console.log("OutrunDeployer deployed on %s", outrunDeployerAddr);
     }
 
-    function deployOutStakeRouter() internal {
-        OutStakeRouter router = new OutStakeRouter();
+    function deployOutStakeRouter(uint256 nonce) internal {
+        bytes32 salt = keccak256(abi.encodePacked("OutStakeRouter", nonce));
+        bytes memory creationCode = abi.encodePacked(type(OutStakeRouter).creationCode);
+        address outStakeRouterAddr = IOutrunDeployer(OUTRUN_DEPLOYER).deploy(salt, creationCode);
 
-        console.log("OutStake router deployed on %s", address(router));
+        console.log("OutStakeRouter deployed on %s", outStakeRouterAddr);
     }
 
     /**
