@@ -100,14 +100,4 @@ contract OutstakeScript is BaseScript {
         console.log("YT_SLISBNB deployed on %s", slisBNBYTAddress);
         console.log("POT_SLISBNB deployed on %s", slisBNBPOTAddress);
     }
-
-    function stringToBytes32(string memory str) public pure returns (bytes32) {
-        bytes memory temp = bytes(str);
-        require(temp.length <= 32, "String too long");
-        bytes32 result;
-        assembly {
-            result := mload(add(str, 32))
-        }
-        return result;
-    }
 }
