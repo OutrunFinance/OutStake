@@ -1,4 +1,5 @@
 import assert from 'assert';
+import { keccak256 } from "@ethersproject/keccak256";
 import { type DeployFunction } from 'hardhat-deploy/types';
 
 const contractName = 'OutrunUniversalPrincipalTokenOnBlast';
@@ -27,7 +28,11 @@ const deploy: DeployFunction = async (hre) => {
         deployer  // gasManager
     ];
 
-    const salt = hre.ethers.utils.id('testnet');
+    const nonce = 0;
+    const salt = keccak256(hre.ethers.utils.defaultAbiCoder.encode(
+        ['string', 'uint256'],
+        ["OutrunUniversalPrincipalToken", nonce]
+    ));
     const creationCode = await hre.artifacts.readArtifact(contractName);
     const encodedArgs = hre.ethers.utils.defaultAbiCoder.encode(
         ['string', 'string', 'uint8', 'address', 'address', 'address'],

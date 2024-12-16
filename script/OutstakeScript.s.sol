@@ -17,7 +17,7 @@ contract OutstakeScript is BaseScript {
     address internal slisBNB;
     address internal revenuePool;
     address internal listaBNBStakeManager;
-    address internal OUTRUN_DEPLOYER;
+    address internal outrunDeployer;
     uint256 internal protocolFeeRate;
 
     function run() public broadcaster {
@@ -25,12 +25,12 @@ contract OutstakeScript is BaseScript {
         slisBNB = vm.envAddress("TESTNET_SLISBNB");
         revenuePool = vm.envAddress("REVENUE_POOL");
         listaBNBStakeManager = vm.envAddress("TESTNET_LISTA_BNB_STAKE_MANAGER");
-        OUTRUN_DEPLOYER = vm.envAddress("OUTRUN_DEPLOYER");
+        outrunDeployer = vm.envAddress("OUTRUN_DEPLOYER");
         protocolFeeRate = vm.envUint("PROTOCOL_FEE_RATE");
 
-        deployOutStakeRouter(2);
+        deployOutStakeRouter(3);
         // supportSlisBNB();
-        // deployOutrunDeployer(1);
+        // deployOutrunDeployer(0);
     }
 
     function deployOutrunDeployer(uint256 nonce) internal {
@@ -43,7 +43,7 @@ contract OutstakeScript is BaseScript {
     function deployOutStakeRouter(uint256 nonce) internal {
         bytes32 salt = keccak256(abi.encodePacked("OutStakeRouter", nonce));
         bytes memory creationCode = abi.encodePacked(type(OutStakeRouter).creationCode);
-        address outStakeRouterAddr = IOutrunDeployer(OUTRUN_DEPLOYER).deploy(salt, creationCode);
+        address outStakeRouterAddr = IOutrunDeployer(outrunDeployer).deploy(salt, creationCode);
 
         console.log("OutStakeRouter deployed on %s", outStakeRouterAddr);
     }

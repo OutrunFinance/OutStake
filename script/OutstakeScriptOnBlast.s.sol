@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "./BaseScript.s.sol";
-import { OutStakeRouter } from "../src/router/OutStakeRouter.sol";
+import { OutStakeRouterOnBlast } from "../src/router/OutStakeRouterOnBlast.sol";
 import { IPrincipalToken } from "../src/core/YieldContracts/interfaces/IPrincipalToken.sol";
 import { IOutrunDeployer, OutrunDeployer } from "../src/external/deployer/OutrunDeployer.sol";
 import { IBlastGovernorable, BlastModeEnum } from "../src/external/blast/BlastGovernorable.sol";
@@ -18,20 +18,20 @@ contract OutstakeScriptOnBlast is BaseScript {
     address internal blastPoints;
     address internal pointsOperator;
     address internal revenuePool;
-    address internal OUTRUN_DEPLOYER;
+    address internal outrunDeployer;
     uint256 internal protocolFeeRate;
 
     function run() public broadcaster {
         owner = vm.envAddress("OWNER");
         revenuePool = vm.envAddress("REVENUE_POOL");
         protocolFeeRate = vm.envUint("PROTOCOL_FEE_RATE");
-        OUTRUN_DEPLOYER = vm.envAddress("OUTRUN_DEPLOYER");
+        outrunDeployer = vm.envAddress("OUTRUN_DEPLOYER");
 
         blastGovernor = vm.envAddress("BLAST_GOVERNOR");
         blastPoints = vm.envAddress("BLAST_POINTS");
         pointsOperator = vm.envAddress("POINTS_OPERATOR");
 
-        deployOutStakeRouter(2);
+        deployOutStakeRouter(3);
         // supportBlastETH();
         // supportBlastUSD();
     }
@@ -176,9 +176,12 @@ contract OutstakeScriptOnBlast is BaseScript {
 
     function deployOutStakeRouter(uint256 nonce) internal {
         bytes32 salt = keccak256(abi.encodePacked("OutStakeRouter", nonce));
-        bytes memory creationCode = abi.encodePacked(type(OutStakeRouter).creationCode);
-        address outStakeRouterAddr = IOutrunDeployer(OUTRUN_DEPLOYER).deploy(salt, creationCode);
+        bytes memory initCode = abi.encodePacked(
+            type(OutStakeRouterOnBlast).creationCode,
+            abi.encode(blastGovernor)
+        );
+        address outStakeRouterAddr = IOutrunDeployer(outrunDeployer).deploy(salt, initCode);
 
-        console.log("OutStakeRouter deployed on %s", outStakeRouterAddr);
+        console.log("OutStakeRouterOnBlast deployed on %s", outStakeRouterAddr);
     }
 }
