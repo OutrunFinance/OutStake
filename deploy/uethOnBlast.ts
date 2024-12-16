@@ -14,7 +14,7 @@ const deploy: DeployFunction = async (hre) => {
     console.log(`Network: ${hre.network.name}`);
     console.log(`Deployer: ${deployer}`);
 
-    const outrunDeployerAddress = '0x72e0BfFab2672B6EDDEBdC4B48f3dD2FC65520C0';
+    const outrunDeployerAddress = process.env.OUTRUN_DEPLOYER as string;
     const outrunDeployer = await hre.ethers.getContractAt('OutrunDeployer', outrunDeployerAddress);
     
     const endpointV2Deployment = await hre.deployments.get('EndpointV2');
