@@ -20,3 +20,10 @@ forge script OutstakeScript.s.sol:OutstakeScript --rpc-url base_sepolia \
     --via-ir \
     --broadcast --ffi -vvvv \
     --verify 
+
+forge script OutstakeScript.s.sol:OutstakeScript --rpc-url mantle_sepolia \
+    --with-gas-price 200000000 \
+    --optimize --optimizer-runs 100000 \
+    --via-ir \
+    --broadcast --ffi -vvvv \
+    --verify 

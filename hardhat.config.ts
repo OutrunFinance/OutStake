@@ -71,12 +71,19 @@ const config: HardhatUserConfig = {
             gasPrice: 1200000,
             accounts,
         },
+        'mantle-sepolia': {
+            eid: EndpointId.MANTLESEP_V2_TESTNET,
+            url: process.env.MANTLE_SEPOLIA_RPC,
+            gasPrice: 20000000,
+            accounts,
+        },
     },
     etherscan: {
         apiKey: {
             bscTestnet: process.env.BSCSCAN_API_KEY as string,
             baseSepolia: process.env.BASESCAN_API_KEY as string,
-            blastSepolia: process.env.BLASTSCAN_API_KEY as string
+            blastSepolia: process.env.BLASTSCAN_API_KEY as string,
+            mantleSepolia: process.env.MANTLESCAN_API_KEY as string,
         },
         customChains: [
             {
@@ -86,6 +93,14 @@ const config: HardhatUserConfig = {
                 apiURL: process.env.BLASTSCAN_API_URL as string,
                 browserURL: "https://testnet.blastscan.io/"
               }
+            },
+            {
+                network: "mantleSepolia",
+                chainId: 5003,
+                urls: {
+                  apiURL: process.env.MANTLESCAN_API_URL as string,
+                  browserURL: "https://sepolia.mantlescan.xyz/"
+                }
             }
         ]
     },
