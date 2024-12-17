@@ -70,6 +70,12 @@ contract OutrunPositionOptionToken is
         _;
     }
 
+    modifier accumulateYields() {
+        IYieldManager(YT).accumulateYields();
+        _;
+    }
+    
+
     /**
      * @dev The average number of days staked based on YT. It isn't the true average number of days staked for the position.
      */
@@ -131,7 +137,7 @@ contract OutrunPositionOptionToken is
         address PTRecipient, 
         address YTRecipient,
         address positionOwner
-    ) external override nonReentrant returns (uint256 PTGenerated, uint256 YTGenerated) {
+    ) external override nonReentrant accumulateYields returns (uint256 PTGenerated, uint256 YTGenerated) {
         _stakeParamValidate(amountInSY, lockupDays);
         _transferIn(SY, msg.sender, amountInSY);
         
@@ -164,7 +170,7 @@ contract OutrunPositionOptionToken is
     function redeem(
         uint256 positionId, 
         uint256 positionShare
-    ) external override nonReentrant returns (uint256 redeemedSyAmount) {
+    ) external override nonReentrant accumulateYields returns (uint256 redeemedSyAmount) {
         Position storage position = positions[positionId];
         uint256 deadline = position.deadline;
         require(deadline <= block.timestamp, LockTimeNotExpired(deadline));

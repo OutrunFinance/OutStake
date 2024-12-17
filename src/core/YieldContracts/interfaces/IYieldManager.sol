@@ -2,15 +2,18 @@
 pragma solidity ^0.8.26;
  
 interface IYieldManager {
-	error FeeRateOverflow();
-
-	error InvalidInput();
+	struct RecentAccumulatedInfo {
+		uint192 accumulatedYields;
+		uint64 latestAccumulateTime;
+	}
 	
-	function totalRedeemableYields() external view returns (uint256 amount);
+	function totalRedeemableYields() external view returns (uint256);
+
+	function totalAccumulatedYields() external view returns (uint256);
 
 	function previewWithdrawYields(uint256 amountInBurnedYT) external view returns (uint256 amountYieldsOut);
 
-	function accumulateYields() external returns (uint256 increasedYield, uint256 syTotalStaking);
+	function accumulateYields() external returns (uint256 increasedYield);
 
 	function withdrawYields(uint256 amountInBurnedYT) external returns (uint256 amountYieldsOut);
 
@@ -24,5 +27,9 @@ interface IYieldManager {
 
 	event WithdrawYields(address indexed account, uint256 amountYieldsOut);
 
-	event AccumulateYields(uint256 amountInYields, uint256 protocolFee, uint256 syTotalStaking);
+	event AccumulateYields(uint256 amountInYields, uint256 protocolFee);
+
+	error FeeRateOverflow();
+
+	error InvalidInput();
 }

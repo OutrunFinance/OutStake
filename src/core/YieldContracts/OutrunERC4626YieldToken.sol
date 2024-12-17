@@ -21,7 +21,9 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
 
     address public revenuePool;
     uint256 public protocolFeeRate;
-    uint256 public currentYields;
+    uint256 public yieldBalance;        // Withdrawable yields balance
+    uint256 public withdrawedYields;    // Cumulatively withdrawn yields
+    RecentAccumulatedInfo[2] public recentTwoAccumulatedInfos;   // Recent accumulated yields information.
 
     constructor(
         string memory name_,
@@ -33,9 +35,13 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
     ) OutrunYieldToken(name_, symbol_, decimals_) Ownable(owner_) {
         revenuePool = revenuePool_;
         protocolFeeRate = protocolFeeRate_;
+
+        uint64 currentTime = uint64(block.timestamp);
+        recentTwoAccumulatedInfos[0].latestAccumulateTime = currentTime;
+        recentTwoAccumulatedInfos[1].latestAccumulateTime = currentTime;
     }
 
-    function _latestYieldInfo() internal view returns (uint256 latestYield, uint256 increasedYield) {
+    function _realTimeYieldInfo() internal view returns (uint256 realTimeYield, uint256 increasedYield) {
         IOutrunStakeManager syStakeManager = IOutrunStakeManager(POT);
         uint256 exchangeRate = IStandardizedYield(SY).exchangeRate();
         uint256 totalCurrentAssetValue = SYUtils.syToAsset(exchangeRate, syStakeManager.syTotalStaking());
@@ -43,10 +49,10 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
 
         if (totalCurrentAssetValue > totalPrincipalValue) {
             uint256 yieldInAsset = totalCurrentAssetValue - totalPrincipalValue;
-            latestYield = SYUtils.assetToSy(exchangeRate, yieldInAsset);
-            uint256 _currentYields = currentYields;
-            if (latestYield > _currentYields) {
-                increasedYield = latestYield - _currentYields;
+            // Real-time withdrawable yields
+            realTimeYield = SYUtils.assetToSy(exchangeRate, yieldInAsset);
+            if (realTimeYield > yieldBalance) {
+                increasedYield = realTimeYield - yieldBalance;
             }
         }
     }
@@ -54,15 +60,30 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
     /**
      * @dev Total redeemable yields
      */
-    function totalRedeemableYields() public view override returns (uint256 /*amount*/) {
-        (uint256 latestYield, uint256 increasedYield) = _latestYieldInfo();
+    function totalRedeemableYields() public view override returns (uint256) {
+        (uint256 realTimeYield, uint256 increasedYield) = _realTimeYieldInfo();
         if (increasedYield > 0) {
             unchecked {
                 uint256 protocolFee = increasedYield.mulDown(protocolFeeRate);
-                latestYield -= protocolFee;
+                realTimeYield -= protocolFee;
             }
         }
-        return latestYield;
+        return realTimeYield;
+    }
+
+    /**
+     * @dev Total historical accumulated yields
+     */
+    function totalAccumulatedYields() external view override returns (uint256) {
+        (uint256 realTimeYield, uint256 increasedYield) = _realTimeYieldInfo();
+        if (increasedYield > 0) {
+            unchecked {
+                uint256 protocolFee = increasedYield.mulDown(protocolFeeRate);
+                realTimeYield -= protocolFee;
+            }
+        }
+
+        return realTimeYield + withdrawedYields;
     }
 
     /**
@@ -77,22 +98,36 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
     /**
      * @dev Accumulate yields
      */
-    function accumulateYields() public override returns (uint256 increasedYield, uint256 syTotalStaking) {
-        uint256 latestYield;
-        (latestYield, increasedYield) = _latestYieldInfo();
+    function accumulateYields() public override returns (uint256 increasedYield) {
+        uint256 realTimeYield;
+        (realTimeYield, increasedYield) = _realTimeYieldInfo();
         if (increasedYield > 0) {
             uint256 protocolFee;
             unchecked {
                 protocolFee = increasedYield.mulDown(protocolFeeRate);
-                latestYield -= protocolFee;
-                currentYields = latestYield;
+                realTimeYield -= protocolFee;
+            }
+            yieldBalance = realTimeYield;
+
+            RecentAccumulatedInfo storage index0 = recentTwoAccumulatedInfos[0];
+            RecentAccumulatedInfo storage index1 = recentTwoAccumulatedInfos[1];
+            uint256 time0 = index0.latestAccumulateTime;
+            uint256 time1 = index1.latestAccumulateTime;
+            if (block.timestamp > time0 + 24 * 3600 && block.timestamp > time1 + 24 * 3600) {
+                uint64 currentTime = uint64(block.timestamp);
+                uint192 totalAccumulated = uint192(realTimeYield + withdrawedYields);
+                if (time0 < time1) {
+                    index0.latestAccumulateTime = currentTime;
+                    index0.accumulatedYields = totalAccumulated;
+                } else {
+                    index1.latestAccumulateTime = currentTime;
+                    index1.accumulatedYields = totalAccumulated;
+                }
             }
 
-            IOutrunStakeManager syStakeManager = IOutrunStakeManager(POT);
-            syStakeManager.transferYields(revenuePool, protocolFee);
-            syTotalStaking = syStakeManager.syTotalStaking();
+            IOutrunStakeManager(POT).transferYields(revenuePool, protocolFee);
 
-            emit AccumulateYields(increasedYield, protocolFee, syTotalStaking);
+            emit AccumulateYields(increasedYield, protocolFee);
         }
     }
 
@@ -107,8 +142,9 @@ contract OutrunERC4626YieldToken is IYieldManager, OutrunYieldToken, ReentrancyG
         accumulateYields();
 
         unchecked {
-            amountYieldsOut = currentYields * amountInBurnedYT / _totalSupply;
-            currentYields -= amountYieldsOut;
+            amountYieldsOut = yieldBalance * amountInBurnedYT / _totalSupply;
+            yieldBalance -= amountYieldsOut;
+            withdrawedYields += amountYieldsOut;
         }
 
         address msgSender = msg.sender;
