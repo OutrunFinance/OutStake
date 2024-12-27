@@ -79,8 +79,9 @@ contract OutrunPositionOptionToken is
     /**
      * @dev The average number of days staked based on YT. It isn't the true average number of days staked for the position.
      */
-    function impliedStakingDays() external view override returns (uint256) {
-        return IERC20(YT).totalSupply() / syTotalStaking;
+    function averageStakingDays() external view override returns (uint256) {
+        uint256 _syTotalStaking = syTotalStaking == 0 ? 1 : syTotalStaking;
+        return IERC20(YT).totalSupply() / _syTotalStaking;
     }
 
     /**

@@ -38,7 +38,7 @@ interface IOutrunStakeManager {
 
     function totalPrincipalValue() external view returns (uint256);
 
-    function impliedStakingDays() external view returns (uint256);
+    function averageStakingDays() external view returns (uint256);
 
     function calcPTAmount(uint256 principalValue, uint256 amountInYT) external view returns (uint256);
 
