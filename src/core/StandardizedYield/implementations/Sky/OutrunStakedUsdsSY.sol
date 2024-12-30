@@ -5,7 +5,7 @@ import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 import { SYBase, ArrayLib } from "../../SYBase.sol";
 
-contract OutrunSUsdsSY is SYBase {
+contract OutrunStakedUsdsSY is SYBase {
     address public immutable USDS;
 
     constructor(
