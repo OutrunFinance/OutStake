@@ -80,6 +80,7 @@
   },
   "dependencies": {
     "@chainlink/contracts": "^1.3.0",
+    "@pythnetwork/pyth-sdk-solidity": "^4.0.0",
     "solmate": "^6.8.0"
   }
 }
