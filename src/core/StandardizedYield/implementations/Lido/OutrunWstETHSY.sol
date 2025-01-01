@@ -22,8 +22,10 @@ contract OutrunWstETHSY is SYBase {
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) {
             uint256 stETHShareAmount = IStETH(STETH).submit{value: amountDeposited}();
+            _safeApproveInf(STETH, nativeYieldToken);
             amountSharesOut = IWstETH(nativeYieldToken).wrap(IStETH(STETH).getPooledEthByShares(stETHShareAmount));
         } else if (tokenIn == STETH) {
+            _safeApproveInf(STETH, nativeYieldToken);
             amountSharesOut = IWstETH(nativeYieldToken).wrap(amountDeposited);
         } else {
             amountSharesOut = amountDeposited;
