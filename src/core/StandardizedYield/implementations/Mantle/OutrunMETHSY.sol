@@ -16,8 +16,8 @@ contract OutrunMETHSY is SYBase {
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) {
-            amountSharesOut = IMETHStaking(nativeYieldToken).ethToMETH(amountDeposited);
-            IMETHStaking(nativeYieldToken).stake{value: amountDeposited}(amountSharesOut);
+            amountSharesOut = IMETHStaking(yieldBearingToken).ethToMETH(amountDeposited);
+            IMETHStaking(yieldBearingToken).stake{value: amountDeposited}(amountSharesOut);
         } else {
             amountSharesOut = amountDeposited;
         }
@@ -28,12 +28,12 @@ contract OutrunMETHSY is SYBase {
         address /*tokenOut*/,
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 /*amountTokenOut*/) {
-        _transferOut(nativeYieldToken, receiver, amountSharesToRedeem);
+        _transferOut(yieldBearingToken, receiver, amountSharesToRedeem);
         return amountSharesToRedeem;
     }
 
     function exchangeRate() public view override returns (uint256 res) {
-        return IMETHStaking(nativeYieldToken).mETHToETH(1 ether);
+        return IMETHStaking(yieldBearingToken).mETHToETH(1 ether);
     }
 
     function _previewDeposit(
@@ -41,7 +41,7 @@ contract OutrunMETHSY is SYBase {
         uint256 amountTokenToDeposit
     ) internal view override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) {
-            amountSharesOut = IMETHStaking(nativeYieldToken).ethToMETH(amountTokenToDeposit);
+            amountSharesOut = IMETHStaking(yieldBearingToken).ethToMETH(amountTokenToDeposit);
         } else {
             amountSharesOut = amountTokenToDeposit;
         }
@@ -55,19 +55,19 @@ contract OutrunMETHSY is SYBase {
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, NATIVE);
+        return ArrayLib.create(yieldBearingToken, NATIVE);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken);
+        return ArrayLib.create(yieldBearingToken);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == NATIVE;
+        return token == yieldBearingToken || token == NATIVE;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken;
+        return token == yieldBearingToken;
     }
 
     function assetInfo() external pure returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {

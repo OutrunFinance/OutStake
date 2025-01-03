@@ -32,7 +32,7 @@ contract OutrunSlisBNBSY is SYBase {
         address /*tokenOut*/,
         uint256 amountSharesToRedeem
     ) internal override returns (uint256) {
-        _transferOut(nativeYieldToken, receiver, amountSharesToRedeem);
+        _transferOut(yieldBearingToken, receiver, amountSharesToRedeem);
         return amountSharesToRedeem;
     }
 
@@ -59,19 +59,19 @@ contract OutrunSlisBNBSY is SYBase {
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, NATIVE);
+        return ArrayLib.create(yieldBearingToken, NATIVE);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken);
+        return ArrayLib.create(yieldBearingToken);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == NATIVE;
+        return token == yieldBearingToken || token == NATIVE;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken;
+        return token == yieldBearingToken;
     }
 
     function assetInfo() external pure returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {

@@ -21,7 +21,7 @@ contract OutrunStakedUSDeSY is SYBase {
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == USDE) {
-            amountSharesOut = IERC4626(nativeYieldToken).deposit(amountDeposited, address(this));
+            amountSharesOut = IERC4626(yieldBearingToken).deposit(amountDeposited, address(this));
         } else {
             amountSharesOut = amountDeposited;
         }
@@ -32,12 +32,12 @@ contract OutrunStakedUSDeSY is SYBase {
         address /*tokenOut*/,
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 /*amountTokenOut*/) {
-        _transferOut(nativeYieldToken, receiver, amountSharesToRedeem);
+        _transferOut(yieldBearingToken, receiver, amountSharesToRedeem);
         return amountSharesToRedeem;
     }
 
     function exchangeRate() public view override returns (uint256 res) {
-        return IERC4626(nativeYieldToken).convertToAssets(1 ether);
+        return IERC4626(yieldBearingToken).convertToAssets(1 ether);
     }
 
     function _previewDeposit(
@@ -45,7 +45,7 @@ contract OutrunStakedUSDeSY is SYBase {
         uint256 amountTokenToDeposit
     ) internal view override returns (uint256 amountSharesOut) {
         if (tokenIn == USDE) {
-            amountSharesOut = IERC4626(nativeYieldToken).previewDeposit(amountTokenToDeposit);
+            amountSharesOut = IERC4626(yieldBearingToken).previewDeposit(amountTokenToDeposit);
         } else {
             amountSharesOut = amountTokenToDeposit;
         }
@@ -59,19 +59,19 @@ contract OutrunStakedUSDeSY is SYBase {
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, USDE);
+        return ArrayLib.create(yieldBearingToken, USDE);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken);
+        return ArrayLib.create(yieldBearingToken);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == USDE;
+        return token == yieldBearingToken || token == USDE;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken;
+        return token == yieldBearingToken;
     }
 
     function assetInfo() external view returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {

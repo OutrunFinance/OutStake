@@ -22,11 +22,11 @@ contract OutrunWstETHSY is SYBase {
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) {
             uint256 stETHShareAmount = IStETH(STETH).submit{value: amountDeposited}();
-            _safeApproveInf(STETH, nativeYieldToken);
-            amountSharesOut = IWstETH(nativeYieldToken).wrap(IStETH(STETH).getPooledEthByShares(stETHShareAmount));
+            _safeApproveInf(STETH, yieldBearingToken);
+            amountSharesOut = IWstETH(yieldBearingToken).wrap(IStETH(STETH).getPooledEthByShares(stETHShareAmount));
         } else if (tokenIn == STETH) {
-            _safeApproveInf(STETH, nativeYieldToken);
-            amountSharesOut = IWstETH(nativeYieldToken).wrap(amountDeposited);
+            _safeApproveInf(STETH, yieldBearingToken);
+            amountSharesOut = IWstETH(yieldBearingToken).wrap(amountDeposited);
         } else {
             amountSharesOut = amountDeposited;
         }
@@ -38,16 +38,16 @@ contract OutrunWstETHSY is SYBase {
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 amountTokenOut) {
         if (tokenOut == STETH) {
-            amountTokenOut = IWstETH(nativeYieldToken).unwrap(amountSharesToRedeem);
+            amountTokenOut = IWstETH(yieldBearingToken).unwrap(amountSharesToRedeem);
             _transferOut(STETH, receiver, amountTokenOut);
         } else {
-            _transferOut(nativeYieldToken, receiver, amountSharesToRedeem);
+            _transferOut(yieldBearingToken, receiver, amountSharesToRedeem);
             amountTokenOut = amountSharesToRedeem;
         }
     }
 
     function exchangeRate() public view override returns (uint256 res) {
-        return IWstETH(nativeYieldToken).stEthPerToken();
+        return IWstETH(yieldBearingToken).stEthPerToken();
     }
 
     function _previewDeposit(
@@ -73,19 +73,19 @@ contract OutrunWstETHSY is SYBase {
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, NATIVE, STETH);
+        return ArrayLib.create(yieldBearingToken, NATIVE, STETH);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, STETH);
+        return ArrayLib.create(yieldBearingToken, STETH);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == NATIVE || token == STETH;
+        return token == yieldBearingToken || token == NATIVE || token == STETH;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == STETH;
+        return token == yieldBearingToken || token == STETH;
     }
 
     function assetInfo() external pure returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {

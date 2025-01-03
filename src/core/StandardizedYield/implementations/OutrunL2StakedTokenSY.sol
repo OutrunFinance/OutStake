@@ -62,19 +62,19 @@ contract OutrunL2StakedTokenSY is SYBase {
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken);
+        return ArrayLib.create(yieldBearingToken);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken);
+        return ArrayLib.create(yieldBearingToken);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken;
+        return token == yieldBearingToken;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken;
+        return token == yieldBearingToken;
     }
 
     function assetInfo() external view returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {

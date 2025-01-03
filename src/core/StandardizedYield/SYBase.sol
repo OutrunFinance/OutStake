@@ -13,15 +13,15 @@ import { OutrunERC20, IERC20Metadata } from "../common/OutrunERC20.sol";
  * @dev Standardized Yield Base Contract
  */
 abstract contract SYBase is IStandardizedYield, OutrunERC20, TokenHelper, ReentrancyGuard, Ownable {
-    address public immutable nativeYieldToken;
+    address public immutable yieldBearingToken;
 
     constructor(
         string memory name_,
         string memory symbol_,
-        address _nativeYieldToken,
+        address _yieldBearingToken,
         address _owner
-    ) OutrunERC20(name_, symbol_, IERC20Metadata(_nativeYieldToken).decimals()) Ownable(_owner) {
-        nativeYieldToken = _nativeYieldToken;
+    ) OutrunERC20(name_, symbol_, IERC20Metadata(_yieldBearingToken).decimals()) Ownable(_owner) {
+        yieldBearingToken = _yieldBearingToken;
     }
 
     receive() external payable {}

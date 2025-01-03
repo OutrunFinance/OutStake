@@ -28,7 +28,7 @@ contract OutrunLisUSDSY is SYBaseWithRewards {
         distributor = _distributor;
         defaultRewardToken = _defaultRewardToken;
 
-        _safeApproveInf(nativeYieldToken, address(_jar));
+        _safeApproveInf(yieldBearingToken, address(_jar));
     }
 
     function _deposit(
@@ -55,7 +55,7 @@ contract OutrunLisUSDSY is SYBaseWithRewards {
         amountTokenOut = amountSharesToRedeem * totalAssets / totalShares;
 
         listaLisUSDJar.exit(totalDepositedInJar);
-        _transferOut(nativeYieldToken, receiver, amountTokenOut);
+        _transferOut(yieldBearingToken, receiver, amountTokenOut);
         unchecked {
             totalDepositedInJar = totalAssets - amountTokenOut;
         }
@@ -98,22 +98,22 @@ contract OutrunLisUSDSY is SYBaseWithRewards {
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken);
+        return ArrayLib.create(yieldBearingToken);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken);
+        return ArrayLib.create(yieldBearingToken);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken;
+        return token == yieldBearingToken;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken;
+        return token == yieldBearingToken;
     }
 
     function assetInfo() external view returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {
-        return (AssetType.TOKEN, nativeYieldToken, IERC20Metadata(nativeYieldToken).decimals());
+        return (AssetType.TOKEN, yieldBearingToken, IERC20Metadata(yieldBearingToken).decimals());
     }
 }

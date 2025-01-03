@@ -21,7 +21,7 @@ contract OutrunStakedUsdsSY is SYBase {
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == USDS) {
-            amountSharesOut = IERC4626(nativeYieldToken).deposit(amountDeposited, address(this));
+            amountSharesOut = IERC4626(yieldBearingToken).deposit(amountDeposited, address(this));
         } else {
             amountSharesOut = amountDeposited;
         }
@@ -33,15 +33,15 @@ contract OutrunStakedUsdsSY is SYBase {
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 amountTokenOut) {
         if (tokenOut == USDS) {
-            amountTokenOut = IERC4626(nativeYieldToken).redeem(amountSharesToRedeem, receiver, address(this));
+            amountTokenOut = IERC4626(yieldBearingToken).redeem(amountSharesToRedeem, receiver, address(this));
         } else {
-            _transferOut(nativeYieldToken, receiver, amountSharesToRedeem);
+            _transferOut(yieldBearingToken, receiver, amountSharesToRedeem);
             amountTokenOut = amountSharesToRedeem;
         }
     }
 
     function exchangeRate() public view override returns (uint256 res) {
-        return IERC4626(nativeYieldToken).convertToAssets(1 ether);
+        return IERC4626(yieldBearingToken).convertToAssets(1 ether);
     }
 
     function _previewDeposit(
@@ -49,7 +49,7 @@ contract OutrunStakedUsdsSY is SYBase {
         uint256 amountTokenToDeposit
     ) internal view override returns (uint256 amountSharesOut) {
         if (tokenIn == USDS) {
-            amountSharesOut = IERC4626(nativeYieldToken).previewDeposit(amountTokenToDeposit);
+            amountSharesOut = IERC4626(yieldBearingToken).previewDeposit(amountTokenToDeposit);
         } else {
             amountSharesOut = amountTokenToDeposit;
         }
@@ -60,26 +60,26 @@ contract OutrunStakedUsdsSY is SYBase {
         uint256 amountSharesToRedeem
     ) internal view override returns (uint256 amountTokenOut) {
         if (tokenOut == USDS) {
-            amountTokenOut = IERC4626(nativeYieldToken).previewRedeem(amountSharesToRedeem);
+            amountTokenOut = IERC4626(yieldBearingToken).previewRedeem(amountSharesToRedeem);
         } else {
             amountTokenOut = amountSharesToRedeem;
         }
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, USDS);
+        return ArrayLib.create(yieldBearingToken, USDS);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, USDS);
+        return ArrayLib.create(yieldBearingToken, USDS);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == USDS;
+        return token == yieldBearingToken || token == USDS;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == USDS;
+        return token == yieldBearingToken || token == USDS;
     }
 
     function assetInfo() external view returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {

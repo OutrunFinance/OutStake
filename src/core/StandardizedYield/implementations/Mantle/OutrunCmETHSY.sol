@@ -24,10 +24,10 @@ contract OutrunMethSY is SYBase {
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) {
-            amountSharesOut = ICmETHTeller(nativeYieldToken).deposit{value: amountDeposited}(ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), amountDeposited, 0);
+            amountSharesOut = ICmETHTeller(yieldBearingToken).deposit{value: amountDeposited}(ERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), amountDeposited, 0);
         } else if (tokenIn == METH) {
             _safeApproveInf(METH, VAULT);
-            amountSharesOut = ICmETHTeller(nativeYieldToken).deposit(ERC20(METH), amountDeposited, 0);
+            amountSharesOut = ICmETHTeller(yieldBearingToken).deposit(ERC20(METH), amountDeposited, 0);
         } else {
             amountSharesOut = amountDeposited;
         }
@@ -38,7 +38,7 @@ contract OutrunMethSY is SYBase {
         address /*tokenOut*/,
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 /*amountTokenOut*/) {
-        _transferOut(nativeYieldToken, receiver, amountSharesToRedeem);
+        _transferOut(yieldBearingToken, receiver, amountSharesToRedeem);
         return amountSharesToRedeem;
     }
 
@@ -65,19 +65,19 @@ contract OutrunMethSY is SYBase {
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, NATIVE, METH);
+        return ArrayLib.create(yieldBearingToken, NATIVE, METH);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken);
+        return ArrayLib.create(yieldBearingToken);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == NATIVE || token == METH;
+        return token == yieldBearingToken || token == NATIVE || token == METH;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken;
+        return token == yieldBearingToken;
     }
 
     function assetInfo() external pure returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {

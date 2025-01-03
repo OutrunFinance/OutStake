@@ -28,7 +28,7 @@ contract OutrunWeETHSY is SYBase {
         if (tokenIn == NATIVE) {
             amountSharesOut = IDepositAdapter(DEPOSIT_ADAPTER).depositETHForWeETH(address(0));
         } else if (tokenIn == EETH) {
-            amountSharesOut = IWeETH(nativeYieldToken).wrap(amountDeposited);
+            amountSharesOut = IWeETH(yieldBearingToken).wrap(amountDeposited);
         } else {
             amountSharesOut = amountDeposited;
         }
@@ -40,11 +40,11 @@ contract OutrunWeETHSY is SYBase {
         uint256 amountSharesToRedeem
     ) internal override returns (uint256 amountTokenOut) {
         if (tokenOut == EETH) {
-            amountTokenOut = IWeETH(nativeYieldToken).unwrap(amountSharesToRedeem);
+            amountTokenOut = IWeETH(yieldBearingToken).unwrap(amountSharesToRedeem);
             _transferOut(EETH, receiver, amountTokenOut);
         } else {
             amountTokenOut = amountSharesToRedeem;
-            _transferOut(nativeYieldToken, receiver, amountSharesToRedeem);
+            _transferOut(yieldBearingToken, receiver, amountSharesToRedeem);
         }
     }
 
@@ -78,19 +78,19 @@ contract OutrunWeETHSY is SYBase {
     }
 
     function getTokensIn() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, NATIVE);
+        return ArrayLib.create(yieldBearingToken, NATIVE);
     }
 
     function getTokensOut() public view override returns (address[] memory res) {
-        return ArrayLib.create(nativeYieldToken, EETH);
+        return ArrayLib.create(yieldBearingToken, EETH);
     }
 
     function isValidTokenIn(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == NATIVE;
+        return token == yieldBearingToken || token == NATIVE;
     }
 
     function isValidTokenOut(address token) public view override returns (bool) {
-        return token == nativeYieldToken || token == EETH;
+        return token == yieldBearingToken || token == EETH;
     }
 
     function assetInfo() external pure returns (AssetType assetType, address assetAddress, uint8 assetDecimals) {

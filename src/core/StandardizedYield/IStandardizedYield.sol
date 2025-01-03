@@ -120,9 +120,9 @@ interface IStandardizedYield is IERC20Metadata {
     function getRewardTokens() external view returns (address[] memory);
 
     /**
-     * @notice returns the address of the native yield token
+     * @notice returns the address of the yield-bearing Token
      */
-    function nativeYieldToken() external view returns (address);
+    function yieldBearingToken() external view returns (address);
 
     /**
      * @notice returns all tokens that can mint this SY
