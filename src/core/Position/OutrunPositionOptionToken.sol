@@ -7,7 +7,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 
 import { SYUtils } from "../libraries/SYUtils.sol";
 import { TokenHelper } from "../libraries/TokenHelper.sol";
-import { OutrunERC1155 } from "../common/OutrunERC1155.sol";
+import { OutrunERC6909 } from "../common/OutrunERC6909.sol";
 import { AutoIncrementId } from "../common/AutoIncrementId.sol";
 import { IOutrunStakeManager } from "./interfaces/IOutrunStakeManager.sol";
 import { PositionRewardManager, Math } from "../RewardManager/PositionRewardManager.sol";
@@ -23,7 +23,7 @@ contract OutrunPositionOptionToken is
     IOutrunStakeManager, 
     PositionRewardManager, 
     AutoIncrementId, 
-    OutrunERC1155, 
+    OutrunERC6909, 
     TokenHelper, 
     ReentrancyGuard, 
     Ownable
@@ -56,7 +56,7 @@ contract OutrunPositionOptionToken is
         address _SY,
         address _PT,
         address _YT
-    ) OutrunERC1155(name_, symbol_, decimals_) Ownable(owner_) {
+    ) OutrunERC6909(name_, symbol_, decimals_) Ownable(owner_) {
         SY = _SY;
         PT = _PT;
         YT = _YT;
@@ -156,7 +156,7 @@ contract OutrunPositionOptionToken is
         positions[positionId] = Position(amountInSY, principalValue, PTGenerated, deadline, positionOwner);
         IYieldToken(YT).mint(YTRecipient, YTGenerated);
         IPrincipalToken(PT).mint(PTRecipient, PTGenerated);
-        _mint(positionOwner, positionId, PTGenerated, "");  // mint POT
+        _mint(positionOwner, positionId, PTGenerated);  // mint POT
 
         _storeRewardIndexes(positionId);
 
@@ -177,7 +177,7 @@ contract OutrunPositionOptionToken is
         require(deadline <= block.timestamp, LockTimeNotExpired(deadline));
 
         address msgSender = msg.sender;
-        burn(msgSender, positionId, positionShare);
+        _burn(msgSender, positionId, positionShare);
         
         uint256 PTRedeemable = position.PTRedeemable;
         uint256 principalRedeemable = position.principalRedeemable;
