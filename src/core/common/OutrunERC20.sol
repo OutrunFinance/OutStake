@@ -35,7 +35,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
     /**
      * @dev Returns the name of the token.
      */
-    function name() public view virtual returns (string memory) {
+    function name() external view returns (string memory) {
         return _name;
     }
 
@@ -43,7 +43,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public view virtual returns (string memory) {
+    function symbol() external view returns (string memory) {
         return _symbol;
     }
 
@@ -60,21 +60,21 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view virtual returns (uint8) {
+    function decimals() external view returns (uint8) {
         return _decimals;
     }
 
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() public view virtual returns (uint256) {
+    function totalSupply() external view returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual returns (uint256) {
+    function balanceOf(address account) external view returns (uint256) {
         return _balances[account];
     }
 
@@ -86,7 +86,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * - `to` cannot be the zero address.
      * - the caller must have a balance of at least `value`.
      */
-    function transfer(address to, uint256 value) public virtual returns (bool) {
+    function transfer(address to, uint256 value) external returns (bool) {
         address owner = _msgSender();
         _transfer(owner, to, value);
         return true;
@@ -95,7 +95,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view virtual returns (uint256) {
+    function allowance(address owner, address spender) external view returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -109,7 +109,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 value) public virtual returns (bool) {
+    function approve(address spender, uint256 value) external returns (bool) {
         address owner = _msgSender();
         _approve(owner, spender, value);
         return true;
@@ -131,7 +131,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * - the caller must have allowance for ``from``'s tokens of at least
      * `value`.
      */
-    function transferFrom(address from, address to, uint256 value) public virtual returns (bool) {
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
         address spender = _msgSender();
         _spendAllowance(from, spender, value);
         _transfer(from, to, value);
@@ -162,7 +162,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      *
      * Emits a {Transfer} event.
      */
-    function _update(address from, address to, uint256 value) internal virtual {
+    function _update(address from, address to, uint256 value) internal {
         _beforeTokenTransfer(from, to, value);
 
         if (from == address(0)) {
@@ -251,14 +251,14 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * Anyone who wishes to continue emitting `Approval` events on the`transferFrom` operation can force the flag to
      * true using the following override:
      * ```
-     * function _approve(address owner, address spender, uint256 value, bool) internal virtual override {
+     * function _approve(address owner, address spender, uint256 value, bool) internal override {
      *     super._approve(owner, spender, value, true);
      * }
      * ```
      *
      * Requirements are the same as {_approve}.
      */
-    function _approve(address owner, address spender, uint256 value, bool emitEvent) internal virtual {
+    function _approve(address owner, address spender, uint256 value, bool emitEvent) internal {
         require(owner != address(0), ERC20InvalidApprover(address(0)));
         require(spender != address(0), ERC20InvalidSpender(address(0)));
 
@@ -276,7 +276,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      *
      * Does not emit an {Approval} event.
      */
-    function _spendAllowance(address owner, address spender, uint256 value) internal virtual {
+    function _spendAllowance(address owner, address spender, uint256 value) internal {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
             require(currentAllowance >= value, ERC20InsufficientAllowance(spender, currentAllowance, value));
@@ -300,7 +300,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * - `from` and `to` are never both zero.
      *
      */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {}
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal {}
 
     /**
      * @dev Hook that is called after any transfer of tokens. This includes
@@ -315,5 +315,5 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * - `from` and `to` are never both zero.
      *
      */
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {}
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal {}
 }
