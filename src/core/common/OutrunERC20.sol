@@ -67,14 +67,14 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() external view returns (uint256) {
+    function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) external view returns (uint256) {
+    function balanceOf(address account) public view returns (uint256) {
         return _balances[account];
     }
 
@@ -95,7 +95,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) external view returns (uint256) {
+    function allowance(address owner, address spender) public view returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -300,7 +300,7 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * - `from` and `to` are never both zero.
      *
      */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal {}
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 
     /**
      * @dev Hook that is called after any transfer of tokens. This includes
@@ -315,5 +315,5 @@ contract OutrunERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {
      * - `from` and `to` are never both zero.
      *
      */
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal {}
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 }
