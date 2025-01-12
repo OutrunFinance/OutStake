@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import "./BaseScript.s.sol";
 import { OutStakeRouter } from "../src/router/OutStakeRouter.sol";
 import { IOutrunDeployer, OutrunDeployer } from "../src/external/deployer/OutrunDeployer.sol";
+import { ISlisBNBProvider } from "../src/external/lista/ISlisBNBProvider.sol";
 import { IListaBNBStakeManager } from "../src/external/lista/IListaBNBStakeManager.sol";
 import { OutrunPositionOptionToken } from "../src/core/Position/OutrunPositionOptionToken.sol";
 import { IPrincipalToken, OutrunPrincipalToken } from "../src/core/YieldContracts/OutrunPrincipalToken.sol";
@@ -53,7 +54,13 @@ contract OutstakeScript is BaseScript {
      */
     function supportSlisBNB() internal {
         // SY
-        OutrunSlisBNBSY SY_SLISBNB = new OutrunSlisBNBSY(owner, slisBNB, IListaBNBStakeManager(listaBNBStakeManager));
+        OutrunSlisBNBSY SY_SLISBNB = new OutrunSlisBNBSY(
+            owner, 
+            slisBNB, 
+            vm.envAddress("DELEGATE_TO"), 
+            IListaBNBStakeManager(listaBNBStakeManager), 
+            ISlisBNBProvider(vm.envAddress("TESTNET_SLISBNB_PROVIDER"))
+        );
         address slisBNBSYAddress = address(SY_SLISBNB);
 
         // PT

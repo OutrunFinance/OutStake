@@ -2,17 +2,37 @@
 pragma solidity ^0.8.26;
 
 import { SYBase, ArrayLib } from "../../SYBase.sol";
+import { ISlisBNBProvider } from "../../../../external/lista/ISlisBNBProvider.sol";
 import { IListaBNBStakeManager } from "../../../../external/lista/IListaBNBStakeManager.sol";
 
 contract OutrunSlisBNBSY is SYBase {
     IListaBNBStakeManager public immutable listaBNBStakeManager;
+    ISlisBNBProvider public immutable slisBNBProvider;
+    address public delegateTo;
+
+    event UpdateDelegateTo(address oldDelegateTo, address newDelegateTo);
 
     constructor(
         address _owner,
         address _slisBNB,
-        IListaBNBStakeManager _stakeManager
+        address _delegateTo,
+        IListaBNBStakeManager _stakeManager,
+        ISlisBNBProvider _slisBNBProvider
     ) SYBase("SY Lista slisBNB", "SY-slisBNB", _slisBNB, _owner) {
+        delegateTo = _delegateTo;
         listaBNBStakeManager = _stakeManager;
+        slisBNBProvider = _slisBNBProvider;
+    }
+
+    function updateDelegateTo(address _delegateTo) external onlyOwner {
+        uint256 _totalSupply = totalSupply();
+        slisBNBProvider.release(address(this), _totalSupply);
+        slisBNBProvider.provide(_totalSupply, _delegateTo);
+
+        address oldDelegateTo = delegateTo;
+        delegateTo = _delegateTo;
+
+        emit UpdateDelegateTo(oldDelegateTo, _delegateTo);
     }
 
     function _deposit(
@@ -25,6 +45,8 @@ contract OutrunSlisBNBSY is SYBase {
         } else {
             amountSharesOut = amountDeposited;
         }
+
+        slisBNBProvider.provide(amountSharesOut, delegateTo);
     }
 
     function _redeem(
@@ -32,7 +54,7 @@ contract OutrunSlisBNBSY is SYBase {
         address /*tokenOut*/,
         uint256 amountSharesToRedeem
     ) internal override returns (uint256) {
-        _transferOut(yieldBearingToken, receiver, amountSharesToRedeem);
+        slisBNBProvider.release(receiver, amountSharesToRedeem);
         return amountSharesToRedeem;
     }
 
