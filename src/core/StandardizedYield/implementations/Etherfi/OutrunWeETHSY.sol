@@ -26,7 +26,7 @@ contract OutrunWeETHSY is SYBase {
         uint256 amountDeposited
     ) internal override returns (uint256 amountSharesOut) {
         if (tokenIn == NATIVE) {
-            amountSharesOut = IDepositAdapter(DEPOSIT_ADAPTER).depositETHForWeETH(address(0));
+            amountSharesOut = IDepositAdapter(DEPOSIT_ADAPTER).depositETHForWeETH{value: amountDeposited}(address(0));
         } else if (tokenIn == EETH) {
             amountSharesOut = IWeETH(yieldBearingToken).wrap(amountDeposited);
         } else {
