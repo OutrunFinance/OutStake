@@ -9,6 +9,8 @@ interface IStandardizedYield is IERC20Metadata {
 
     error SYInvalidTokenOut(address token);
 
+    error SYZeroAddress();
+
     error SYZeroDeposit();
 
     error SYZeroRedeem();
