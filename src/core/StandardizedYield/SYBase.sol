@@ -21,6 +21,8 @@ abstract contract SYBase is IStandardizedYield, OutrunERC20, TokenHelper, Reentr
         address _yieldBearingToken,
         address _owner
     ) OutrunERC20(name_, symbol_, IERC20Metadata(_yieldBearingToken).decimals()) Ownable(_owner) {
+        require(_yieldBearingToken != address(0), SYZeroAddress());
+        
         yieldBearingToken = _yieldBearingToken;
     }
 
